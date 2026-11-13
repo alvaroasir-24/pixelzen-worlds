@@ -20,7 +20,10 @@ if (Test-Path $PidFile) {
 }
 Set-Content -Path $PidFile -Value $PID -Encoding ASCII
 
-$TemasBase = Join-Path $Aqui 'temas'
+$TemasBase = Join-Path $Aqui 'lively\temas'
+if (-not (Test-Path $TemasBase)) {
+    $TemasBase = Join-Path $Aqui 'temas'
+}
 if (-not (Test-Path $TemasBase)) {
     $TemasBase = Join-Path $Raiz 'windows\lively\temas'
 }

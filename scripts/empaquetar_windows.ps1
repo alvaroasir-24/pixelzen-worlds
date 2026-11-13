@@ -27,8 +27,14 @@ try {
     }
     Copy-Item -Path (Join-Path $Raiz 'windows\installer\Desinstalar.ps1') -Destination (Join-Path $AppStage 'Desinstalar.ps1') -Force
 
+    $LivelyDst = Join-Path $AppStage 'lively'
+    New-Item -Path $LivelyDst -ItemType Directory -Force | Out-Null
+    foreach ($webItem in Get-ChildItem -Path (Join-Path $Raiz 'windows\lively') -File) {
+        Copy-Item -Path $webItem.FullName -Destination (Join-Path $LivelyDst $webItem.Name) -Force
+    }
+
     $TemasSrc = Join-Path $Raiz 'windows\lively\temas'
-    $TemasDst = Join-Path $AppStage 'temas'
+    $TemasDst = Join-Path $LivelyDst 'temas'
     Copy-Item -Path $TemasSrc -Destination $TemasDst -Recurse -Force
 
     # Copiar previews dia/dorado/noche (principal y secundario) dentro de cada tema instalado
@@ -41,13 +47,6 @@ try {
                 Copy-Item -Path $prevSrc -Destination $prevDst -Recurse -Force
             }
         }
-    }
-
-    # También copiar visor web ligero por si alguien pulsa "Ver animación en navegador" teniendo Python
-    $LivelyDst = Join-Path $AppStage 'lively'
-    New-Item -Path $LivelyDst -ItemType Directory -Force | Out-Null
-    foreach ($webItem in Get-ChildItem -Path (Join-Path $Raiz 'windows\lively') -File) {
-        Copy-Item -Path $webItem.FullName -Destination (Join-Path $LivelyDst $webItem.Name) -Force
     }
 
     $PayloadZip = Join-Path $Stage 'PixelZenPayload.zip'

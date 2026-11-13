@@ -28,9 +28,10 @@ import urllib.parse
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 LIVELY_DIR = os.path.join(AQUI, 'lively')
-_TEMAS_INSTALADOS = os.path.join(AQUI, 'temas')
-TEMAS_DIR = _TEMAS_INSTALADOS if os.path.isdir(_TEMAS_INSTALADOS) else os.path.join(LIVELY_DIR, 'temas')
-if os.path.isdir(_TEMAS_INSTALADOS):
+_TEMAS_LIVELY = os.path.join(LIVELY_DIR, 'temas')
+_TEMAS_LEGACY = os.path.join(AQUI, 'temas')
+TEMAS_DIR = _TEMAS_LIVELY if os.path.isdir(_TEMAS_LIVELY) else (_TEMAS_LEGACY if os.path.isdir(_TEMAS_LEGACY) else os.path.join(LIVELY_DIR, 'temas'))
+if os.path.isdir(_TEMAS_LIVELY) or os.path.isdir(_TEMAS_LEGACY):
     _DATA_DIR = os.path.join(os.environ.get('LOCALAPPDATA', AQUI), 'PixelZenWorlds')
     os.makedirs(_DATA_DIR, exist_ok=True)
     CONFIG_PATH = os.path.join(_DATA_DIR, 'config.json')

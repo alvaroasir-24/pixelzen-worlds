@@ -24,6 +24,22 @@ $deskLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PixelZen Worlds.
 $startLnk = Join-Path ([Environment]::GetFolderPath('Programs')) 'PixelZen Worlds.lnk'
 Remove-Item $deskLnk, $startLnk -Force -ErrorAction SilentlyContinue
 
+foreach ($wallRoot in @(
+    (Join-Path $env:LOCALAPPDATA 'Lively Wallpaper\Library\wallpapers'),
+    (Get-ChildItem "$env:LOCALAPPDATA\Packages\12030rocksdanister.LivelyWallpaper*\LocalCache\Local\Lively Wallpaper\Library\wallpapers" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName)
+)) {
+    if ($wallRoot -and (Test-Path $wallRoot)) {
+        foreach ($slot in @('pixelzen-m1', 'pixelzen-m2')) {
+            $sp = Join-Path $wallRoot $slot
+            if (Test-Path $sp) {
+                $tJ = Join-Path $sp 'temas'
+                if (Test-Path $tJ) { cmd /c "rmdir `"$tJ`"" 2>$null | Out-Null }
+                Remove-Item $sp -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
 $root = Join-Path $env:LOCALAPPDATA 'PixelZenWorlds'
 Start-Process -FilePath 'cmd.exe' -ArgumentList "/c ping 127.0.0.1 -n 3 >nul & rmdir /s /q `"$root`"" -WindowStyle Hidden
 [System.Windows.MessageBox]::Show(

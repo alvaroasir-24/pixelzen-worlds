@@ -4,6 +4,7 @@
   const canvas = document.getElementById('lienzo');
   const d = new Date();
   let liveStats = null;
+  let lastEstadoTxt = '';
 
   const statsParam = params.get('stats');
   const hudStatsInit = statsParam ? {
@@ -25,11 +26,13 @@
     ? params.get('hud') !== '0'
     : pantallaParam !== 'secundaria';
 
+  const modoToIdx = m => (m === 'real' ? 0 : (m === 'demo' ? 2 : (m === 'fija' ? 3 : 1)));
+
   const renderer = window.PixelZenCanvas.createRenderer(canvas, {
     initialState: {
       tema: params.get('tema') || 'fittoa',
       pantalla: pantallaParam,
-      modoHora: params.get('modo') === 'real' ? 0 : (params.get('modo') === 'demo' ? 2 : (params.get('modo') === 'fija' ? 3 : 1)),
+      modoHora: modoToIdx(params.get('modo')),
       horaFija: parseFloat(params.get('hora') || '21.5'),
       fps: parseInt(params.get('fps') || '8', 10),
       mostrarHud: mostrarHudParam,
@@ -51,6 +54,77 @@
     timer = setInterval(() => { state.tick++; renderer.render(); }, Math.round(1000 / Math.max(2, Math.min(24, state.fps))));
   }
 
+  async function aplicaEstadoJson(cfg) {
+    if (!cfg || typeof cfg !== 'object') return;
+    const nuevoTema = cfg.tema || state.tema;
+    const nuevaPantalla = cfg.pantalla === 'secundaria' ? 'secundaria' : 'principal';
+    if (cfg.modo) {
+      const mIdx = modoToIdx(cfg.modo);
+      if (mIdx !== state.modoHora) {
+        state.modoHora = mIdx;
+        if (mIdx === 1) {
+          state.inicioMs = Date.now();
+          const now = new Date();
+          state.inicioHora = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+        }
+      }
+    }
+    if (cfg.horaFija !== undefined) state.horaFija = parseFloat(cfg.horaFija) || 21.5;
+    if (cfg.fps !== undefined) {
+      const nf = parseInt(cfg.fps, 10) || 8;
+      if (nf !== state.fps) {
+        state.fps = nf;
+        if (timer) reprogramar();
+      }
+    }
+    if (cfg.hud !== undefined) state.mostrarHud = !!cfg.hud;
+    if (cfg.stats && typeof cfg.stats === 'object') {
+      for (const k of ['tiempo', 'sistema', 'red', 'dev', 'grimorio']) {
+        if (cfg.stats[k] !== undefined) state.hudStats[k] = !!cfg.stats[k];
+      }
+    }
+    if (cfg.live && typeof cfg.live === 'object') liveStats = cfg.live;
+    if (nuevoTema !== state.tema || nuevaPantalla !== state.pantalla) {
+      await renderer.cargarTema(nuevoTema, { pantalla: nuevaPantalla });
+    }
+    renderer.render();
+  }
+
+  let pendingSync = null;
+
+  window.PixelZenRecibeEstado = cfg => {
+    try {
+      const txt = JSON.stringify(cfg);
+      if (txt === lastEstadoTxt) return;
+      lastEstadoTxt = txt;
+      pendingSync = aplicaEstadoJson(cfg);
+    } catch (_e) { /* estado invalido */ }
+  };
+
+  function sincronizaEstado() {
+    if (params.has('tema')) return Promise.resolve();
+    return new Promise(resolve => {
+      const prev = document.getElementById('pz-sync-script');
+      if (prev) prev.remove();
+      const s = document.createElement('script');
+      s.id = 'pz-sync-script';
+      s.src = `pz_estado.js?t=${Date.now()}`;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        const p = pendingSync;
+        pendingSync = null;
+        if (p && typeof p.then === 'function') p.then(resolve, resolve);
+        else resolve();
+      };
+      const tid = setTimeout(finish, 1200);
+      s.onload = () => { clearTimeout(tid); finish(); };
+      s.onerror = () => { clearTimeout(tid); finish(); };
+      document.head.appendChild(s);
+    });
+  }
+
   async function refrescaStats() {
     if (window.location.protocol === 'file:') return;
     try {
@@ -58,19 +132,17 @@
       if (res.ok) liveStats = await res.json();
     } catch (_e) { /* servidor local opcional */ }
   }
-  refrescaStats();
-  setInterval(refrescaStats, 2500);
 
   window.livelyPropertyListener = (name, val) => {
     if (name === 'tema') {
-      const nuevo = TEMAS_DISPONIBLES[val] || TEMAS_DISPONIBLES[0];
+      const nuevo = typeof val === 'string' ? val : (TEMAS_DISPONIBLES[val] || TEMAS_DISPONIBLES[0]);
       if (nuevo !== state.tema) { renderer.cargarTema(nuevo).then(renderer.render); }
     } else if (name === 'pantalla') {
-      const nueva = val === 1 ? 'secundaria' : 'principal';
+      const nueva = (val === 1 || val === 'secundaria') ? 'secundaria' : 'principal';
       if (nueva !== state.pantalla) { renderer.cargarTema(state.tema, { pantalla: nueva }).then(renderer.render); }
     } else if (name === 'modoHora') {
-      state.modoHora = val;
-      if (val === 1) {
+      state.modoHora = typeof val === 'string' ? modoToIdx(val) : val;
+      if (state.modoHora === 1) {
         state.inicioMs = Date.now();
         const now = new Date();
         state.inicioHora = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
@@ -86,5 +158,17 @@
     renderer.render();
   };
 
-  renderer.cargarTema(state.tema, { pantalla: state.pantalla }).then(() => { renderer.render(); reprogramar(); });
+  sincronizaEstado().finally(() => {
+    const yaCargado = state.D && state.T;
+    const inicio = yaCargado
+      ? Promise.resolve()
+      : renderer.cargarTema(state.tema, { pantalla: state.pantalla });
+    inicio.then(() => {
+      renderer.render();
+      reprogramar();
+      refrescaStats();
+      setInterval(sincronizaEstado, 1800);
+      setInterval(refrescaStats, 2500);
+    });
+  });
 })();

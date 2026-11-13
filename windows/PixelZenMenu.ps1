@@ -8,8 +8,15 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 $ErrorActionPreference = 'SilentlyContinue'
 $Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Raiz = Split-Path -Parent $Aqui
-$EsInstalada = Test-Path (Join-Path $Aqui 'temas')
-$TemasDir = if ($EsInstalada) { Join-Path $Aqui 'temas' } else { Join-Path $Raiz 'windows\lively\temas' }
+$LivelyLocalDir = if (Test-Path (Join-Path $Aqui 'lively\index.html')) { Join-Path $Aqui 'lively' } else { Join-Path $Raiz 'windows\lively' }
+$TemasDir = if (Test-Path (Join-Path $Aqui 'lively\temas')) {
+    Join-Path $Aqui 'lively\temas'
+} elseif (Test-Path (Join-Path $Aqui 'temas')) {
+    Join-Path $Aqui 'temas'
+} else {
+    Join-Path $Raiz 'windows\lively\temas'
+}
+$EsInstalada = (Test-Path (Join-Path $Aqui 'lively\temas')) -or (Test-Path (Join-Path $Aqui 'temas'))
 $DataDir = if ($EsInstalada) { Join-Path $env:LOCALAPPDATA 'PixelZenWorlds' } else { $Aqui }
 if (-not (Test-Path $DataDir)) { New-Item -Path $DataDir -ItemType Directory -Force | Out-Null }
 $ConfigPath = Join-Path $DataDir 'config.json'
@@ -145,16 +152,256 @@ public class PzWallApp {
     [PzWallApp]::Apply($p1, $p2, [int]$numMonitores)
 }
 
+function Detener-CicloYHud {
+    foreach ($pf in @('pixelzen_win.pid', 'pixelzen_hud.pid')) {
+        $pfile = Join-Path $env:TEMP $pf
+        if (Test-Path $pfile) {
+            $oldPid = Get-Content $pfile -ErrorAction SilentlyContinue
+            if ($oldPid) { Stop-Process -Id ([int]$oldPid) -Force -ErrorAction SilentlyContinue }
+        }
+    }
+}
+
+function Write-Utf8NoBom([string]$path, [string]$text) {
+    $enc = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($path, $text, $enc)
+}
+
+function Resolver-Lively {
+    $pkg = Get-AppxPackage -Name '12030rocksdanister.LivelyWallpaper*' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($pkg) {
+        $pfn = $pkg.PackageFamilyName
+        $cfgBase = Join-Path $env:LOCALAPPDATA "Packages\$pfn\LocalCache\Local\Lively Wallpaper"
+        $wallBase = Join-Path $env:LOCALAPPDATA 'Lively Wallpaper'
+        if ((Test-Path $cfgBase) -or (Test-Path $wallBase)) {
+            return @{ IsStore = $true; AppId = "$pfn!App"; Base = $wallBase; CfgBase = $cfgBase; Exe = $null }
+        }
+    }
+    foreach ($cand in @(
+        (Join-Path $env:LOCALAPPDATA 'Programs\Lively Wallpaper\Lively.exe'),
+        (Join-Path $env:ProgramFiles 'Lively Wallpaper\Lively.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Lively Wallpaper\Lively.exe')
+    )) {
+        if ($cand -and (Test-Path $cand)) {
+            $deskBase = Join-Path $env:LOCALAPPDATA 'Lively Wallpaper'
+            return @{ IsStore = $false; AppId = $null; Base = $deskBase; CfgBase = $deskBase; Exe = $cand }
+        }
+    }
+    return $null
+}
+
+function Get-MonitoresLively {
+    if (-not ('PzDisplayDev' -as [type])) {
+        $dispCode = @'
+using System;
+using System.Runtime.InteropServices;
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct PZ_DISPLAY_DEVICE {
+    public int cb;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceString;
+    public int StateFlags;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceID;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
+}
+
+public class PzDisplayDev {
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern bool EnumDisplayDevicesW(string lpDevice, uint iDevNum, ref PZ_DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
+
+    public static string GetDeviceId(string gdiName) {
+        var dd = new PZ_DISPLAY_DEVICE();
+        dd.cb = Marshal.SizeOf(dd);
+        if (EnumDisplayDevicesW(gdiName, 0, ref dd, 1) && !string.IsNullOrEmpty(dd.DeviceID)) {
+            return dd.DeviceID;
+        }
+        return gdiName;
+    }
+}
+'@
+        Add-Type -TypeDefinition $dispCode -ErrorAction SilentlyContinue
+    }
+    $lista = @()
+    $pos = 1
+    foreach ($scr in [System.Windows.Forms.Screen]::AllScreens) {
+        $devId = $scr.DeviceName
+        try { $devId = [PzDisplayDev]::GetDeviceId($scr.DeviceName) } catch {}
+        $idx = if ($scr.DeviceName -match '(\d+)$') { [int]$Matches[1] } else { $pos }
+        $dispName = ($scr.DeviceName -replace '^\\\\\.\\', '')
+        $b = $scr.Bounds; $w = $scr.WorkingArea
+        $lista += [ordered]@{
+            DeviceId    = $devId
+            DeviceName  = $scr.DeviceName
+            DisplayName = $dispName
+            Index       = $idx
+            IsPrimary   = [bool]$scr.Primary
+            Bounds      = "$($b.X), $($b.Y), $($b.Width), $($b.Height)"
+            WorkingArea = "$($w.X), $($w.Y), $($w.Width), $($w.Height)"
+        }
+        $pos++
+    }
+    return $lista
+}
+
+function Sync-CarpetaLively([string]$destDir, $c, [string]$pantalla, [string]$sufijo) {
+    if (-not (Test-Path $LivelyLocalDir)) { return }
+    if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
+    foreach ($f in @('index.html', 'escena-web.js', 'pixelzen-canvas.js', 'LivelyProperties.json')) {
+        $src = Join-Path $LivelyLocalDir $f
+        if (Test-Path $src) { Copy-Item -Path $src -Destination (Join-Path $destDir $f) -Force }
+    }
+    $temasLink = Join-Path $destDir 'temas'
+    $targetReal = (Get-Item $TemasDir).FullName
+    $needsLink = $true
+    if (Test-Path $temasLink) {
+        $it = Get-Item $temasLink -Force
+        if ($it.Attributes -band [System.IO.FileAttributes]::ReparsePoint) {
+            $curTarget = ($it.Target | Select-Object -First 1)
+            if ($curTarget -eq $targetReal) { $needsLink = $false }
+            else { cmd /c rmdir "`"$temasLink`"" | Out-Null }
+        } else {
+            Remove-Item -Path $temasLink -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+    if ($needsLink) {
+        cmd /c mklink /J "`"$temasLink`"" "`"$targetReal`"" | Out-Null
+    }
+    $infoSrc = Join-Path $LivelyLocalDir 'LivelyInfo.json'
+    $infoObj = if (Test-Path $infoSrc) {
+        Get-Content $infoSrc -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        [pscustomobject]@{
+            AppVersion = '2.5.6.0'; Title = 'PixelZen Worlds'; Thumbnail = ''; Preview = ''
+            Desc = 'Escenas pixel art animadas con ciclo solar.'; Author = 'David Lozano'
+            License = 'MIT'; Contact = ''; Type = 1; FileName = 'index.html'; Arguments = ''
+            IsAbsolutePath = $false
+        }
+    }
+    $infoObj.Title = "PixelZen Worlds ($sufijo)"
+    $infoObj.FileName = 'index.html'
+    $infoObj.Arguments = "--pantalla $pantalla"
+    Write-Utf8NoBom (Join-Path $destDir 'LivelyInfo.json') ($infoObj | ConvertTo-Json -Depth 4)
+
+    $estadoObj = [ordered]@{
+        tema     = [string]$c.tema
+        pantalla = [string]$pantalla
+        modo     = [string]$c.modo
+        horaFija = [double]$c.horaFija
+        fps      = 8
+        hud      = if ($pantalla -eq 'principal') { [bool]$c.hud } else { $false }
+        stats    = [ordered]@{
+            tiempo   = [bool]$c.stats.tiempo
+            sistema  = [bool]$c.stats.sistema
+            red      = [bool]$c.stats.red
+            dev      = [bool]$c.stats.dev
+            grimorio = [bool]$c.stats.grimorio
+        }
+    }
+    $estadoJson = $estadoObj | ConvertTo-Json -Depth 4 -Compress
+    Write-Utf8NoBom (Join-Path $destDir 'pz_estado.js') "window.PixelZenRecibeEstado && window.PixelZenRecibeEstado($estadoJson);"
+}
+
+function Esta-LivelyLayoutActivo($lively, [string]$wallM1, [string]$wallM2) {
+    $layoutPath = Join-Path $lively.CfgBase 'WallpaperLayout.json'
+    if (-not (Test-Path $layoutPath)) { return $false }
+    try {
+        $items = @(Get-Content $layoutPath -Raw -Encoding UTF8 | ConvertFrom-Json)
+        if ($items.Count -eq 0) { return $false }
+        $tieneM1 = $items | Where-Object { $_.LivelyScreen.IsPrimary -and $_.LivelyInfoPath -eq $wallM1 }
+        if (-not $tieneM1) { return $false }
+        $numMon = [System.Windows.Forms.Screen]::AllScreens.Count
+        if ($numMon -ge 2) {
+            $tieneM2 = $items | Where-Object { (-not $_.LivelyScreen.IsPrimary) -and ($_.LivelyInfoPath -eq $wallM2 -or $_.LivelyInfoPath -eq $wallM1) }
+            if (-not $tieneM2) { return $false }
+        }
+        $settingsPath = Join-Path $lively.CfgBase 'Settings.json'
+        if (Test-Path $settingsPath) {
+            $st = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($null -ne $st.WallpaperArrangement -and [int]$st.WallpaperArrangement -ne 0) { return $false }
+        }
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Hay-LivelyActivo {
+    $lively = Resolver-Lively
+    if (-not $lively) { return $false }
+    if (-not (Get-Process -Name 'Lively' -ErrorAction SilentlyContinue)) { return $false }
+    $wallRoot = Join-Path $lively.Base 'Library\wallpapers'
+    return (Esta-LivelyLayoutActivo $lively (Join-Path $wallRoot 'pixelzen-m1') (Join-Path $wallRoot 'pixelzen-m2'))
+}
+
+function Aplicar-Lively($c) {
+    $lively = Resolver-Lively
+    if (-not $lively) { return $false }
+    if (-not (Test-Path $LivelyLocalDir)) { return $false }
+
+    $wallRoot = Join-Path $lively.Base 'Library\wallpapers'
+    $wallM1 = Join-Path $wallRoot 'pixelzen-m1'
+    $wallM2 = Join-Path $wallRoot 'pixelzen-m2'
+
+    Sync-CarpetaLively $wallM1 $c 'principal' 'Principal'
+    $p2Mode = if ([int]$c.monitores -ge 2) { 'secundaria' } else { 'principal' }
+    Sync-CarpetaLively $wallM2 $c $p2Mode 'Secundaria'
+
+    $livelyRunning = [bool](Get-Process -Name 'Lively' -ErrorAction SilentlyContinue)
+    $layoutOk = Esta-LivelyLayoutActivo $lively $wallM1 $wallM2
+    if ($livelyRunning -and $layoutOk) {
+        return $true
+    }
+
+    if (-not (Test-Path $lively.CfgBase)) {
+        New-Item -Path $lively.CfgBase -ItemType Directory -Force | Out-Null
+    }
+    $settingsPath = Join-Path $lively.CfgBase 'Settings.json'
+    if (Test-Path $settingsPath) {
+        try {
+            $st = Get-Content $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $st | Add-Member -NotePropertyName 'WallpaperArrangement' -NotePropertyValue 0 -Force
+            Write-Utf8NoBom $settingsPath ($st | ConvertTo-Json -Depth 6)
+        } catch {}
+    }
+
+    $layout = @()
+    foreach ($m in (Get-MonitoresLively)) {
+        $infoPath = if ($m.IsPrimary) { $wallM1 } else { $wallM2 }
+        $layout += [ordered]@{
+            LivelyInfoPath = $infoPath
+            LivelyScreen   = $m
+        }
+    }
+    Write-Utf8NoBom (Join-Path $lively.CfgBase 'WallpaperLayout.json') (ConvertTo-Json -InputObject @($layout) -Depth 5)
+
+    if ($livelyRunning) {
+        Stop-Process -Name 'Lively', 'Lively.UI.WinUI', 'Lively.WebView2' -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 600
+    }
+    if ($lively.IsStore) {
+        Start-Process 'explorer.exe' -ArgumentList "shell:AppsFolder\$($lively.AppId)"
+    } elseif ($lively.Exe) {
+        Start-Process -FilePath $lively.Exe
+    }
+    return $true
+}
+
+$script:modoMotor = 'estatico'
+
 function Aplicar-Todo($c) {
     Guardar-Config $c
     $fase = Detectar-Fase $c.modo $c.horaFija
     Aplicar-Fondos-Windows $c.tema $c.monitores $fase
+    Detener-CicloYHud
+
+    if (Aplicar-Lively $c) {
+        $script:modoMotor = 'lively'
+        return $fase
+    }
+    $script:modoMotor = 'estatico'
 
     $pyPidFile = Join-Path $env:TEMP 'pixelzen_win.pid'
-    if (Test-Path $pyPidFile) {
-        $oldPy = Get-Content $pyPidFile -ErrorAction SilentlyContinue
-        if ($oldPy) { Stop-Process -Id ([int]$oldPy) -Force -ErrorAction SilentlyContinue }
-    }
     $py = Resolver-Python
     $pyConPillow = $false
     if ($py) {
@@ -172,11 +419,6 @@ function Aplicar-Todo($c) {
         if ($proc) { Set-Content -Path $pyPidFile -Value $proc.Id -Encoding ASCII }
     }
 
-    $hudPidFile = Join-Path $env:TEMP 'pixelzen_hud.pid'
-    if (Test-Path $hudPidFile) {
-        $oldHud = Get-Content $hudPidFile -ErrorAction SilentlyContinue
-        if ($oldHud) { Stop-Process -Id ([int]$oldHud) -Force -ErrorAction SilentlyContinue }
-    }
     if ($c.hud) {
         Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$(Join-Path $Aqui 'PixelZenHud.ps1')`"" -WindowStyle Hidden
     }
@@ -196,6 +438,9 @@ function Hay-HudActivo {
     if (Test-Path $hudPidFile) {
         $pidVal = Get-Content $hudPidFile -ErrorAction SilentlyContinue
         if ($pidVal -and (Get-Process -Id ([int]$pidVal) -ErrorAction SilentlyContinue)) { return $true }
+    }
+    if (Hay-LivelyActivo) {
+        return [bool](Cargar-Config).hud
     }
     return $false
 }
@@ -1025,17 +1270,21 @@ $el.BtnRestaurar.Add_Click({
 })
 
 $el.BtnToggleHudNow.Add_Click({
-    if (Hay-HudActivo) {
-        Detener-Hud
-        $el.ChkHudMaster.IsChecked = $false
-        $c = Lee-FormConfig; Guardar-Config $c
-        $el.TxtEstado.Text = "Cajitas ocultadas del escritorio."
-    } else {
-        $el.ChkHudMaster.IsChecked = $true
-        $c = Lee-FormConfig; Guardar-Config $c
+    $hudAhora = Hay-HudActivo
+    $nuevoHud = -not $hudAhora
+    $el.ChkHudMaster.IsChecked = $nuevoHud
+    $c = Lee-FormConfig
+    Guardar-Config $c
+    if (Hay-LivelyActivo) {
+        $null = Aplicar-Lively $c
+        $el.TxtEstado.Text = if ($nuevoHud) { "✅ Cajitas mostradas sobre tu fondo animado." } else { "Cajitas ocultadas del fondo animado." }
+    } elseif ($nuevoHud) {
         Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$(Join-Path $Aqui 'PixelZenHud.ps1')`"" -WindowStyle Hidden
         Start-Sleep -Milliseconds 350
         $el.TxtEstado.Text = "✅ Cajitas mostradas en tu pantalla principal."
+    } else {
+        Detener-Hud
+        $el.TxtEstado.Text = "Cajitas ocultadas del escritorio."
     }
     Actualiza-Vista
 })
@@ -1053,7 +1302,11 @@ $el.BtnAplicar.Add_Click({
     Start-Sleep -Milliseconds 250
     Actualiza-Vista
     $tmeta = $temas | Where-Object { $_.id -eq $c.tema } | Select-Object -First 1
-    $el.TxtEstado.Text = "✅ ¡Listo! Aplicado '$($tmeta.titulo)' en $($c.monitores) pantalla(s) (fase $fase)."
+    if ($script:modoMotor -eq 'lively') {
+        $el.TxtEstado.Text = "✨ ¡Listo! '$($tmeta.titulo)' animado en vivo con Lively ($($c.monitores) pantalla(s))."
+    } else {
+        $el.TxtEstado.Text = "✅ ¡Listo! Aplicado '$($tmeta.titulo)' en $($c.monitores) pantalla(s) (fase $fase)."
+    }
 })
 
 $el.BtnWeb.Add_Click({

@@ -37,7 +37,13 @@ function Copy-RuntimeDesdeRepo([string]$Raiz, [string]$DestApp) {
     }
     Copy-Item -Path (Join-Path $Raiz 'windows\installer\Desinstalar.ps1') -Destination (Join-Path $DestApp 'Desinstalar.ps1') -Force
 
-    $TemasDst = Join-Path $DestApp 'temas'
+    $LivelyDst = Join-Path $DestApp 'lively'
+    New-Item -Path $LivelyDst -ItemType Directory -Force | Out-Null
+    foreach ($webItem in Get-ChildItem -Path (Join-Path $Raiz 'windows\lively') -File) {
+        Copy-Item -Path $webItem.FullName -Destination (Join-Path $LivelyDst $webItem.Name) -Force
+    }
+
+    $TemasDst = Join-Path $LivelyDst 'temas'
     if (Test-Path $TemasDst) { Remove-Item $TemasDst -Recurse -Force -ErrorAction SilentlyContinue }
     Copy-Item -Path (Join-Path $Raiz 'windows\lively\temas') -Destination $TemasDst -Recurse -Force
 
@@ -50,12 +56,6 @@ function Copy-RuntimeDesdeRepo([string]$Raiz, [string]$DestApp) {
                 Copy-Item -Path $prevSrc -Destination $prevDst -Recurse -Force
             }
         }
-    }
-
-    $LivelyDst = Join-Path $DestApp 'lively'
-    New-Item -Path $LivelyDst -ItemType Directory -Force | Out-Null
-    foreach ($webItem in Get-ChildItem -Path (Join-Path $Raiz 'windows\lively') -File) {
-        Copy-Item -Path $webItem.FullName -Destination (Join-Path $LivelyDst $webItem.Name) -Force
     }
 }
 
