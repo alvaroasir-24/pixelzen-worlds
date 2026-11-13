@@ -261,11 +261,12 @@ for x in range(DX0, DX1 + 1):
         put(x, DY_TOP - 1, PAL['nieve'][1])
 
 
-def _pinta_sprite(cx, by, spr, cmap):
-    """Pinta una matriz pixel-art centrada horizontalmente en cx con base en by."""
+def _pinta_sprite(cx, by, spr, cmap, off_x=0):
+    """Pinta una matriz pixel-art centrada en cx+off_x con base en by."""
+    assert len({len(r) for r in spr}) == 1, f"Sprite filas desiguales: {[len(r) for r in spr]}"
     sw = len(spr[0])
     sh = len(spr)
-    x0 = cx - sw // 2
+    x0 = cx - sw // 2 + off_x
     y0 = by - sh + 1
     for ry, row in enumerate(spr):
         for rx, ch in enumerate(row):
@@ -276,249 +277,271 @@ def _pinta_sprite(cx, by, spr, cmap):
 
 
 def dibuja_zenon(cx, by):
-    """Zenon Zogratis: cabello negro alborotado, marca demoníaca en ojo/frente,
-    abrigo largo azul marino de cuello alto con ribete claro, huesos blancos y cubos espaciales."""
-    sp0, sp1, sp2 = PAL['spatial']
+    """Zenon Zogratis (fiel al sprite ZENON): pelo corto oscuro, piel pálida fría con marca frontal,
+    cuello de piel gris claro, capa negra larga, túnica granate con cinturón y picos de Magia de Hueso."""
     bn0, bn1, bn2 = PAL['bone']
 
-    # Cubos de Magia Espacial flotando arriba a los lados
-    for qx, qy, qr in ((cx - 21, by - 58, 6), (cx + 19, by - 56, 5)):
-        for dy in range(-qr, qr + 1):
-            for dx in range(-qr, qr + 1):
-                if abs(dx) == qr or abs(dy) == qr:
-                    put(qx + dx, qy + dy, sp2)
-                else:
-                    over(qx + dx, qy + dy, sp1, 0.38)
-        if ANIM:
-            RUNAS.append([qx, qy])
-        else:
-            glow(qx, qy, 8, sp1, 0.45)
-
-    # Picos afilados de Magia de Hueso blanco saliendo desde su espalda
+    # Picos afilados de Magia de Hueso blanco saliendo diagonalmente hacia fuera (ZENON IDLE 3/4)
     for sx, sy, ex, ey, th in (
-        (cx - 5, by - 36, cx - 26, by - 50, 2),
-        (cx + 5, by - 34, cx + 25, by - 48, 2),
-        (cx - 6, by - 22, cx - 22, by - 26, 1),
-        (cx + 6, by - 20, cx + 22, by - 22, 1),
+        (cx - 10, by, cx - 22, by - 21, 2),
+        (cx + 10, by, cx + 22, by - 21, 2),
+        (cx - 14, by - 2, cx - 26, by - 13, 1),
+        (cx + 14, by - 2, cx + 26, by - 13, 1),
+        (cx - 9, by - 31, cx - 22, by - 43, 1),
+        (cx + 9, by - 31, cx + 22, by - 43, 1),
     ):
-        steps = 22
+        steps = 18
         for s in range(steps + 1):
-            px = int(sx + (ex - sx) * s / steps)
-            py = int(sy + (ey - sy) * s / steps)
-            w_cur = max(0, int(th * (1 - s / (steps + 2))))
-            for d_w in range(-w_cur, w_cur + 1):
-                put(px, py + d_w, bn1 if d_w <= 0 else bn0)
-            put(px, py + w_cur + 1, bn2)
+            t = s / steps
+            px = int(sx + (ex - sx) * t)
+            py = int(sy + (ey - sy) * t)
+            w_cur = max(0, int(th * (1 - t * 0.92)))
+            for d_w in range(-w_cur - 1, w_cur + 2):
+                if abs(d_w) == w_cur + 1:
+                    put(px + d_w, py, '#0b0a12')
+                else:
+                    put(px + d_w, py, bn1 if d_w <= 0 else bn0)
+            if s == steps:
+                put(px, py - 1, bn2)
 
     cmap = {
-        'O': '#08060e',
-        'K': '#141522', 'k': '#26293e',
-        'S': '#ead8cf', 's': '#c9b3a8',
-        'M': '#6844b8', 'e': '#22142e',
-        'C': '#182038', 'c': '#283458', 'd': '#101424',
-        'T': '#d2daf0', 't': '#8e98b6',
-        'P': '#12121a', 'B': '#1c1e2a',
+        'O': '#0b0a12',
+        'H': '#1c1e2a', 'h': '#32364a',
+        'S': '#d4cee0', 's': '#a8a0b8',
+        'M': '#221c34', 'e': '#1a1526',
+        'F': '#d8dae4', 'f': '#9fa4b6', 'W': '#eff1f8',
+        'K': '#222430', 'k': '#343848', 'd': '#14151e',
+        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
+        'B': '#5a3a24', 'G': '#eab844',
+        'P': '#222534', 'p': '#151722',
     }
+    # 33x51 px
     spr = [
-        "...........OO.OO...........",
-        ".........OOKOKKOO..........",
-        "........OKKKKKKKKO.........",
-        ".......OKkkKKKKkkKO........",
-        ".......OKKKKKKKKKKO........",
-        "......OKKSSSSSMSSKKO.......",
-        "......OKKSeSSMSSeSKO.......",
-        ".......OKSSSSMSSSSO........",
-        ".......OKSsSSSSSsKO........",
-        "........OOSSSSSSOO.........",
-        "........OTOOssOOTO.........",
-        ".......OTCTSSSSSTCTO.......",
-        "......OTCCCTssTCCCCTO......",
-        ".....OCCCCCCTTTCCCCCCO.....",
-        ".....OCCCCCCKTKCCCCCCO.....",
-        "....OCCCdCCCKPKCCCdCCCO....",
-        "....OCCCdCCCKTKCCCdCCCO....",
-        "....OCCcdCCCKPKCCCdcCCO....",
-        "....OCCcdCCCKPKCCCdcCCO....",
-        "....OCCCdCCKTKTKCCdCCCO....",
-        ".....OCCdCCTKKKTCCdCCO.....",
-        ".....OSSdCCKKKKKCCdSSO.....",
-        "......OOOCCCTKTCCCOOO......",
-        "........OCCCtKtCCCO........",
-        "........OCCCtKtCCCO........",
-        ".......OCCCCtKtCCCCO.......",
-        ".......OCCCdKKKdCCCO.......",
-        ".......OCCCdOOOdCCCO.......",
-        "......OCCCCO...OCCCCO......",
-        "......OCCCdO...OdCCCO......",
-        "......OCCdO.....OdCCO......",
-        "......OCdOO.....OOdCO......",
-        "......OOO.OPO.OPO.OOO......",
-        "..........OPO.OPO..........",
-        "..........OPO.OPO..........",
-        "..........OPO.OPO..........",
-        "..........OPO.OPO..........",
-        "..........OBO.OBO..........",
-        "..........OBO.OBO..........",
-        ".........OBBO.OBBO.........",
-        ".........OOOO.OOOO.........",
+        "............OOOOOOOO.............",
+        "...........OHHHHHHHHO............",
+        "..........OHHhHHHHHhHO...........",
+        "..........OHHHHHHHHHHO...........",
+        "..........OHHHhHHhHHHO...........",
+        "..........OHSSSSSSSSHO...........",
+        "..........OSSSSMMSSSSO...........",
+        "..........OSSeSMMSeSSO...........",
+        "...........OSSSSSSSSO............",
+        "............OOSssSOO.............",
+        ".............OSSSSO..............",
+        "........OOOOOOWFFWOOOOOO.........",
+        ".......OOWWFFFFWWFFFFWWOO........",
+        "......OWFFFFWFFFFFFWFFFFWO.......",
+        ".....OOFfFFFFfFFFFfFFFFfFO.......",
+        ".....OKOOffffVVVVVVffffOOKO......",
+        "....OKKKOOKOVVVvvVVVOKOKKKKO.....",
+        "....OKkkKOKOVVvvvvVVOKOKkkKO.....",
+        "...OKKKdKOKOVVVvvVVVOKOKdKKKO....",
+        "...OKKKdKOKOVVVVVVVVOKOKdKKKO....",
+        "...OKKdKKOKOBBBBBBBKOKOKKdKKO....",
+        "...OKKdKKOKOBBBGGGBKOKOKKdKKO....",
+        "...OKKdKKOKOVVVVVVVVOKOKKdKKO....",
+        "..OKKKdKKOKOVVVvvVVVOKOKKdKKKO...",
+        "..OKKdKKdOKOVVvvvvVVOKOKdKKdKO...",
+        "..OKKdKSSOOKOVVVVVVOKOOSSKdKKO...",
+        "..OKKddOO.OKOVVuuVVOK..OOddKKO...",
+        "..OKKdO...OKOVVuuVVOK....OdKKO...",
+        "..OKKdO...OKOVVuuVVOK....OdKKO...",
+        "..OKdO....OKOVVOOOVOK.....OdKO...",
+        "..OKdO....OKOPPOOOPPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OKOPPpOppPO.....OdKO...",
+        "..OKdO....OOOPPpOppPO.....OdKO...",
+        "..OKdO......OKKOOOKKO.....OdKO...",
+        "..OKOO......OKKOOOKKO.....OOKO...",
+        "..OO........OKkOOOkKO.......OO...",
+        "............OKkOOOkKO............",
+        "............OKkOOOkKO............",
+        "............OKkOOOkKO............",
+        "............OKdOOOdKO............",
+        "............OKdOOOdKO............",
+        "............OKdOOOdKO............",
+        "...........OKKdOOOdKKO...........",
+        "..........OKKKdOOOdKKKO..........",
+        "..........OOOOO...OOOOO..........",
     ]
     _pinta_sprite(cx, by, spr, cmap)
+    if ANIM:
+        RUNAS.append([cx, by - 46])
 
 
 def dibuja_dante(cx, by):
-    """Dante Zogratis (centro): líder con corona real dorada, barba, abrigo negro-carmesí
-    con hombreras reales, espada oscura y esferas negras de Magia de Gravedad."""
-    gr0, gr1, gr2 = PAL['grav']
-
-    # Esferas de Magia de Gravedad orbitando alrededor de Dante
-    for gx, gy, gr_r in ((cx - 23, by - 46, 6), (cx + 22, by - 42, 6), (cx, by - 64, 5)):
-        disc(gx, gy, gr_r, gr0)
-        for ang in range(0, 360, 15):
-            rad = math.radians(ang)
-            put(int(gx + (gr_r + 1) * math.cos(rad)), int(gy + (gr_r + 1) * math.sin(rad)), gr1)
-            if ang % 45 == 0:
-                put(int(gx + (gr_r + 2) * math.cos(rad)), int(gy + (gr_r + 2) * math.sin(rad)), gr2)
-        if ANIM:
-            RUNAS.append([gx, gy])
-        else:
-            glow(gx, gy, gr_r + 5, gr1, 0.55)
-
+    """Dante Zogratis (fiel al sprite IDLE 0/1): corona dorada alta con picos, cabello castaño oscuro,
+    cuello de piel claro, capa negra amplia, túnica granate con cinturón, botas marrón-oliva
+    y mano izquierda alzada sosteniendo esfera negro-púrpura de Gravedad."""
     cmap = {
-        'O': '#08050b',
-        'G': '#f4c648', 'g': '#b8821e',
-        'R': '#d82238', 'r': '#881224', 'L': '#ff5268',
-        'H': '#2a181a', 'h': '#462a2a',
-        'S': '#e6cfc4', 's': '#bfa298',
-        'M': '#d81c36',
-        'K': '#14101c', 'k': '#261e34', 'd': '#0c0912',
-        'V': '#761426', 'v': '#a61c34',
-        'W': '#201e2c', 'w': '#7c829e',
+        'O': '#0b0812',
+        'G': '#f0c044', 'g': '#b2821e', 'y': '#ffe07a',
+        'H': '#3a2420', 'h': '#563630',
+        'S': '#e6c6b6', 's': '#be9a8c',
+        'M': '#281624', 'e': '#1c1218',
+        'F': '#d8dae4', 'f': '#9fa4b6', 'W': '#eff1f8',
+        'K': '#222430', 'k': '#343848', 'd': '#14151e',
+        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
+        'B': '#5a3a24',
+        'P': '#222534', 'p': '#151722',
+        'T': '#6e5a28', 't': '#4c3e18',
     }
+    # 45x51 px (centro del cuerpo en col 18; mano izquierda extendida a col 36)
     spr = [
-        "...........O...O...O...........",
-        "..........OGOOOGOOOGO..........",
-        ".........OGRGOGGGOGGRO.........",
-        ".........OGGGGGGGGGGGGO........",
-        ".........OHHHHHHHHHHHHO........",
-        "........OHhhSSSMSMSShHHO.......",
-        "........OHSSSeSSSeSSSHHO.......",
-        "........OHSSSSSsSSSSSHHO.......",
-        ".........OSSHSSSSSHSSO.........",
-        "..........OSHHHHHHHSO..........",
-        "..........OOHHHHHHHOO..........",
-        ".......OOOOOOsssssOOOOOO.......",
-        "......ORRRGGOSSSSSOGGRRRO......",
-        ".....ORRRRGGKVvvvVKGGGRRRO.....",
-        "....ORrrrGGKVVvvvVVKGGrrrRO....",
-        "....OKKKKGGKVVGVGVVKGKKKKKO....",
-        "...OKkkkkKKKVVvGvVVKKkkkkkKO...",
-        "...OKkkkKKKKVVvvvVVKKKKkkkKO...",
-        "...OKkkKKKKdVVGGGVVdKKKKkkKO...",
-        "...OKkKKKKKdKKGGGKKdKKKKKkKO...",
-        "...OKKKKKKKdKGGGGGKdKKKKKKKO...",
-        "...OKKdKKKKdKVVVVVKdKKKKdKKO...",
-        "...OSSdKKKKdKVVvVVKdKKKKdSSO...",
-        "....OOOKKKKdKVVvVVKdKKKKOOO....",
-        "......OKKKKdKVVVVVKdKKKO.......",
-        "......OKKKdOKVvvvVKOKKKO.......",
-        "......OKKdO.OKVVVKO.OKKO.......",
-        ".....OKKdO..OKVVVKO..OKKO......",
-        ".....OKdO...OKKKKKO...OKKO.....",
-        ".....OKO....OKKOOKKO...OKO.....",
-        "............OKKOOKKO...........",
-        "............OKKOOKKO...........",
-        "............OKKOOKKO...........",
-        "............OKKOOKKO...........",
-        "...........OKKKOOKKKO..........",
-        "...........OddOO.OOddO.........",
-        "..........OddOO...OOddO........",
-        "..........OOOO.....OOOO........",
+        ".............O...O...O...O...................",
+        "............OyO.OGOOOGOOOyO..................",
+        "............OGGOGGGOOGGGOGGO.................",
+        "............OGGGGyGGGGyGGGGO.................",
+        "............OGGGGGGGGGGGGGGO.................",
+        "............OggggggggggggggO.................",
+        "............OHHHHHHHHHHHHHHO.................",
+        "...........OHhHHHHHHHHHHHHhHO................",
+        "...........OHHHSSSSSSSSSSHHHO................",
+        "...........OHHSSSeSSMMSSSeSHO................",
+        "............OSSSSSSSSSSSSSSO.................",
+        ".............OSSSSssssSSSSO..................",
+        ".............OOSSSHHHHSSSOO..................",
+        ".............OOHHHHHHHHHHOO..................",
+        "........OOOOOOWWFFFFFFFWWOOOOO...............",
+        ".......OOWFFFFFWWFFFFFWWFFFFFWOO.............",
+        "......OWFFFFfFFFFFWFFWFFFFFfFFFWO............",
+        "......OOFfffFFFFfFFFFFFfFFFFfffFO............",
+        ".....OKKOOOfffOKKVVvvVVKKOfffOOKKO...........",
+        "....OKKKdKKOOOOKOVVvvVVOKOOOOOKKKKO..........",
+        "....OKKdKKKKKKOKOVVvvVVOKOKKKKKdKKO..........",
+        "...OKKKdKKKKKKOKOVVvvVVOKOKKKKKKdKKO.........",
+        "...OKKdKKKKKKdOKOVVVVVVOKOKKKKKKdKKO.........",
+        "...OKKdKKKKKKdOKOBBBBBBBKOKKKKKKdKKO.........",
+        "...OKKdKKKKdKdOKOBBGGGBBKOKKKKKKKSSOO........",
+        "..OKKKdKKKKdKdOKOVVVVVVOKOKKKKOOOOSSO........",
+        "..OKKdKKKSSOOKOKOVVvvVVOKOKKKO....OO.........",
+        "..OKKdKKSSOO.OKOVVvvvvVVOKOKKO...............",
+        "..OKKdKKOO...OKOVVVuuVVVOKOKKO...............",
+        "..OKKdKO.....OKOVVVuuVVVOKOKKO...............",
+        "..OKKdKO.....OKOVVVuuVVVOKOKKO...............",
+        "..OKKdO......OKOVVVuuVVVOKOdKO...............",
+        "..OKdKO......OKOVVOOOOVVOKOdKO...............",
+        "..OKdKO......OKOPPPOOOPPPOOdKO...............",
+        "..OKdKO......OKOPPpOOOpPPOOdKO...............",
+        "..OKdKO......OKOPPpOOOpPPOOdKO...............",
+        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
+        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
+        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
+        "..OKdO.......OOOPPpOOOpPPdOKOO...............",
+        "..OKdO.........OPPpOOOpPPO.OO................",
+        "..OKOO.........OTTO...OTTO...................",
+        "..OO...........OTtO...OTtO...................",
+        "...............OTtO...OTtO...................",
+        "...............OTtO...OTtO...................",
+        "...............OTtO...OTtO...................",
+        "...............OTtO...OTtO...................",
+        "...............OTTO...OTTO...................",
+        "..............OTTtO...OTttO..................",
+        ".............OTTTtO...OTttTO.................",
+        ".............OOOOOO...OOOOOO.................",
     ]
-    _pinta_sprite(cx, by, spr, cmap)
+    x0, y0 = _pinta_sprite(cx, by, spr, cmap, off_x=4)
 
-    # Espada oscura pesada apoyada al costado izquierdo/derecho de Dante
-    sx = cx + 14
-    for yy in range(by - 32, by):
-        put(sx, yy, '#222030')
-        put(sx + 1, yy, '#d82238' if yy % 6 == 0 else '#7c829e')
-    for dx in range(-4, 5):
-        put(sx + dx, by - 31, '#f4c648')
-    put(sx, by - 34, '#d82238')
-    put(sx, by - 33, '#f4c648')
+    # Esfera negro-púrpura de Magia de Gravedad flotando sobre su palma extendida (IDLE 0)
+    orb_x = x0 + 35
+    orb_y = y0 + 18
+    disc(orb_x, orb_y, 5, '#090412')
+    for ang in range(0, 360, 18):
+        rad = math.radians(ang)
+        put(int(orb_x + 5.2 * math.cos(rad)), int(orb_y + 5.2 * math.sin(rad)), '#8c3cf0')
+        if ang % 54 == 0:
+            put(int(orb_x + 6.2 * math.cos(rad)), int(orb_y + 6.2 * math.sin(rad)), '#d69cff')
+    if ANIM:
+        RUNAS.append([orb_x, orb_y])
+    else:
+        glow(orb_x, orb_y, 9, '#8c3cf0', 0.55)
 
 
 def dibuja_vanica(cx, by):
-    """Vanica Zogratis: coleta lateral enorme, parche en ojo derecho, marca de Megicula,
-    vestimenta gótica negro-carmesí y látigos espirales de Magia de Sangre."""
+    """Vanica Zogratis (fiel al sprite VANICA): coronita dorada, cabello oscuro con flequillo
+    sobre su parche negro en ojo derecho, sonrisa entusiasta, cuello de piel claro, capa negra,
+    túnica/falda corta granate con cinturón, botas altas y aura de Magia de Sangre carmesí."""
     bl0, bl1, bl2 = PAL['blood']
 
-    # Tentáculos / espirales de Magia de Sangre carmesí tras y alrededor de Vanica
-    for t in range(44):
-        ang = t * 0.24
-        sx = int(cx + math.cos(ang) * (12 + t * 0.34))
-        sy = int(by - 10 - t * 1.15)
+    # Trazos dinámicos sinuosos de Magia de Sangre carmesí-negra alrededor (VANICA IDLE 4/5)
+    for t in range(34):
+        ang = t * 0.25
+        sx = int(cx - 2 + math.cos(ang) * (13 + t * 0.25))
+        sy = int(by - 8 - t * 1.15)
         put(sx, sy, bl1 if t % 3 else bl2)
-        put(sx + 1, sy, bl0)
-    for bx_s, by_s in ((cx - 17, by - 42), (cx + 19, by - 38)):
-        disc(bx_s, by_s, 3, bl1)
-        put(bx_s - 1, by_s - 1, bl2)
-        if ANIM:
-            RUNAS.append([bx_s, by_s])
-        else:
-            glow(bx_s, by_s, 6, bl0, 0.55)
+        put(sx + 1, sy, '#18050c' if t % 2 else bl0)
+    if ANIM:
+        RUNAS.append([cx + 15, by - 32])
+    else:
+        glow(cx + 14, by - 30, 8, bl0, 0.45)
 
     cmap = {
-        'O': '#08050d',
-        'H': '#1d142a', 'h': '#372450',
-        'S': '#f2ded8', 's': '#d2b4ac',
-        'P': '#0d0912',
-        'M': '#ff2c78', 'E': '#d61c38',
-        'R': '#c81c34', 'r': '#821022', 'L': '#ff6a80',
-        'K': '#16121e', 'k': '#2a2238',
+        'O': '#0b0812',
+        'G': '#f0c044', 'g': '#b2821e',
+        'H': '#221a2a', 'h': '#3a2c48',
+        'S': '#f0d4ce', 's': '#c8a6a0',
+        'P': '#0d0912', 'E': '#1a1220',
+        'R': '#b81c30', 'W': '#f8eef0',
+        'F': '#d8dae4', 'f': '#9fa4b6', 'Z': '#eff1f8',
+        'K': '#20222e', 'k': '#323646', 'd': '#14151e',
+        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
+        'B': '#5a3a24',
     }
+    # 35x42 px
     spr = [
-        "........OOOO........OOOOOOO........",
-        ".......OHHHHO.....OHHHHHhhhO.......",
-        "......OHhHHHHO...OHHHHHHHHHhhO.....",
-        ".....OHHHHHHHHO.OHHHHHHHHHHHhhO....",
-        ".....OHHhhHHHHOOHHHHHHHHHHHHHhhO...",
-        "....OHHSSSHHHHOOHHHHHHHhhHHHHHhhO..",
-        "....OHSSPPPSHHO.OOHHHHHHhhHHHHHHO..",
-        "....OHSSEPPMSHO...OOHHHHHhhHHHHHO..",
-        ".....OHSSSSSSHO.....OOHHHHHhHHHHO..",
-        "......OSSSSSSO........OOHHHHhhhO...",
-        ".......OOssOO...........OOHHHHO....",
-        "......OKRRRKKO............OOOO.....",
-        ".....ORRRRRRRKO....................",
-        "....OSSRrrRRRSSO...................",
-        "...OSSROKKKKORSSO..................",
-        "...OO..ORKKRO..OO..................",
-        ".......ORLLRO......................",
-        "......OKRRRRKO.....................",
-        ".....OKKRRRRKKO....................",
-        ".....OKkRRRRkKO....................",
-        "....OKKKrRRrKKKO...................",
-        "....OKKKrRRrKKKO...................",
-        ".....OOSSOOSSOO....................",
-        "......OSSOOSSO.....................",
-        "......OSSOOSSO.....................",
-        "......OKKOOKKO.....................",
-        "......OKKOOKKO.....................",
-        "......OKKOOKKO.....................",
-        "......OKKOOKKO.....................",
-        "......ORROORRO.....................",
-        "......OKKOOKKO.....................",
-        "......OKKOOKKO.....................",
-        ".....OKKKOOKKKO....................",
-        ".....OKKKOOKKKO....................",
-        ".....OKKKOOKKKO....................",
-        ".....OOOO..OOOO....................",
+        "..............O..O..O..............",
+        ".............OGOGGGOGO.............",
+        ".............OGGGGGGGGO............",
+        "............OOOHHHHHHOOO...........",
+        "...........OHHHhHHHHhHHHO..........",
+        "..........OHHHHHHHHHHHHHHO.........",
+        "..........OHHHhHHHhHHHHHHO.........",
+        "..........OHHHSSSHHHHHHHHO.........",
+        "..........OHHSeSSPPPHHHHHO.........",
+        "..........OHHSSSSPPPSHHHHO.........",
+        "..........OOHSSSWWWRSSSHHO.........",
+        "...........OOHSSRRRSSSHHO..........",
+        "............OOSSSSSSSOOO...........",
+        "........OOOOOZZFFFFFZZOOOO.........",
+        ".......OOZFFFFZFFFFFZFFFFZOO.......",
+        "......OZFFFFfFFFFZFFFFFfFFFZO......",
+        "......OOFfffFFFFFFFFFFFfffFO.......",
+        ".....OKKOOOffOVVVvvVVVOffOOKKO.....",
+        "....OKKKdKKOOOVVvvvvVVOOOOKdKKO....",
+        "...OKKKdKKKKOKOVVVvvVVOKOKKKKdKO...",
+        "...OKKdKKSSOKKOVVVVVVVOKKKSSKdKO...",
+        "...OKKdKKOO..OKOBBBBBBBKOKOOOdKO...",
+        "...OKKdKO....OKOBGGGBBBKOK...OdO...",
+        "..OKKKdO.....OKOVVVVVVVKO..........",
+        "..OKKdKO.....OKOVVvvvVVKO..........",
+        "..OKKdO......OKOVVVvvVVKO..........",
+        "..OKdKO......OKOVVuuuVVKO..........",
+        "..OKdO.......OOOVVVVVVVOO..........",
+        "..OKdO........OSSSSOSSSSO..........",
+        "..OKdO........OSSSSOSSSSO..........",
+        "..OKdO.......OOKKKO.OKKKOO.........",
+        "..OKOO.......OKkKKO.OKKkKO.........",
+        "..OO.........OKKKKO.OKKKKO.........",
+        "............OKKKdKO.OKdKKKO........",
+        "............OKKKdKO.OKdKKKO........",
+        "............OKKdKKO.OKKdKKO........",
+        "............OKKdKO...OKdKKO........",
+        "............OKKdKO...OKdKKO........",
+        "............OKKdKO...OKdKKO........",
+        "...........OKKKdKO...OKdKKKO.......",
+        "..........OKKKKdKO...OKdKKKKO......",
+        "..........OOOOOOOO...OOOOOOOO......",
     ]
     _pinta_sprite(cx, by, spr, cmap)
 
 
-dibuja_zenon(330, DY_TOP)
-dibuja_dante(388, DY_TOP)
+dibuja_zenon(326, DY_TOP)
+dibuja_dante(386, DY_TOP)
 dibuja_vanica(446, DY_TOP)
 
 # Pequeños braseros rúnicos bajos en los extremos de la terraza (sin tapar a la Tríada)

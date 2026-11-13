@@ -268,125 +268,134 @@ for y in range(PY_TOP, HOR + 1):
         put(x, y, c)
 
 def dibuja_atofe(cx, by):
-    """Atoferatofe Raibaku: piel azul cobalto, cuerno central único, melena blanca voluminosa,
-    alas carmesí pequeñas tras los hombros, armadura gris oscuro y espadón rojo horizontal."""
-    # Paleta fiel a la referencia (adaptada sutilmente a la fase del cielo)
-    skin = mix('#5c72b8', PAL['filo'], 0.08 if FASE == 'dia' else 0.0)
-    skin_d = '#3e4f8e'
-    skin_h = '#7d95dc'
-    hair = mix('#ece9df', PAL['filo'], 0.06 if FASE != 'noche' else 0.0)
-    hair_m = '#c8c4b8'
-    hair_d = '#969288'
-    horn = '#243062'
-    horn_h = '#4658a4'
-    wing_m = '#a81e30'
-    wing_d = '#6e101e'
-    arm_h = '#58607a'
-    arm_m = '#383d4f'
-    arm_d = '#212533'
-    scab = '#981e2c'
-    scab_d = '#66121d'
-    sil = '#dcdce6'
-    out = '#100c18'
-    eye = '#ff4c24'
-    eye_h = '#ffb844'
+    """Atoferatofe Raibaku (fiel al sprite IDLE): cabello blanco puntiagudo barrido atrás,
+    cuerno único curvo en la frente, piel azul cielo, ojos rojos, alas de murciélago carmesí,
+    armadura oscuro-azulada con faldón rasgado y gran espadón rojo de filo plateado en diagonal."""
+    skin = mix('#78a2f0', PAL['filo'], 0.08 if FASE == 'dia' else 0.0)
+    skin_d = '#4c72be'
+    skin_h = '#aac8ff'
+    hair = mix('#f4f6fc', PAL['filo'], 0.05 if FASE != 'noche' else 0.0)
+    hair_m = '#c8d2e8'
+    hair_d = '#8b98b8'
+    horn = '#8ea6dc'
+    horn_h = '#dce6ff'
+    wing_m = '#b81c30'
+    wing_d = '#74101e'
+    arm_h = '#4e5d84'
+    arm_m = '#2c354f'
+    arm_d = '#181d2e'
+    cape = '#10121e'
+    scab = '#b81a2c'
+    scab_d = '#700e1b'
+    sil = '#e4eaf8'
+    sil_d = '#96a2be'
+    out = '#0b0914'
+    eye = '#ff2c34'
+    eye_h = '#ffcccc'
 
-    # Sprite pixel art exacto (59x69 px): cada caracter mapea a un color nítido
-    # . = transparente, O = contorno oscuro
     cmap = {
-        'O': out,
+        'O': out, 'o': out,
         'H': hair, 'h': hair_m, 'g': hair_d,
         'N': horn, 'n': horn_h,
         'S': skin, 's': skin_d, 'L': skin_h,
         'E': eye, 'e': eye_h,
         'W': wing_m, 'w': wing_d,
         'A': arm_h, 'M': arm_m, 'D': arm_d,
-        'R': scab, 'r': scab_d, 'G': sil,
+        'B': cape,
+        'R': scab, 'r': scab_d, 'G': sil, 'f': sil_d,
     }
 
-    # Espada horizontal detrás de la cintura + vaina roja con detalles plateados
-    # Se dibuja primero para quedar detrás del cuerpo y brazos igual que en la referencia
-    # Capa oscura interior detrás de las piernas (como en la referencia)
+    # Sprite pixel art exacto (82x73 px): centro corporal en col 37, punta del espadón en col 78
+    # . = transparente, O = contorno oscuro
     spr = [
-        "............................OO.............................",
-        ".........................OOOHHOOO..........................",
-        ".......................OOHHHNHHHHOO........................",
-        "...............O......OOHHHHNNHHHHHO......O................",
-        "..............OWO....OOHHHHHNNHHHHHHO....OWO...............",
-        ".............OWwWO...OOHHHHHNNHHHHHHO...OWwWO..............",
-        "............OWwwwWO..OOHHHHNNnHHHHHHO..OWwwwWO.............",
-        "...........OWwwwwwWO.OOHHHHSSSHHHHHHO.OWwwwwwWO............",
-        "...........OWWwwwwwWOOOHHLSSsSSLHHHHOOOWwwwwwWWO...........",
-        "............OWWWwwwwWOHHHSESsSsSESHHHOWwwwwWWWWO...........",
-        "............OWWWWWwwWOHHHSeSsSsSeSHHHOWwwWWWWWO............",
-        ".............OWWWWWwWOHHHHSSsSsSSHHHHOWwWWWWWO.............",
-        "..............OWWWWWWOOOHHHHSSSHHHHHOOWWWWWWO..............",
-        ".............OHhOWWWWO.OOHODMMMDDOHO.OWWWWOOhHO............",
-        "............OHHHhOOWOOOMMMMAAMMDDMOOOOOWOOhHHHHO...........",
-        "...........OHHHHHhOOOMMMMMMAMMMAMMMMMMOOOhHHHHHHO..........",
-        "..........OHHHHHHhOOAMMMSMMMMMMMMMSMMMAOOOhHHHHHHO.........",
-        ".........OHHHHHHHhOOAMMMSsMAAMMAAMsSMMAOOOhHHHHHHHO........",
-        "........OHHHHHHHHhOOAMMsSMMMMMMMMMMsMMAOOOhHHHHHHHHO.......",
-        ".......OHHHHHHHHhhOODMMsSMMMMMMMMMMsMMDDOOhHHHHHHHHHO......",
-        "........OHHHHHHHhhOODMsSDMMMAMAMMMDsSDDOOOhHHHHHHHHO.......",
-        ".......OHHHHHHHHhhOOOMsSDMMMAMAMMMDMsMOOOOhHHHHHHHHO.......",
-        "......OHHHHHHHHhhhOOOMMDMMMMAMAMMMMDMMOOOOhhhhhhhhhHO......",
-        ".......OOHHHHHhhhhOOOMMMDDDDGGDDDDMMMOOOOhhhhhHHHOO........",
-        "........OOHHHHhhhhOOOMMMMMMMMMMMMMMMMOOOOhhhhhHOO..........",
-        ".........OOHhhggggOOMMMMMDMMMMMMDMMMMOOggggghOO............",
-        "...........OOOOOOO.OMMMMMDMMMMMMDMMMMO.OOOOOO..............",
-        "..................OOMMMDDDDDDDDDDMMMMOO....................",
-        "..................OMMDDDDMDMMMDMDDMMMO.....................",
-        "....OO............OMMDDMMMMMMMMDDMMMO................OOOO..",
-        "...OGGOOOOO..OOO..OMDDMMMDMMMDDMMMDDMO......OOOOOOOOGGRGGO.",
-        "..OGGGGGGGGGGGGGOOOMDMMMDMMMMMDMMMDDMO...OOORRRRRRRGGGGGGGO",
-        "...OGGOOOOOOMMMGGOOMDMMDMODDDOMDMMMDMOOORRRRRRRRRGGGGGRGGO.",
-        "....OO......OOGGGOMDMMDOO...OODMMMDMOOORRRRRRRRGRGGGGGO....",
-        "..................OMDMMO.OSSBO.OMMMDMO.ORRRRGGGGGGGOOO.....",
-        "..................OMMDMO.OSSBO.OMMDMMO..OOOOOOOOOO.........",
-        "..................OOMDMOOSSSOOSSSOOMDOO....................",
-        "...................OOMDOOSSsO.OsSSOMDO.....................",
-        "....................OO.OODDD...DDDO.OO.....................",
-        ".......................OOSSs...sSSOO.......................",
-        ".......................OODDD...DDDOO.......................",
-        ".......................OOSSs...sSSOO.......................",
-        ".......................OODDD...DDDOO.......................",
-        ".......................OOSSs...sSSOO.......................",
-        ".......................OAMMMO.OMMMAO.......................",
-        ".......................OAMMMO.OMMMAO.......................",
-        ".......................OADDDO.ODDDDO.......................",
-        ".......................OMMDMO.OMDMMO.......................",
-        "......................OAMMDMO.OMDMMAO......................",
-        "......................OAMMDMO.OMDMMAO......................",
-        "......................OMMDDMO.OMDDMMO......................",
-        "......................OMMDDMO.OMDDMMO......................",
-        "......................ODDDDO...ODDDDO......................",
-        "......................OMMMMO...OMMMMO......................",
-        "......................ODDDDO...ODDDDO......................",
-        ".....................OAMMDO.....ODMMAo.....................",
-        ".....................ODDDDO.....ODDDDO.....................",
-        "....................OAMMDO.......ODMMAo....................",
-        "....................ODDDDO.......ODDDDO....................",
-        "...................OAMMDO.........ODMMAo...................",
-        "...................ODDDDO.........ODDDDO...................",
-        "..................OADDDDO.........ODDDDAO..................",
-        "..................OOOOOO...........OOOOOO..................",
+        ".......................................OO.........................................",
+        "......................................OnNO........................................",
+        "...........................OO........OnNNO........................................",
+        "....................OO....OHHO..OO...OnNNO........................................",
+        ".................OOOHHO..OHHHHOOHHO..OnNHOOO......................................",
+        "..............OOOHHHHHHOOHHHHHHHHHOOOnNNHHHHOOO...................................",
+        "............OOHHHHHHHHHHHHHHHHHHHHOONNNHHHHHHHOO..................................",
+        "..........OOHHHHhhhhHHHHHHHHHHHHHHHONNNHHHHHHHHHO.................................",
+        "........OOHHHHhhggggHHHHHHHHHhhHHHhONNHHHHHHHHHhHO................................",
+        ".......OOHHhhgggHHHHHHHHHHHhhLLSSSHNNhHHSHHHHHHhhHO...............................",
+        "....OO..OOHHhHHHHHHHHHHHHhhLLSSSSSHNNSHHSSSHHHHHhHO.....OOO.......................",
+        "..OOWWOO.OOHHHHHHHhhhHHHHHhLSSSSOEOSSSOEOSSHHHHHhO...OOWWWWOO.....................",
+        ".OWWWWWWO.OOHHHHHhhggggHHhLSSSLLeEOSSSeEOsSSHHHHhO..OWWWwwWWWOO...................",
+        "OWWWwwWWWOOOHHHHhgggHHHHHhLSSSSsSSSSSSSSSsSSHHHhOO.OWWwwwwwwWWWOO.................",
+        "OWWwwwwWWWWOOHHHhHHHHHHHHhOSLSSSSSSSSoSSSSSsHHhO..OWWwwwwwwwwwWWWO................",
+        "OWwwwwwwwWWWOOHHhhHHHHHHHhOOsSSSSSSsssSSSSsSHhO..OWWwwwWWWWwwwwWWWO...............",
+        "OWwwwWWWWwWWWOOHhggHHHHHHHhOOsSSSSSSSSSSSSssHO...OWWwwWWWWwWWwwwWWWO..............",
+        ".OWwWWOOwWWWWOOgggHHHHHHHHhOOSSsssSSSSsSSShO....OWWWWOOWWWOOwwwWWWO...............",
+        "..OWO..OOOWWWWOOHHhHHHHHHHHhOOODMMMMMMMDhHO.....OWWOO..OWO..OOwWWO................",
+        "...O.....OOWWOOOHhggHHHHHhhHOOAMMMMMMMMMAOO......OO.....O.....OWO.................",
+        "..........OOO..OOHgHHHHHhhOOAMMMDDDDDDMMMAAO...................O..................",
+        "................OOHHhHHHHhHOOOAMMDMMMMMMDMMMMAO...................................",
+        "...............OOHHHhHHHhhOAMMMMDMMMMMMMMDMMMMAMO.................................",
+        "..............OOHhggHHHHhOAMMDDMMDMMMMMMDMMDMMDMAO................................",
+        ".............OOHgHHHHHHHHhOAMMMMMMMMMMMMMMMMMMMAMO................................",
+        ".............OOgHHHHHHHhhOOODMMMDDDDDDDDDDMMMDMDO.................................",
+        "..............OOHHHHHhhgOO.OMMMMMMDDDDDDMMMMMMMO..................................",
+        "..............OOHHHhhggOO..OAMMMMMMDDDDMMMMMMMAO..................................",
+        ".............OOHHhhgOOO....OAMMMMDDDDDDDDDMMMMAO..................................",
+        "............OOHhhgOO......OOSMMMMMMMMMMMMMMMMMSOO.................................",
+        "...........OOHhgOO........OOsDMMMMDDDDDDMMMMMDsOO.................................",
+        "..........OOHhOO..........OOODDMMMDDffDDMMMMDOOO..................................",
+        "...........OO.............OMMMDDDDDDDDDDDDDDMMMO..................................",
+        "..........................OMMMMMMDMMMMMMDMMMMMMO..................................",
+        ".................OOOO.....OMMMMMMMDDDDDDMMMMMMMO..................................",
+        "................OGffGO...OAMMDMMMMMMMMMMMMMMDMMO..................................",
+        "................OGGGGOOO.OAMDOBBBBBBBBBBBBBBODMO..................................",
+        ".................OODDDGGOOAMDOBBBBBBDDDBBBBBODMO..................................",
+        "...................OODDGGOAMOOBBBBBBDDDBBBBBODMO..................................",
+        "....................OOODDGMMOOBBBBBDDDDDBBBBODMO..................................",
+        ".....................OOGGGGGGGOOBBBDDDDDBBBBOAMO..................................",
+        ".....................OOGfGRRGGGGOOBBDDDDBBBOODMO..................................",
+        "......................OOGGGRRRRRGGGOODDDOOO.ODMO..................................",
+        ".......................OOGfGRRRRRRRGGGGGO....OO...................................",
+        "........................OOOGfGRRRRRRRRRRGGGGOO....................................",
+        ".........................OOBOGfGRRRRRRRRRRRRGGGGGOO...............................",
+        "........................OBBBOOGGfGRRrrRRRRRRRRRRRRGGGOO...........................",
+        ".......................OBBBBO..OOGfGRRrrrRRRRRRRRRRRRRRGGGOO......................",
+        "......................OBBBBBO...OOGGfGRRrrrrRRRRRRRRRRRRRRRRGGGOO.................",
+        ".....................OBBBBBO.OAMDOOOGGfGRRrrrrRRRRRRRRRRRRRRRRRRRGGGOO............",
+        "....................OBBBBBO..OMDMMO..OOGfGRRrrrrRRRRRRRRRRRRRRRRRRRRRRGGGOO.......",
+        "...................OBBBBBO...OMDMMO...OOGGfGRRrrrrRRRRRRRRRRRRRRRRRRRRRRRRRGGGO...",
+        "..................OBBBBO.OO..OAMMMO.OBBOOGGfGGrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrGGGO",
+        "...................OBBO......ODDDDO.OBBO..OOOGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGO",
+        ".............................OMMMMO.OBBO.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.",
+        ".............................OMDDMO.OBO...........................................",
+        "............................OAMMDMO.OO......OAMMMO................................",
+        "............................OAMDDMO.........OAMMMO................................",
+        "............................OMMDDMO.........OADDDO................................",
+        "............................ODDDDMO.........OMMDMO................................",
+        "...........................OAMMDDMO.........OMMDMO................................",
+        "...........................OAMMDDMO........OAMMDMO................................",
+        "...........................OMMDDDMO........OAMMDMO................................",
+        "...........................ODDDDDMO........OMMDDMO................................",
+        "..........................OAMDDDDMO........OMDDDMO................................",
+        "..........................OAMDDDDMO........ODDDDMO................................",
+        "..........................OMDDDDDMO.......OAMDDDMO................................",
+        "..........................ODDDDDDMO.......OAMDDDMO................................",
+        ".........................OAMDDDDDMO.......OMDDDDMO................................",
+        ".........................ODDDDDDDMO.......ODDDDDMO................................",
+        "........................OAMDDDDDDO........OMDDDDDMO...............................",
+        "........................ODDDDDDDDO........ODDDDDDMO...............................",
+        "........................OOOOOOOOOO........OOOOOOOOO...............................",
     ]
-    cmap['B'] = '#0d0a12'
-    cmap['o'] = out
+    assert len({len(r) for r in spr}) == 1, f"Atofe filas desiguales: {[len(r) for r in spr]}"
 
     sw = len(spr[0])
     sh = len(spr)
-    x0 = cx - sw // 2
+    x0 = cx - 37
     y0 = by - sh + 1
 
-    # Faldón negro interior detrás entre las piernas (como la capa oscura de su armadura)
-    for dy in range(36, 56):
-        hw = 7 + (dy - 36) // 5
-        for dx in range(-hw, hw + 1):
-            if dy > 50 and ((dx + dy) % 3 == 0):
+    # Faldón negro interior detrás entre las piernas y tras la pierna izquierda
+    for dy in range(40, 62):
+        hw = 7 + (dy - 40) // 4
+        for dx in range(-hw - 2, hw):
+            if dy > 55 and ((dx + dy) % 3 == 0):
                 continue
-            put(cx + dx, y0 + dy, '#12131e')
+            put(cx + dx, y0 + dy, '#111320')
 
     for ry, row in enumerate(spr):
         for rx, ch in enumerate(row):
@@ -394,16 +403,12 @@ def dibuja_atofe(cx, by):
             if col:
                 put(x0 + rx, y0 + ry, col)
 
-    # Reflejo brillante en ojos rojo-naranja
-    put(x0 + 27, y0 + 9, eye_h)
-    put(x0 + 31, y0 + 9, eye_h)
-
     if ANIM:
-        RUNAS.append([cx, y0 + 5])
+        RUNAS.append([cx, y0 + 6])
     else:
-        glow(cx, y0 + 6, 8, MANA_LO, 0.25)
+        glow(cx, y0 + 7, 8, MANA_LO, 0.25)
 
-dibuja_atofe(406, PY_TOP)
+dibuja_atofe(402, PY_TOP)
 
 # 5. Reflejo en el mar de obsidiana (sin duplicar astro en Monitor 2)
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['filo'], PAL['ola'][0]), reflejo_astro=False)
