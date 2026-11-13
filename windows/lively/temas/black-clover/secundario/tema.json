@@ -1,9 +1,10 @@
 {
   "id": "black-clover",
   "pantalla": "secundaria",
-  "nombre": "Black Clover · Reino de Picas y Tríada Oscura",
-  "subtitulo": "Reino de Picas · Fortaleza Invernal y la Tríada Oscura",
-  "descripcion": "Más allá de la frontera helada del Reino de Picas: las cumbres nevadas, el sombrío Castillo de Picas bajo el sello del Qliphoth y la imponente Tríada Oscura — Dante (Gravedad), Vanica (Sangre) y Zenon (Hueso y Espacio).",
+  "nombre": "Black Clover · Reino de Picas y Asta",
+  "subtitulo": "Reino de Picas · Fortaleza Helada y Espada Demon-Slayer",
+  "descripcion": "Más allá de la frontera helada del Reino de Picas: las cumbres nevadas, el sombrío Castillo de Picas bajo el sello del Qliphoth y Asta blandiendo la espada Danma junto a su grimorio de cinco hojas.",
+  "sin_lago": true,
   "cielo_fondo": "#070412",
   "modo_pajaros": "grullas",
   "color_pajaros": "#0d0614",

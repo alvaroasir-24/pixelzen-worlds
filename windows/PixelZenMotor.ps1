@@ -86,6 +86,7 @@ public class PzmSceneData {
     public bool ModoWyvern;
     public bool ModoMiles;
     public bool ModoBrasas;
+    public bool SinLago;
     public Color ColorPajaros = Color.FromArgb(40, 48, 72);
     public Color ColorHumoDia = Color.FromArgb(220, 224, 232);
     public Color ColorHumoNoche = Color.FromArgb(148, 160, 188);
@@ -454,7 +455,7 @@ public class PzmRenderer {
                 Bitmap[] imgNub = new Bitmap[] { S.NubesNoche, S.NubesDorado, S.NubesDia };
                 for (int i = 0; i < S.Nubes.Length; i++) {
                     var nb = S.Nubes[i];
-                    double v = 0.035 + (i % 4) * 0.012;
+                    double v = 0.11 + (i % 4) * 0.035;
                     int cx = (int)Math.Round(((nb.X + nb.W + t * v) % (640 + nb.W)) - nb.W);
                     for (int k = 0; k < 3; k++) {
                         if (opNub[k] > 0.01 && imgNub[k] != null) {
@@ -508,25 +509,27 @@ public class PzmRenderer {
                 }
             }
 
-            foreach (var o in _olas) {
-                Px(g, o.Light ? S.ColorOlas[0] : S.ColorOlas[1 % S.ColorOlas.Length],
-                    (0.08 + 0.55 * Math.Max(0, Math.Sin(t * 0.04 + o.Ph))) * (1 - 0.6 * wB),
-                    o.X + 6 * Math.Sin(t * o.Sp + o.Ph), o.Y, o.W, 1);
-            }
-
-            if (S.ConAstro && cuerpoOp > 0.02) {
-                Color col = e > -1 ? S.ColorReflejoSol : S.ColorReflejoLuna;
-                for (int i = 0; i < 38; i++) {
-                    double d = 8 + i * 3, w = Math.Max(3, 46 - d * 0.30);
-                    Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(t, 0.07, i * 1.7),
-                        cuerpoX - w / 2 + 3 * Math.Sin(t * 0.05 + i * 1.3), 280 + d,
-                        w * (0.45 + 0.55 * Osc(t, 0.09, i * 2.2)), 1);
+            if (!S.SinLago) {
+                foreach (var o in _olas) {
+                    Px(g, o.Light ? S.ColorOlas[0] : S.ColorOlas[1 % S.ColorOlas.Length],
+                        (0.08 + 0.55 * Math.Max(0, Math.Sin(t * 0.04 + o.Ph))) * (1 - 0.6 * wB),
+                        o.X + 6 * Math.Sin(t * o.Sp + o.Ph), o.Y, o.W, 1);
                 }
-                double dx = cuerpoX - 352;
-                for (int i = 0; i < S.Destellos.Length; i++) {
-                    var ds = S.Destellos[i];
-                    double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(t * 0.16 + i * 0.9)), 3);
-                    if (op > 0.004) Px(g, S.ColorDestello, op, ds.X + dx, ds.Y, 2, 1);
+
+                if (S.ConAstro && cuerpoOp > 0.02) {
+                    Color col = e > -1 ? S.ColorReflejoSol : S.ColorReflejoLuna;
+                    for (int i = 0; i < 38; i++) {
+                        double d = 8 + i * 3, w = Math.Max(3, 46 - d * 0.30);
+                        Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(t, 0.07, i * 1.7),
+                            cuerpoX - w / 2 + 3 * Math.Sin(t * 0.05 + i * 1.3), 280 + d,
+                            w * (0.45 + 0.55 * Osc(t, 0.09, i * 2.2)), 1);
+                    }
+                    double dx = cuerpoX - 352;
+                    for (int i = 0; i < S.Destellos.Length; i++) {
+                        var ds = S.Destellos[i];
+                        double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(t * 0.16 + i * 0.9)), 3);
+                        if (op > 0.004) Px(g, S.ColorDestello, op, ds.X + dx, ds.Y, 2, 1);
+                    }
                 }
             }
 
@@ -568,16 +571,41 @@ public class PzmWallForm : Form {
     public Bitmap FrameRef;
     public Rectangle ScreenBounds { get; set; }
     public int PaintCount = 0;
+    public bool LastUlwOk = false;
+    public int LastUlwErr = 0;
+    private bool _fallbackGdi = false;
 
+    private IntPtr _memDc = IntPtr.Zero;
+    private IntPtr _hDib = IntPtr.Zero;
+    private IntPtr _oldBmp = IntPtr.Zero;
+    private int _dibW = 0;
+    private int _dibH = 0;
+
+    [StructLayout(LayoutKind.Sequential)] private struct WPOINT { public int X, Y; }
+    [StructLayout(LayoutKind.Sequential)] private struct WSIZE { public int cx, cy; }
+    [StructLayout(LayoutKind.Sequential, Pack=1)] private struct BLENDFUNCTION { public byte BlendOp, BlendFlags, SourceConstantAlpha, AlphaFormat; }
+    [StructLayout(LayoutKind.Sequential)] private struct BITMAPINFOHEADER {
+        public int biSize, biWidth, biHeight;
+        public short biPlanes, biBitCount;
+        public int biCompression, biSizeImage, biXPelsPerMeter, biYPelsPerMeter, biClrUsed, biClrImportant;
+    }
+
+    [DllImport("user32.dll", SetLastError=true)] private static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, IntPtr pptDst, ref WSIZE psize, IntPtr hdcSrc, ref WPOINT pptSrc, uint crKey, ref BLENDFUNCTION pblend, uint dwFlags);
     [DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+    [DllImport("user32.dll")] private static extern IntPtr GetDC(IntPtr hWnd);
+    [DllImport("user32.dll")] private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+    [DllImport("gdi32.dll")] private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+    [DllImport("gdi32.dll")] private static extern bool DeleteDC(IntPtr hdc);
+    [DllImport("gdi32.dll")] private static extern IntPtr SelectObject(IntPtr hdc, IntPtr h);
+    [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr ho);
+    [DllImport("gdi32.dll")] private static extern IntPtr CreateDIBSection(IntPtr hdc, ref BITMAPINFOHEADER pbmi, uint iUsage, out IntPtr ppvBits, IntPtr hSection, uint dwOffset);
 
     public PzmWallForm(Rectangle bounds) {
         ScreenBounds = bounds;
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         Enabled = false;
-        DoubleBuffered = true;
-        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.Opaque, true);
+        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true);
         BackColor = Color.FromArgb(10, 12, 36);
         StartPosition = FormStartPosition.Manual;
         Bounds = bounds;
@@ -596,7 +624,6 @@ public class PzmWallForm : Form {
 
     protected override void OnHandleCreated(EventArgs e) {
         base.OnHandleCreated(e);
-        try { SetLayeredWindowAttributes(this.Handle, 0, 255, 0x02); } catch {}
     }
 
     protected override void WndProc(ref Message m) {
@@ -605,25 +632,115 @@ public class PzmWallForm : Form {
         base.WndProc(ref m);
     }
 
+    private void ReleaseDib() {
+        if (_memDc != IntPtr.Zero) {
+            if (_oldBmp != IntPtr.Zero) { SelectObject(_memDc, _oldBmp); _oldBmp = IntPtr.Zero; }
+            if (_hDib != IntPtr.Zero) { DeleteObject(_hDib); _hDib = IntPtr.Zero; }
+            DeleteDC(_memDc);
+            _memDc = IntPtr.Zero;
+        }
+        _dibW = 0; _dibH = 0;
+    }
+
+    private bool EnsureDib(int w, int h) {
+        if (_memDc != IntPtr.Zero && _dibW == w && _dibH == h) return true;
+        ReleaseDib();
+        IntPtr screenDc = GetDC(IntPtr.Zero);
+        try {
+            _memDc = CreateCompatibleDC(screenDc);
+            if (_memDc == IntPtr.Zero) return false;
+            var bi = new BITMAPINFOHEADER {
+                biSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER)),
+                biWidth = w,
+                biHeight = -h, // top-down DIB
+                biPlanes = 1,
+                biBitCount = 32,
+                biCompression = 0
+            };
+            IntPtr bits;
+            _hDib = CreateDIBSection(screenDc, ref bi, 0, out bits, IntPtr.Zero, 0);
+            if (_hDib == IntPtr.Zero) { ReleaseDib(); return false; }
+            _oldBmp = SelectObject(_memDc, _hDib);
+            _dibW = w; _dibH = h;
+            return true;
+        } finally {
+            ReleaseDC(IntPtr.Zero, screenDc);
+        }
+    }
+
+    private void ComputeSourceCrop(int w, int h, out float srcX, out float srcY, out float srcW, out float srcH) {
+        double scale = Math.Max((double)w / 640.0, (double)h / 400.0);
+        srcW = (float)(w / scale);
+        srcH = (float)(h / scale);
+        srcX = (float)((640.0 - srcW) * 0.5);
+        srcY = (float)Math.Round((400.0 - srcH) * 0.55);
+        if (srcY < 0) srcY = 0;
+        if (srcY + srcH > 400f) srcY = 400f - srcH;
+    }
+
+    public void PushFrame() {
+        var f = FrameRef;
+        if (f == null || !IsHandleCreated) return;
+        if (_fallbackGdi) {
+            Invalidate();
+            return;
+        }
+        int w = ScreenBounds.Width, h = ScreenBounds.Height;
+        if (w <= 0 || h <= 0) return;
+        if (!EnsureDib(w, h)) {
+            _fallbackGdi = true;
+            try { SetLayeredWindowAttributes(this.Handle, 0, 255, 0x02); } catch {}
+            Invalidate();
+            return;
+        }
+        float srcX, srcY, srcW, srcH;
+        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH);
+        using (var g = Graphics.FromHdc(_memDc)) {
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.CompositingMode = CompositingMode.SourceCopy;
+            g.DrawImage(f, new Rectangle(0, 0, w, h), srcX, srcY, srcW, srcH, GraphicsUnit.Pixel);
+        }
+        IntPtr screenDc = GetDC(IntPtr.Zero);
+        try {
+            var sz = new WSIZE { cx = w, cy = h };
+            var ptSrc = new WPOINT { X = 0, Y = 0 };
+            var blend = new BLENDFUNCTION { BlendOp = 0, BlendFlags = 0, SourceConstantAlpha = 255, AlphaFormat = 0 };
+            bool ok = UpdateLayeredWindow(this.Handle, screenDc, IntPtr.Zero, ref sz, _memDc, ref ptSrc, 0, ref blend, 0x00000002);
+            LastUlwOk = ok;
+            LastUlwErr = ok ? 0 : Marshal.GetLastWin32Error();
+            if (ok) {
+                PaintCount++;
+            } else {
+                _fallbackGdi = true;
+                try { SetLayeredWindowAttributes(this.Handle, 0, 255, 0x02); } catch {}
+                Invalidate();
+            }
+        } finally {
+            ReleaseDC(IntPtr.Zero, screenDc);
+        }
+    }
+
     protected override void OnPaint(PaintEventArgs e) {
+        if (!_fallbackGdi) return;
         PaintCount++;
         var f = FrameRef;
         if (f == null) return;
         int w = ClientSize.Width, h = ClientSize.Height;
         if (w <= 0 || h <= 0) return;
-        double scale = Math.Max((double)w / 640.0, (double)h / 400.0);
-        float srcW = (float)(w / scale);
-        float srcH = (float)(h / scale);
-        float srcX = (float)((640.0 - srcW) * 0.5);
-        float srcY = (float)Math.Round((400.0 - srcH) * 0.55);
-        if (srcY < 0) srcY = 0;
-        if (srcY + srcH > 400f) srcY = 400f - srcH;
+        float srcX, srcY, srcW, srcH;
+        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH);
 
         var g = e.Graphics;
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
         g.PixelOffsetMode = PixelOffsetMode.Half;
         g.CompositingMode = CompositingMode.SourceCopy;
         g.DrawImage(f, new Rectangle(0, 0, w, h), srcX, srcY, srcW, srcH, GraphicsUnit.Pixel);
+    }
+
+    protected override void Dispose(bool disposing) {
+        ReleaseDib();
+        base.Dispose(disposing);
     }
 }
 
@@ -712,14 +829,12 @@ public static class PzmDesktopHost {
         SetWindowLong(form.Handle, -20, exStyle);
 
         SetParent(form.Handle, targetParent);
-        SetLayeredWindowAttributes(form.Handle, 0, 255, 0x02);
 
         Rectangle sb = form.ScreenBounds;
         POINT pt = new POINT { X = sb.Left, Y = sb.Top };
         ScreenToClient(targetParent, ref pt);
         bool okPos = SetWindowPos(form.Handle, insertAfter, pt.X, pt.Y, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
         ShowWindow(form.Handle, 8);
-        RedrawWindow(form.Handle, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0080 | 0x0100);
         return okPos;
     }
 
@@ -839,6 +954,7 @@ function Cargar-SceneData([string]$dir, [bool]$conAstro) {
         $sd.ModoWyvern = ($t.modo_pajaros -eq 'wyverns')
         $sd.ModoMiles = ($t.modo_heroe -eq 'miles_morales')
         $sd.ModoBrasas = ($t.modo_particulas -eq 'brasas_mana')
+        $sd.SinLago = [bool]($t.sin_lago)
         $sd.ColorPajaros = [PzmSceneData]::ParseHex($t.color_pajaros, $sd.ColorPajaros)
         $sd.ColorHumoDia = [PzmSceneData]::ParseHex($t.color_humo_dia, $sd.ColorHumoDia)
         $sd.ColorHumoNoche = [PzmSceneData]::ParseHex($t.color_humo_noche, $sd.ColorHumoNoche)
@@ -980,12 +1096,11 @@ function Render-MotorFrame([int]$t) {
     if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t) }
     if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t) }
     foreach ($fItem in $script:forms) {
-        $fItem.Form.Invalidate()
+        $fItem.Form.PushFrame()
     }
 }
 
 Render-MotorFrame 0
-foreach ($fItem in $script:forms) { $fItem.Form.Update() }
 
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = [Math]::Max(42, [int](1000 / [Math]::Max(2, [Math]::Min(24, $Fps))))
@@ -1040,7 +1155,8 @@ $timer.Add_Tick({
         }
         if ($t -eq 12) {
             $pc = ($script:forms | ForEach-Object { $_.Form.PaintCount }) -join ','
-            Write-MotorLog ("Tree t12: paints=[$pc] " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
+            $ulw = ($script:forms | ForEach-Object { "$($_.Form.LastUlwOk)/$($_.Form.LastUlwErr)" }) -join ','
+            Write-MotorLog ("Tree t12: paints=[$pc] ulw=[$ulw] " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
         }
     }
 

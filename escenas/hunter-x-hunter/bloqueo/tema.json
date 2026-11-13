@@ -1,8 +1,9 @@
 {
   "id": "hunter-x-hunter",
   "nombre": "Hunter x Hunter · Torre Celestial",
-  "subtitulo": "Piso 251 · Arena del Cielo y Dirigible",
-  "descripcion": "Silueta monumental de la Torre Celestial iluminada sobre la bahía junto al dirigible del Examen de Cazador.",
+  "subtitulo": "Piso 251 · Arena del Cielo y Metrópolis",
+  "descripcion": "Silueta monumental de la Torre Celestial alzada sobre una gran plaza urbana iluminada junto al dirigible del Examen de Cazador.",
+  "sin_lago": true,
   "cielo_fondo": "#061020",
   "modo_pajaros": "grullas",
   "color_pajaros": "#13222e",

@@ -86,20 +86,36 @@ for base, amp, seed, col, mist in ((240, 82, 71, PAL['mont'][0], PAL['mist'][0])
 ST0, ST1, ST2, ST3 = PAL['stone']
 CR0, CR1, CR2 = PAL['crimson']
 
-# Orilla rocosa nevada continua + zócalos de piedra bajo las torres laterales y el santuario
-for y in range(HOR - 10, HOR + 1):
-    for x in range(0, W):
-        c_s = ST2 if y <= HOR - 8 else (ST1 if (x + y) % 5 else ST0)
-        if y == HOR - 10 and (x % 7 < 3):
-            c_s = ST3
-        put(x, y, c_s)
+# Plaza ceremonial gótica de piedra continua (y = HOR-14..H, sin lago)
+for y in range(HOR - 14, H):
+    t_y = (y - (HOR - 14)) / float(H - (HOR - 14))
+    for x in range(W):
+        if y < HOR - 4:
+            col = ST2 if (x % 16 == 0 or y == HOR - 14) else ST1
+        else:
+            # Perspectiva de losas de granito hacia el frente
+            cx_d = (x - 320.0) / max(0.35, 0.35 + t_y * 1.15)
+            seam_x = abs((cx_d % 28.0) - 14.0) > 13.1
+            seam_y = ((y - HOR) % int(8 + t_y * 10)) == 0
+            col = ST0 if (seam_x or seam_y) else mix(ST1, ST2, 0.28 + 0.32 * (1.0 - t_y))
+            if (x * 11 + y * 17) % 23 == 0:
+                col = mix(col, ST0, 0.25)
+        put(x, y, col)
 
-# Torres góticas laterales bien cimentadas en el malecón
+# Muro balaustrada trasero enmarcando las torres laterales
+for y in range(HOR - 24, HOR - 12):
+    for x in range(W):
+        if 176 <= x <= 464:
+            continue
+        c_m = ST3 if y == HOR - 24 else (ST2 if (x % 12 < 5 or y > HOR - 16) else ST0)
+        put(x, y, c_m)
+
+# Torres góticas laterales bien cimentadas tras el muro del patio
 for tx, top_y in ((58, 174), (556, 168)):
-    for y in range(HOR - 14, HOR + 1):
-        for dx in range(-4, 32):
+    for y in range(HOR - 22, HOR - 8):
+        for dx in range(-5, 33):
             put(tx + dx, y, ST1 if dx < 12 else ST0)
-    for y in range(top_y, HOR - 8):
+    for y in range(top_y, HOR - 20):
         for x in range(tx, tx + 28):
             put(x, y, ST2 if x < tx + 8 else ST0)
     for dy in range(26):
@@ -112,11 +128,24 @@ for tx, top_y in ((58, 174), (556, 168)):
         for dy in range(4):
             put(tx + 13, top_y + 22 + dy, PAL['gold'][0])
 
-# Santuario gótico central bien asentado con peldaños amplios hasta HOR
-for y in range(HOR - 16, HOR + 1):
-    extra = max(0, y - (HOR - 16))
-    for x in range(186 - extra, 454 + extra):
-        put(x, y, ST1 if y > HOR - 12 else ST3)
+# Santuario gótico central escalonado con peldaños descendiendo hasta la plaza (y=314)
+for step_i, sy, hw_s in ((0, HOR - 18, 134), (1, HOR - 10, 148), (2, HOR - 1, 164), (3, HOR + 8, 182), (4, HOR + 18, 200)):
+    for y in range(sy, sy + 10):
+        for x in range(320 - hw_s, 320 + hw_s + 1):
+            put(x, y, ST3 if y <= sy + 1 else (ST2 if x < 320 else ST1))
+
+# Sello mágico carmesí grabado en perspectiva sobre las losas del patio frontal (y=328..388)
+for y in range(326, 392):
+    dy = (y - 359) / 26.0
+    for x in range(220, 421):
+        dx = (x - 320) / 86.0
+        r_e = math.hypot(dx, dy)
+        if 0.88 <= r_e <= 0.96 or 0.56 <= r_e <= 0.62:
+            if ANIM and (x + y) % 18 == 0:
+                RUNAS.append([x, y])
+            over(x, y, CR2 if r_e > 0.88 else CR1, 0.58)
+        elif r_e < 0.88 and (abs(dx * 0.85 - dy * 0.5) < 0.03 or abs(dx * 0.85 + dy * 0.5) < 0.03 or abs(dx) < 0.025):
+            over(x, y, CR1, 0.42)
 
 # Dos pilares góticos labrados y arco ojival superior
 for px in (212, 404):
@@ -138,7 +167,6 @@ for y in range(HOR - 36, HOR - 16):
     hw = 28 + (y - (HOR - 36)) // 2
     for x in range(320 - hw, 320 + hw + 1):
         put(x, y, ST3 if y == HOR - 36 else (ST2 if x < 330 else ST1))
-# Hoja ancha de la espada + empuñadura cruzada
 for y in range(178, HOR - 36):
     for dx in range(-3, 4):
         put(320 + dx, y, PAL['sword'][1] if dx < 0 else (PAL['sword'][2] if dx > 1 else PAL['sword'][0]))
@@ -159,16 +187,15 @@ for y in range(152, 232):
             elif not ANIM:
                 over(x, y, CR2, 0.55)
 
-for fx in (256, 384, 166, 474):
-    for y in range(HOR - 24, HOR - 16):
+for fx, fy in ((256, HOR - 25), (384, HOR - 25), (156, HOR - 25), (484, HOR - 25), (118, 344), (522, 344)):
+    for y in range(fy + 1, fy + 10):
         put(fx, y, ST0)
     if ANIM:
-        FAROLES.append([fx, HOR - 25, 9])
+        FAROLES.append([fx, fy, 9])
     else:
-        put(fx, HOR - 25, CR2)
-        glow(fx, HOR - 25, 7, CR1, 0.55)
+        put(fx, fy, CR2)
+        glow(fx, fy, 7, CR1, 0.55)
 
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(CR2, PAL['ola'][0]))
 aplica_vineta(lz, PAL['vig'])
 
 out = ARGS[0] if ARGS else '.'

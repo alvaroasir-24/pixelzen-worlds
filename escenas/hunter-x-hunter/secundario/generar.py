@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PixelZen Worlds - Hunter x Hunter (Monitor 2): Greed Island."""
+"""PixelZen Worlds - Hunter x Hunter (Monitor 2): Praderas de Greed Island y Torre de Eta/Elena."""
 import math
 import os
 import random
@@ -8,8 +8,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
-    render_estrellas, render_lago, render_nubes,
+    exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    render_estrellas, render_nubes,
 )
 
 ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -20,64 +20,88 @@ random.seed(1711)
 
 PALETAS = {
     'noche': dict(
-        sky=['#040914', '#081326', '#0d2038', '#122f4b', '#19405e', '#225370', '#2d6880', '#3d7d90', '#50939c', '#68a6a6'],
-        mont=['#1d3d4a', '#15303c', '#0f2530', '#0a1b24', '#07131a'],
-        mist=['#3b7b84', '#2e6470', '#234e5a', '#193b46', '#102832'],
-        isla=('#0a1e18', '#123024', '#1d4c36', '#2a6848'),
-        sand=('#7a6c4e', '#584c36'),
-        wall=('#7c6e54', '#584e3c'),
-        roof=('#14402c', '#1e5c40', '#2c7e54'),
-        gold=('#f4ce5c', '#a88224', '#fff4b0'),
-        ring=('#4a5c6c', '#7c94a8', '#2c3844'),
-        card=('#e8eed8', '#226458', '#f4ce5c', '#54b8ff'),
-        agua='#061824',
-        ola=('#6ee0cc', '#2e7c90', '#143c52'),
-        vig=0.76,
-        nube=['#2e5472', '#3c6886', '#4a7a98', '#6090aa', '#78a6ba', '#284a66'],
-        rama=('#160e0a', '#2c1c14'),
-        hoja={'l': '#5ee080', 'c': '#3ab860', 'm': '#248c48', 'd': '#145a30', 'x': '#0c341c'},
+        sky=['#060d1c', '#0b182c', '#12263f', '#1a3654', '#244868', '#305c7a', '#3d708a', '#4d849a', '#5e96a8', '#72a8b4'],
+        mont=['#2b4c5a', '#1e3844', '#162b34'],
+        grass_far='#2d5a3e',
+        grass_mid='#214c30',
+        grass_near='#183c24',
+        grass_hi='#3b744c',
+        grass_sh='#102818',
+        dirt=('#484c38', '#343828', '#5c6048'),
+        pond=('#386e82', '#649cb0'),
+        roof_hi='#5c5e66',
+        roof_mid='#3e4048',
+        roof_lo='#24262e',
+        roof_line='#181a20',
+        bowl_hi='#6e3a3e',
+        bowl_mid='#52282c',
+        bowl_lo='#34181c',
+        tile_g='#325838',
+        tile_y='#786832',
+        tile_o='#703c2a',
+        tile_d='#1e2024',
+        pillar=('#60646c', '#3c4048', '#22242a'),
+        shadow='#091810',
+        vig=0.80,
+        nube=['#2b4a68', '#3a5d7c', '#4c7290', '#6088a2', '#789eb4', '#26425c'],
         nen=('#48f09c', '#b8ffe0'),
-        elec=('#54b8ff', '#d4f4ff'),
+        ball=('#f49048', '#ffe49c'),
     ),
     'dorado': dict(
-        sky=['#141e3c', '#223054', '#38446c', '#58587e', '#826882', '#ae787a', '#d6886c', '#f29e5e', '#ffba5e', '#ffd87e'],
-        mont=['#4c5468', '#3c4256', '#2e3346', '#222636', '#171a28'],
-        mist=['#dc9678', '#c07e70', '#9c6668', '#744e5e', '#4e384e'],
-        isla=('#1e2e20', '#2c442a', '#406038', '#587c44'),
-        sand=('#d8ae74', '#a47c50'),
-        wall=('#c8a882', '#9a7e5c'),
-        roof=('#1e543a', '#2c744e', '#3e9664'),
-        gold=('#ffdc68', '#c48a24', '#fff8c4'),
-        ring=('#726e7e', '#b6a8b2', '#443e4c'),
-        card=('#fff8e6', '#2a7864', '#ffcf54', '#58c4ff'),
-        agua='#1e3c4c',
-        ola=('#ffd29c', '#88a0a8', '#3c586c'),
-        vig=0.84,
-        nube=['#a87088', '#d48a84', '#f2a47e', '#ffc288', '#ffe09e', '#8e5e78'],
-        rama=('#22140c', '#3e2416'),
-        hoja={'l': '#a8e468', 'c': '#72be4c', 'm': '#468e38', 'd': '#285e26', 'x': '#163616'},
+        sky=['#1e2e58', '#304470', '#485b86', '#686e96', '#908098', '#b8908e', '#da9e80', '#f4b476', '#ffcb80', '#ffe29c'],
+        mont=['#6c768e', '#58607a', '#485068'],
+        grass_far='#7ba468',
+        grass_mid='#649448',
+        grass_near='#4c7e34',
+        grass_hi='#8eb864',
+        grass_sh='#325624',
+        dirt=('#a89a70', '#867854', '#c4b68a'),
+        pond=('#8eb4c0', '#d8d6c8'),
+        roof_hi='#a69c94',
+        roof_mid='#7e746e',
+        roof_lo='#544c48',
+        roof_line='#383030',
+        bowl_hi='#b8685c',
+        bowl_mid='#8e463e',
+        bowl_lo='#5e2a28',
+        tile_g='#5c8444',
+        tile_y='#cca446',
+        tile_o='#bc6238',
+        tile_d='#2e2824',
+        pillar=('#9a9694', '#6e6a68', '#464242'),
+        shadow='#1e3418',
+        vig=0.88,
+        nube=['#b8889a', '#daa094', '#f2b88e', '#ffd09c', '#ffe4b4', '#9e7488'],
         nen=('#60f8a8', '#dcffec'),
-        elec=('#68d0ff', '#e4f8ff'),
+        ball=('#ff8438', '#ffe69a'),
     ),
     'dia': dict(
-        sky=['#155cb8', '#2272ca', '#3488da', '#4c9ee6', '#6ab4ee', '#8cc8f4', '#aedcf8', '#cdeafa', '#e6f4f6', '#f8f6e0'],
-        mont=['#4e809a', '#3e6e88', '#305c74', '#244b60', '#1a3a4c'],
-        mist=['#b2deec', '#96cce0', '#7ab8d2', '#5ea2c0', '#448aa8'],
-        isla=('#1e482c', '#2c6438', '#3e8448', '#56a65a'),
-        sand=('#f2d89c', '#c8aa74'),
-        wall=('#efe2c4', '#cbb896'),
-        roof=('#226846', '#2e845a', '#40a070'),
-        gold=('#ffe46a', '#c89a28', '#fffce0'),
-        ring=('#8ea4b8', '#d6e6f2', '#52687c'),
-        card=('#ffffff', '#26846c', '#ffd448', '#38a8ff'),
-        agua='#166a82',
-        ola=('#d2faf6', '#66b8cc', '#287690'),
-        vig=0.92,
-        nube=['#ffffff', '#f0f8fc', '#ffffff', '#e4f2fa', '#f6fcff', '#dcf0fa'],
-        rama=('#2c1c10', '#4a2e1a'),
-        hoja={'l': '#8ee868', 'c': '#5ac448', 'm': '#369434', 'd': '#1e6222', 'x': '#103a14'},
+        sky=['#529cd4', '#68addd', '#80bee6', '#98ceee', '#aedcf4', '#c2e6f8', '#d4eefb', '#e2f4fc', '#edf8fe', '#f4fbff'],
+        mont=['#8ab4c8', '#7ca6bc', '#729ab0'],
+        grass_far='#8ac684',
+        grass_mid='#6db852',
+        grass_near='#54a238',
+        grass_hi='#90d26c',
+        grass_sh='#3a7a28',
+        dirt=('#c2ba90', '#9ea278', '#ded6b0'),
+        pond=('#a8d8ec', '#e8f6fc'),
+        roof_hi='#aca8a2',
+        roof_mid='#84807a',
+        roof_lo='#5a5856',
+        roof_line='#3e3c3a',
+        bowl_hi='#b26260',
+        bowl_mid='#8e4646',
+        bowl_lo='#622c2e',
+        tile_g='#608e4a',
+        tile_y='#d0ac48',
+        tile_o='#c0643a',
+        tile_d='#2c2c2c',
+        pillar=('#a6aaae', '#7a7e84', '#4e5258'),
+        shadow='#22441e',
+        vig=0.95,
+        nube=['#ffffff', '#f6fbfe', '#ffffff', '#edf6fc', '#f8fdff', '#e4f2fa'],
         nen=('#48f09c', '#d8fff0'),
-        elec=('#54b8ff', '#e0f8ff'),
+        ball=('#f6782e', '#ffe88e'),
     ),
 }
 PAL = PALETAS[FASE]
@@ -86,7 +110,7 @@ ESTRELLAS, VENTANAS, FAROLES, RUNAS, DESTELLOS, NUBES = [], [], [], [], [], []
 lz = Lienzo()
 put, over, disc, glow = lz.put, lz.over, lz.disc, lz.glow
 
-# 1. Cielo + astro
+# 1. Cielo alto de Greed Island + astro (horizonte alto alrededor de y ~ 118)
 render_cielo(lz, PAL['sky'], SKYM, FASE, aurora_cols=('#48f09c', '#54b8ff'))
 exporta_sprites_si_aplica(
     lz,
@@ -95,365 +119,312 @@ exporta_sprites_si_aplica(
 )
 render_estrellas(lz, FASE, ANIM, ESTRELLAS, colors=['#d8fff0', '#bce8ff', '#98c8f0'])
 
-MX, MY, MR = 408, 80, 40
-CX_ASTRO = MX if FASE == 'noche' else (MX + 22 if FASE == 'dorado' else MX - 36)
-# Monitor 2 comparte cielo con Monitor 1: no duplicar sol/luna aquí
-
+MX, MY, MR = 365, 58, 34
 NUBES_DEF = [
-    (115, 64, 165, PAL['nube'][0], 3),
-    (320, 48, 155, PAL['nube'][1], 3),
-    (520, 114, 160, PAL['nube'][2], 3),
-    (215, 168, 180, PAL['nube'][3], 2),
-    (445, 208, 145, PAL['nube'][4], 2),
-    (75, 238, 115, PAL['nube'][5], 2),
+    (60, 26, 130, PAL['nube'][0], 2),
+    (245, 36, 150, PAL['nube'][1], 2),
+    (430, 22, 185, PAL['nube'][2], 3),
+    (535, 52, 145, PAL['nube'][3], 3),
+    (155, 64, 120, PAL['nube'][4], 2),
 ]
 render_nubes(lz, NUBES_DEF, NUBES, ANIM)
 
-# 2. Montañas y archipiélago de Greed Island en el horizonte (descenso suave desde x = 115)
-for base, amp, seed, col, mist in (
-    (242, 62, 31, PAL['mont'][0], PAL['mist'][0]),
-    (258, 46, 32, PAL['mont'][1], PAL['mist'][1]),
-    (272, 30, 33, PAL['mont'][2], PAL['mist'][2]),
-):
-    r = Ruido(seed * 19)
-    for x in range(115, W):
-        t_ramp = max(0.0, min(1.0, (x - 115) / 130.0))
-        ramp = (t_ramp * t_ramp * (3.0 - 2.0 * t_ramp)) * (1.0 if x < 450 else 0.72)
-        top = int(HOR - (HOR - base + amp * fbm(r, x * 0.018 + seed)) * ramp)
-        for y in range(top, HOR + 1):
-            put(x, y, mix(col, mist, 0.28 * ((y - top) / max(1, HOR - top)) ** 1.8))
+# 2. Suave cordillera azulada en el horizonte lejano (y ~ 102..120)
+r_mont = Ruido(773)
+for x in range(W):
+    ridge_y = int(106 + 7 * fbm(r_mont, x * 0.012 + 3.1) - (3 if x > 420 else 0))
+    for y in range(ridge_y, 124):
+        t = (y - ridge_y) / max(1, 124 - ridge_y)
+        put(x, y, mix(PAL['mont'][0], PAL['mont'][2], 0.35 + 0.45 * t))
 
-# 3. ISLA CENTRAL DE GREED ISLAND: mesetas planas bajo Masadora, Portal y Castillo de Limeiro (x = 194..470)
-IS0, IS1, IS2, IS3 = PAL['isla']
-for x in range(194, 470):
-    if x < 232:
-        t_l = (x - 194) / 38.0
-        elev = int(32 * (t_l ** 0.75))
-    elif x <= 426:
-        elev = 32
+# 3. Vastas praderas esmeralda y lima de Greed Island (y = 114..400, sin lago)
+r_grass = Ruido(404)
+r_patch = Ruido(819)
+for y in range(114, H):
+    t_y = (y - 114) / float(H - 114)
+    if t_y < 0.32:
+        col_base = mix(PAL['grass_far'], PAL['grass_mid'], t_y / 0.32)
     else:
-        t_r = (470 - x) / 44.0
-        elev = int(32 * (t_r ** 0.75))
-    for y in range(HOR - elev, HOR + 1):
-        c = IS3 if y < HOR - elev + 4 else (IS2 if y < HOR - 6 else PAL['sand'][0])
-        if y >= HOR - 3:
-            c = PAL['sand'][1]
+        col_base = mix(PAL['grass_mid'], PAL['grass_near'], (t_y - 0.32) / 0.68)
+    for x in range(W):
+        horizon_wave = int(115 + 2.5 * math.sin(x * 0.015 + 0.6) + 2.0 * fbm(r_grass, x * 0.02))
+        if y < horizon_wave:
+            continue
+        c = col_base
+        # Suaves franjas onduladas de luz solar sobre la llanura
+        band = math.sin(y * 0.065 + x * 0.004 + 1.8 * fbm(r_grass, x * 0.012 + y * 0.031))
+        if band > 0.35:
+            c = mix(c, PAL['grass_hi'], 0.22 * (band - 0.35))
+        elif band < -0.45:
+            c = mix(c, PAL['grass_sh'], 0.16 * (-band - 0.45))
+
+        # Textura sutil de hierba y manchitas de tierra seca/guijarros en primer plano
+        n_loc = fbm(r_patch, x * 0.055 + y * 0.143)
+        if t_y > 0.12 and n_loc > 0.67:
+            c = mix(c, PAL['dirt'][1], min(0.75, (n_loc - 0.67) * 2.2))
+        elif (x * 13 + y * 29) % 41 == 0 and t_y > 0.10:
+            c = mix(c, PAL['grass_sh'], 0.28)
+        elif (x * 7 + y * 19) % 53 == 0 and t_y > 0.16:
+            c = mix(c, PAL['grass_hi'], 0.25)
+
+        # Neblina atmosferica junto al horizonte lejano
+        if y < 146:
+            c = mix(PAL['mont'][0], c, (y - 113) / 33.0)
         put(x, y, c)
 
-# Peñón natural + cascada cristalina tras el Castillo de Limeiro (x ~ 414..450)
-r_peak = Ruido(413)
-for x in range(398, 456):
-    t_p = 1.0 - abs(x - 428) / 30.0
-    if t_p <= 0:
-        continue
-    top_p = int(HOR - 26 - 48 * (t_p ** 0.85) * (0.75 + 0.35 * r_peak(x * 0.18)))
-    for yy in range(top_p, HOR - 18):
-        c = IS2 if yy < top_p + 5 else (IS1 if r_peak(x * 0.2 + yy * 0.15) > 0.45 else IS0)
-        put(x, yy, c)
-# Cascada de Greed Island cayendo desde el peñón hasta el mar
-for yy in range(HOR - 54, HOR + 1):
-    for dx in (-2, -1, 0, 1):
-        if dx == 0 or (yy + dx) % 3:
-            put(436 + dx, yy, PAL['ola'][0] if dx <= 0 else PAL['ola'][1])
-# Castillo blanco/verde de Limeiro (anclado en terraza elev=32 hasta HOR - 28)
-for x in range(358, 418):
-    for yy in range(HOR - 54, HOR - 28):
-        put(x, yy, PAL['wall'][0] if x < 388 else PAL['wall'][1])
-def torre_limeiro(cx, tw, th, sh):
-    y0 = HOR - 54 - th
-    for yy in range(y0, HOR - 52):
-        for x in range(cx - tw // 2, cx + tw // 2 + 1):
-            put(x, yy, PAL['wall'][0] if x < cx else PAL['wall'][1])
-    for wy in range(y0 + 6, HOR - 56, 10):
-        if ANIM:
-            VENTANAS.append([cx - 1, wy])
-        else:
-            put(cx - 1, wy, '#ffd074')
-            put(cx, wy, '#ffd074')
-    for i in range(sh):
-        hw = max(0, int((tw // 2 + 2) * (1 - i / max(1, sh - 1))))
-        for x in range(cx - hw, cx + hw + 1):
-            put(x, y0 - i, PAL['roof'][2] if x < cx else PAL['roof'][0])
-    put(cx, y0 - sh - 2, PAL['gold'][0])
+# Dos diminutos estanques y arbolitos lejanos en el extremo izquierdo (fieles a la captura)
+for px, py, pw in ((18, 162, 26), (10, 186, 36)):
+    for dy in range(-2, 3):
+        span = int(pw * math.sqrt(max(0.0, 1.0 - (dy / 2.6) ** 2)))
+        for dx in range(-span, span + 1):
+            put(px + dx, py + dy, PAL['pond'][1] if (abs(dx) < span * 0.55 and dy == 0) else PAL['pond'][0])
 
-torre_limeiro(368, 12, 22, 12)
-torre_limeiro(388, 18, 36, 18)
-torre_limeiro(408, 12, 24, 12)
+for tx, ty, tr in ((16, 146, 5), (27, 148, 4), (58, 152, 3)):
+    for y in range(ty + tr - 1, ty + tr + 4):
+        put(tx, y, PAL['grass_sh'])
+    for dy in range(-tr, tr + 1):
+        for dx in range(-tr, tr + 1):
+            if dx * dx + dy * dy <= tr * tr:
+                put(tx + dx, ty + dy, PAL['grass_sh'] if dy > 0 else PAL['grass_mid'])
 
-# Ciudad inicial de Masadora bien cimentada sobre la terraza plana (x = 236..312)
-for cx_m, cw, ch in ((238, 22, 16), (266, 24, 20), (294, 18, 14)):
-    hy0 = HOR - 30 - ch
-    for yy in range(hy0, HOR - 28):
-        for x in range(cx_m, cx_m + cw):
-            put(x, yy, PAL['wall'][0] if x < cx_m + cw // 2 else PAL['wall'][1])
-    for i in range(10):
-        hw = max(1, cw // 2 + 2 - i)
-        for x in range(cx_m + cw // 2 - hw, cx_m + cw // 2 + hw + 1):
-            put(x, hy0 - i, PAL['roof'][1] if x < cx_m + cw // 2 else PAL['roof'][0])
-    if ANIM:
-        VENTANAS.append([cx_m + 6, hy0 + 6])
-        VENTANAS.append([cx_m + cw - 8, hy0 + 6])
-CHIMENEA = [272, HOR - 58]
+# Pequeños guijarros claros salpicados por la llanura
+for _ in range(42):
+    px = random.randint(25, 395)
+    py = random.randint(170, 388)
+    rw = 1 + int((py - 160) / 110)
+    for dx in range(-rw, rw + 1):
+        put(px + dx, py, PAL['dirt'][2] if dx <= 0 else PAL['dirt'][0])
+    if rw >= 2:
+        put(px, py - 1, PAL['dirt'][2])
 
-# 4. GRAN ANILLO / PUERTA ARCANO DE GREED ISLAND ("G.I." Ring Portal, cx = 318, cy = 148)
-AX, AY, AR_OUT, AR_IN = 318, 152, 42, 31
-# Pilares base del portal en la isla
-for px_p in (AX - 36, AX + 36):
-    for yy in range(AY + 10, HOR - 26):
-        for dx in range(-4, 5):
-            put(px_p + dx, yy, PAL['ring'][1] if dx < 0 else PAL['ring'][0])
-# Anillo circular metálico de Greed Island (con la esmeralda superior como el Anillo oficial)
-for y in range(AY - AR_OUT - 2, AY + AR_OUT + 3):
-    for x in range(AX - AR_OUT - 2, AX + AR_OUT + 3):
-        d = math.hypot(x - AX, y - AY)
-        if AR_IN <= d <= AR_OUT:
-            c = PAL['ring'][1] if x < AX and y < AY else (PAL['ring'][0] if d < AR_OUT - 2 else PAL['ring'][2])
-            if abs(d - (AR_IN + AR_OUT) * 0.5) < 1.3 and ((x + y) % 5 == 0):
-                c = PAL['nen'][0]
-            put(x, y, c)
-# Joya / piedra central superior del Anillo ("G.I." Gemstone) + letras "G I" dentro del aura
-for dy in range(-6, 7):
-    hw = 6 - abs(dy) // 2
-    for dx in range(-hw, hw + 1):
-        put(AX + dx, AY - AR_OUT + dy, PAL['nen'][1] if (abs(dx) < 3 and dy < 0) else PAL['nen'][0])
-if ANIM:
-    RUNAS.append([AX, AY - AR_OUT])
-else:
-    glow(AX, AY - AR_OUT, 10, PAL['nen'][0], 0.65)
-# Halo suave Nen interior del portal + sigilo G.I. sutil
-for y in range(AY - AR_IN + 3, AY + AR_IN - 2):
-    for x in range(AX - AR_IN + 3, AX + AR_IN - 2):
-        d = math.hypot(x - AX, y - AY)
-        if d < AR_IN - 3 and dith(x, y, 0.25 * (1 - d / AR_IN)):
-            over(x, y, PAL['nen'][0], 0.4)
+# 4. Sombra larga proyectada por la Torre de Eta/Elena hacia la esquina inferior derecha
+shadow_poly_y = lambda x: (342 + (x - 420) * 0.34, 376 + (x - 420) * 0.42)
+for x in range(408, W):
+    y_min_line, y_max_line = shadow_poly_y(x)
+    # Ancho extra bajo la torre principal y brazo de sombra de la torreta derecha
+    cx_m = 472 + (x - 472) * 0.15
+    y_top = int(max(340, 344 + max(0, x - 465) * 0.18))
+    y_bot = int(min(H - 1, 368 + max(0, x - 418) * 0.48))
+    for y in range(y_top, y_bot + 1):
+        in_main = (y - 344) >= (x - 515) * 0.35 and (y - 352) <= (x - 406) * 0.52 and x >= 412
+        in_wing = (535 <= x <= 628) and (354 + (x - 540) * 0.15 <= y <= 382 + (x - 540) * 0.25)
+        if in_main or in_wing:
+            edge = 0.68
+            over(x, y, PAL['shadow'], edge)
 
-# 5. CARTAS DE HECHIZO DE GREED ISLAND FLOTANDO EN EL CIELO (Spell Cards con aura Nen!)
-def dibuja_carta_gi(cx, cy, w_c, h_c, acento, tipo='estrella'):
-    """Dibuja una carta de hechizo pixel art de Greed Island con marco dorado y símbolo."""
-    x0, y0 = cx - w_c // 2, cy - h_c // 2
-    c_bg, _, c_gold, c_cyan = PAL['card']
-    # Aura Nen envolvente
-    if not ANIM:
-        glow(cx, cy, max(w_c, h_c), acento, 0.42)
-    # Cuerpo y borde dorado de la carta
-    for yy in range(y0, y0 + h_c):
-        for xx in range(x0, x0 + w_c):
-            borde = (xx in (x0, x0 + w_c - 1) or yy in (y0, y0 + h_c - 1))
-            inner = (xx in (x0 + 2, x0 + w_c - 3) or yy in (y0 + 2, y0 + h_c - 3))
-            if borde:
-                put(xx, yy, c_gold)
-            elif inner and y0 + 2 <= yy <= y0 + h_c - 3 and x0 + 2 <= xx <= x0 + w_c - 3:
-                put(xx, yy, acento)
+# 5. Torre de Recepción de Eta y Elena en la derecha (cx = 472) + puente + torreta anexa (cx = 582)
+def pinta_tambor_mosaico(x0, y0, w_d, h_d, rows=4, cols=7):
+    cell_h = max(6, h_d // rows)
+    cell_w = max(8, w_d // cols)
+    for yy in range(y0, y0 + h_d):
+        row = min(rows - 1, (yy - y0) // cell_h)
+        ry = (yy - y0) - row * cell_h
+        for xx in range(x0, x0 + w_d):
+            col = min(cols - 1, (xx - x0) // cell_w)
+            rx = (xx - x0) - col * cell_w
+            u = (xx - x0) / max(1.0, w_d - 1.0)
+            shade = max(0.0, (u - 0.42) * 1.1)
+            # Borde de rejilla geométrica y diagonales tipo mosaico Greed Island
+            diag1 = abs(rx / max(1.0, cell_w - 1.0) - ry / max(1.0, cell_h - 1.0)) < 0.11
+            diag2 = abs((1.0 - rx / max(1.0, cell_w - 1.0)) - ry / max(1.0, cell_h - 1.0)) < 0.11
+            if ry == 0 or rx == 0 or yy == y0 + h_d - 1 or xx == x0 + w_d - 1 or diag1 or diag2:
+                base_c = PAL['tile_d']
             else:
-                put(xx, yy, c_bg)
-    # Banda superior de título (nombre + rango) y recuadro de ilustración
-    for xx in range(x0 + 3, x0 + w_c - 3):
-        put(xx, y0 + 4, PAL['gold'][1])
-        put(xx, y0 + 5, c_gold)
-    # Ilustración central según el hechizo
-    icy = cy + 2
-    if tipo == 'estrella':  # Ruler's Blessing N°000
-        for dy in range(-5, 6):
-            hw = 5 - abs(dy) if abs(dy) > 1 else 6
-            for dx in range(-hw, hw + 1):
-                if abs(dx) + abs(dy) <= 6 or abs(dx) == 0 or abs(dy) == 0:
-                    put(cx + dx, icy + dy, c_gold if abs(dx) + abs(dy) > 2 else PAL['gold'][2])
-    elif tipo == 'ala':  # Angel's Breath
-        for sgn in (-1, 1):
-            for t in range(6):
-                put(cx + sgn * (1 + t), icy - t // 2, c_cyan)
-                put(cx + sgn * (1 + t), icy - t // 2 + 1, acento)
-    elif tipo == 'brújula':  # Accompany
-        for d_a in (-4, -3, -2, -1, 0, 1, 2, 3, 4):
-            put(cx + d_a, icy, acento)
-            put(cx, icy + d_a, acento)
-        put(cx, icy, c_gold)
-    else:  # Gain / Nen
-        for dy in range(-4, 5):
-            hw = 4 - abs(dy)
-            for dx in range(-hw, hw + 1):
-                put(cx + dx, icy + dy, acento)
-    if ANIM:
-        RUNAS.append([cx, y0 - 2])
+                up_tri = (rx / max(1.0, cell_w - 1.0) + ry / max(1.0, cell_h - 1.0)) < 1.0
+                up_tri2 = (rx / max(1.0, cell_w - 1.0) - ry / max(1.0, cell_h - 1.0)) > 0.0
+                if up_tri and up_tri2:
+                    base_c = PAL['tile_y'] if (row + col) % 2 == 0 else PAL['tile_o']
+                elif (not up_tri) and (not up_tri2):
+                    base_c = PAL['tile_o'] if (row + col) % 2 == 0 else PAL['tile_y']
+                else:
+                    base_c = PAL['tile_g']
+            put(xx, yy, mix(base_c, PAL['tile_d'], min(0.62, shade)))
 
-# 4 cartas icónicas flotando sobre el mar y la isla (todas en x=96..452, fuera del HUD!)
-dibuja_carta_gi(102, 118, 22, 30, PAL['card'][3], 'brújula')   # Accompany
-dibuja_carta_gi(178, 86, 26, 36, PAL['card'][2], 'estrella')   # Ruler's Blessing 000
-dibuja_carta_gi(248, 124, 22, 30, PAL['nen'][0], 'gain')       # Gain
-dibuja_carta_gi(426, 178, 22, 30, PAL['card'][3], 'ala')       # Angel's Breath
+def pinta_cuenco_terracota(cx, y_top, y_bot, w_top, w_bot, ribs=12):
+    for y in range(y_top, y_bot + 1):
+        t = (y - y_top) / max(1.0, float(y_bot - y_top))
+        # Perfil ligeramente acampanado hacia dentro
+        curve = math.sin(t * math.pi * 0.5)
+        hw = int(round((w_top * (1.0 - curve * 0.92) + w_bot * (curve * 0.92)) * 0.5))
+        for x in range(cx - hw, cx + hw + 1):
+            u = (x - (cx - hw)) / max(1.0, 2.0 * hw)
+            if y in (y_top, y_bot):
+                put(x, y, PAL['roof_line'])
+            else:
+                c = PAL['bowl_hi'] if u < 0.36 else (PAL['bowl_mid'] if u < 0.72 else PAL['bowl_lo'])
+                if t > 0.78:
+                    c = mix(c, PAL['bowl_lo'], 0.45)
+                rib_pos = u * ribs
+                if abs(rib_pos - round(rib_pos)) < 0.09:
+                    c = mix(c, PAL['roof_line'], 0.65)
+                put(x, y, c)
 
-# 6. PROMONTORIO IZQUIERDO PLANO (x = 0..176): Pedestal "BOOK!" + GON y KILLUA jugando juntos
-r_grass = Ruido(617)
-for x in range(0, 176):
-    if x <= 146:
-        ridge = HOR - 36
-    else:
-        t_down = (x - 146) / 30.0
-        ridge = HOR - 36 + int((t_down * t_down) * 36)
-    for y in range(max(0, ridge), HOR + 1):
-        d_y = y - ridge
-        n_g = r_grass(x * 0.16 + y * 0.22)
-        c = IS3 if d_y < 4 else (IS2 if n_g > 0.45 else (IS1 if n_g > 0.25 else IS0))
-        if d_y == 2 and x % 19 == 0:
-            c = PAL['gold'][0]
-        put(x, y, c)
+def pinta_tejado_conico(cx, y_apex, y_eave, hw_eave):
+    for y in range(y_apex, y_eave + 1):
+        t = (y - y_apex) / max(1.0, float(y_eave - y_apex))
+        # Ligera campana elegante como en el diseño original
+        hw = max(1, int(round(hw_eave * (t ** 0.90))))
+        row_shingle = (y - y_apex) // 5
+        for x in range(cx - hw, cx + hw + 1):
+            u = (x - (cx - hw)) / max(1.0, 2.0 * hw)
+            if y == y_eave or abs(x - cx) == hw:
+                put(x, y, PAL['roof_line'])
+                continue
+            c = PAL['roof_hi'] if u < 0.38 else (PAL['roof_mid'] if u < 0.68 else PAL['roof_lo'])
+            # Tejas escalonadas de pizarra
+            shingle_x = ((x - cx) + (row_shingle % 2) * 3) % 6
+            shingle_y = (y - y_apex) % 5
+            if shingle_y == 4 or shingle_x == 0:
+                c = mix(c, PAL['roof_line'], 0.48)
+            elif shingle_y == 1 and ((x * 7 + y * 13) % 5 == 0):
+                c = mix(c, PAL['roof_hi'], 0.35)
+            put(x, y, c)
 
-# Pedestal con el Libro de Cartas ("BOOK!" Binder abierto) a la izquierda (x = 28)
-PX_B, PY_B = 28, HOR - 35
-for yy in range(PY_B - 12, PY_B + 1):
-    for dx in range(-8, 9):
-        put(PX_B + dx, yy, PAL['ring'][0] if dx > 0 else PAL['ring'][1])
-for dy in range(-6, 1):
-    for dx in range(-11, 12):
-        if abs(dx) == 11 or dy in (-6, 0):
-            put(PX_B + dx, PY_B - 12 + dy, PAL['rama'][0])
-        elif dx == 0:
-            put(PX_B + dx, PY_B - 12 + dy, PAL['gold'][1])
-        else:
-            put(PX_B + dx, PY_B - 12 + dy, PAL['card'][0] if dy > -4 else PAL['nen'][1])
-if ANIM:
-    FAROLES.append([PX_B, PY_B - 20, 12])
-else:
-    glow(PX_B, PY_B - 18, 9, PAL['nen'][0], 0.48)
+# Puente elevado y torreta derecha (dibujados antes del cuerpo principal para que queden bien encajados)
+for y in range(214, 240):
+    t = (y - 214) / 26.0
+    for x in range(520, 566):
+        c = PAL['tile_g'] if ((x // 6 + y // 6) % 2 == 0) else PAL['tile_y']
+        if y in (214, 239) or y == 222:
+            c = PAL['roof_line']
+        put(x, y, mix(c, PAL['tile_d'], 0.25 + 0.35 * t))
 
+# Torreta anexa derecha (cx = 582)
+pinta_tambor_mosaico(562, 212, 40, 38, rows=3, cols=4)
+pinta_cuenco_terracota(582, 198, 213, 52, 40, ribs=7)
+pinta_tejado_conico(582, 134, 199, 28)
+
+# Pilares y escalinata central de la torre principal (plantados sobre el césped en y = 356..362)
+# Escalera interior bajo el tambor
+for y in range(304, 356):
+    t = (y - 304) / 52.0
+    for x in range(456, 490):
+        step = ((y - 304) % 5) == 0
+        col = PAL['roof_line'] if (x < 462 or x > 484 or y < 312) else (PAL['pillar'][2] if step else PAL['pillar'][1])
+        put(x, y, mix(col, PAL['shadow'], 0.35 * (1.0 - t)))
+
+# 4 pilares gruesos de piedra
+for px, pw, py_bot in ((426, 9, 356), (446, 8, 352), (492, 8, 353), (509, 9, 358)):
+    for y in range(304, py_bot + 1):
+        for x in range(px, px + pw):
+            u = (x - px) / max(1.0, pw - 1.0)
+            c = PAL['pillar'][0] if u < 0.40 else (PAL['pillar'][1] if u < 0.78 else PAL['pillar'][2])
+            if y < 310:
+                c = mix(c, PAL['shadow'], 0.55)
+            put(x, y, c)
+    # Matitas de hierba rodeando la base del pilar para integrarlo al suelo
+    for dx in range(-3, pw + 3):
+        if (dx * 3 + py_bot) % 2 == 0:
+            put(px + dx, py_bot, PAL['grass_sh'])
+            put(px + dx, py_bot - 1, PAL['grass_near'])
+
+# Tambor de mosaico, cuenco terracota y gran tejado cónico principal
+pinta_tambor_mosaico(420, 234, 104, 70, rows=4, cols=7)
+pinta_cuenco_terracota(472, 196, 235, 146, 104, ribs=13)
+pinta_tejado_conico(472, 64, 197, 84)
+RUNAS.extend([(442, 250), (472, 266), (502, 250), (582, 226)])
+
+# 6. GON y KILLUA jugando sobre la pradera (cx_gon = 205, cx_killua = 272, pie en y = 328)
+def sombra_suelo(cx, by, rx=13, ry=3):
+    for dy in range(-ry, ry + 1):
+        for dx in range(-rx, rx + 1):
+            if (dx / float(rx)) ** 2 + (dy / float(ry)) ** 2 <= 1.0:
+                over(cx + dx, by + dy, PAL['shadow'], 0.55)
 
 def dibuja_gon_jugando(cx, by):
-    """Gon Freecss en pose dinámica de juego (brazos alzados lanzando/recibiendo pelota, sonrisa entusiasta)."""
-    cmap = {
-        'O': '#0a0f0c',
-        'H': '#0e1b14', 'E': '#1a4c2e', 'L': '#26683e',
-        'S': '#f4d2ba', 's': '#d2aa90', 'I': '#2a1810',
-        'W': '#f2f6ee',
-        'G': '#248c46', 'g': '#176632', 'd': '#104622',
-        'R': '#ec6a2c', 'B': '#164626', 'b': '#0d2b16',
-    }
-    spr = [
-        "....OO.......OO...........",
-        "...OLLO.....OLLO..........",
-        "...OEEO..OO.OEEO..OO......",
-        "..OEHHEOOEEOOEHHOOEEO.....",
-        "..OHHHHOEHHHOHHHHEHHO.....",
-        "..OHHHHHHHHHHHHHHHHHO.....",
-        "...OHHHHHHHHHHHHHHHO..OO..",
-        "...OHHSSSSSSSSSSSHHO.OSSO.",
-        "....OHSSISSSISSSSHOO.OSSO.",
-        "....OSSSSSSSSSSSSOOOOSSO..",
-        ".....OSSSSsSSSSSSOOOGGO...",
-        "......OOSSSSSSSOOOGGGO....",
-        ".......ORRWGGGWRGGGO......",
-        "...OOOOORWWWWWWWGGGO......",
-        "..OSSOOGGWWWWWWWWGO.......",
-        "..OSSO.OGGGGGGGGGGO.......",
-        "...OO..OGGGggGGGGO........",
-        ".......ORRRRRRRRRO........",
-        "......OGGGGGGGGGGO........",
-        "......OGGggOOggGGO........",
-        "......OSSO....OSSO........",
-        ".....OSSO......OSSO.......",
-        "....OBBO........OBBO......",
-        "....OBbO........OBbO......",
-        "...OBbBO........OBbBO.....",
-        "...OOOOO........OOOOO.....",
-    ]
-    assert len({len(r) for r in spr}) == 1
-    pinta_sprite(lz, cx, by, spr, cmap)
-
+    sombra_suelo(cx + 1, by, 13, 3)
+    for (x, y) in ((-5, -1), (-4, -1), (-3, -1), (2, -1), (3, -1), (4, -1), (-4, -2), (3, -2)):
+        put(cx + x, by + y, '#102418')
+    for x in (-4, -3, 2, 3):
+        for y in (-3, -4, -5):
+            put(cx + x, by + y, '#dfb494')
+    for dy in range(-10, -5):
+        for dx in range(-5, 6):
+            if abs(dx) < 5 or dy > -9:
+                put(cx + dx, by + dy, '#1e7844' if dx <= 0 else '#145832')
+    for dy in range(-21, -10):
+        for dx in range(-5, 6):
+            if abs(dx) == 5 and dy == -21:
+                continue
+            put(cx + dx, by + dy, '#249450' if dx < 1 else '#186c3a')
+    for dy in (-21, -20, -16, -15):
+        for dx in range(-4, 5):
+            put(cx + dx, by + dy, '#f05a30')
+    for k in range(1, 10):
+        put(cx + 5 + k // 2, by - 19 - k, '#f2c8a4')
+        put(cx + 4 + k // 2, by - 19 - k, '#249450' if k < 4 else '#f2c8a4')
+    for k in range(1, 7):
+        put(cx - 5 - k // 2, by - 17 + k // 2, '#f2c8a4')
+    for dy in range(-31, -21):
+        hw = 5 if dy > -29 else 4
+        for dx in range(-hw, hw + 1):
+            put(cx + dx, by + dy, '#f4c8a6')
+    put(cx - 2, by - 26, '#14181e')
+    put(cx + 2, by - 26, '#14181e')
+    put(cx - 1, by - 23, '#a04e3c'); put(cx, by - 23, '#a04e3c'); put(cx + 1, by - 23, '#a04e3c')
+    for dy in range(-40, -29):
+        hw = 6 if dy < -32 else 7
+        for dx in range(-hw, hw + 1):
+            if dy < -36 and abs(dx) in (1, 4):
+                continue
+            if dy >= -32 and abs(dx) < 5:
+                continue
+            put(cx + dx, by + dy, '#0d2218' if (dx + dy) % 3 else '#1e5838')
+    for sx in (-5, -2, 0, 2, 5):
+        put(cx + sx, by - 41, '#123624')
+        put(cx + sx, by - 42, '#0d2218')
 
 def dibuja_killua_jugando(cx, by):
-    """Killua Zoldyck sobre su patineta amarilla jugando con Gon y lanzando chispas Nen."""
-    cmap = {
-        'O': '#101424',
-        'H': '#eef4ff', 'h': '#c2d2ee', 'g': '#90a6cc',
-        'S': '#f8e2d6', 's': '#d8bcb0', 'E': '#2264d8',
-        'B': '#1e2c64', 'W': '#f4f6fc', 'w': '#cfd8ea',
-        'P': '#222240', 'p': '#16162c',
-        'K': '#3e3a88', 'Z': '#e8eef8',
-        'Y': '#ffd238', 'y': '#d48c1c',  # Patineta clásica de Killua
-    }
-    spr = [
-        "......OO..OO..OO..........",
-        "....OOHHOOHHOOHHOO........",
-        "...OHHHHHHHHHHHHHHO.......",
-        "..OHhHHHHHHHhHHHHHhO......",
-        ".OHggHHHHHHHHHHHggHHO.....",
-        ".OOghHHSSSSSSSSSHHhgO.....",
-        ".OSSOHSSESSSESSSSHHO......",
-        ".OSSOOSSSsSSSsSSSSO.......",
-        "..OSSOOSSSSSSSSSSO........",
-        "...OGGGOOBBBBBBOO.........",
-        "....OGGWWBBBBBBWWO........",
-        "....OWWWWWBBBBWWWWO.......",
-        "....OWWWwWWWWWWwWWWO......",
-        ".....OWWWOWWWWWO..OSSO....",
-        "......OBBBBBBBBO...OO.....",
-        "......OPPPPPPPPO..........",
-        ".....OPPPppOOppPO.........",
-        ".....OSSO....OSSO.........",
-        "....OSSO......OSSO........",
-        "...OKKO........OKKO.......",
-        "...OZZO........OZZO.......",
-        "..OYYYYYYYYYYYYYYYYO......",
-        "..OyyyyyyyyyyyyyyyyO......",
-        "...OO.OO......OO.OO.......",
-    ]
-    assert len({len(r) for r in spr}) == 1
-    pinta_sprite(lz, cx, by, spr, cmap)
+    sombra_suelo(cx, by + 1, 14, 3)
+    for dx in range(-8, 9):
+        put(cx + dx, by - 1, '#5844b4' if abs(dx) < 6 else '#e4b848')
+    for (x, y) in ((-5, -3), (-4, -3), (-3, -3), (2, -3), (3, -3), (4, -3), (-4, -4), (3, -4)):
+        put(cx + x, by + y, '#283878' if abs(x) != 3 else '#f4f6fc')
+    for x in (-4, -3, 2, 3):
+        for y in (-5, -6, -7):
+            put(cx + x, by + y, '#f4d8c8')
+    for dy in range(-12, -7):
+        for dx in range(-5, 6):
+            put(cx + dx, by + dy, '#4a527c' if dx <= 0 else '#363c62')
+    for dy in range(-23, -12):
+        for dx in range(-5, 6):
+            c = '#eef2fa' if (dy < -16 or abs(dx) < 4) else '#d0d8ea'
+            if abs(dx) <= 2 and dy < -18:
+                c = '#38468c'
+            put(cx + dx, by + dy, c)
+    for k in range(1, 9):
+        put(cx - 5 - k // 2, by - 21 - k // 2, '#f6dacc')
+        put(cx + 5 + k // 2, by - 20 + k // 3, '#f6dacc')
+    for dy in range(-33, -23):
+        hw = 5 if dy > -31 else 4
+        for dx in range(-hw, hw + 1):
+            put(cx + dx, by + dy, '#f6dacc')
+    put(cx - 2, by - 28, '#2864b8'); put(cx + 2, by - 28, '#2864b8')
+    for dy in range(-41, -31):
+        hw = 7 if dy > -39 else 5
+        for dx in range(-hw, hw + 1):
+            if dy >= -34 and abs(dx) < 5:
+                continue
+            if dy < -38 and abs(dx) in (2, 5):
+                continue
+            put(cx + dx, by + dy, '#e4ecf6' if (dx < 2) else '#c2cce0')
+    for sx, sy in ((-6, -35), (-4, -42), (-1, -43), (3, -42), (6, -36)):
+        put(cx + sx, by + sy, '#f4f8ff')
 
+dibuja_gon_jugando(208, 326)
+dibuja_killua_jugando(274, 326)
 
-# Gon (izq) y Killua (der) pasándose un balón de Nen / Dodgeball brillante entre sí
-dibuja_gon_jugando(70, HOR - 36)
-dibuja_killua_jugando(132, HOR - 36)
-
-# Pelota de Dodgeball de Greed Island en pleno vuelo + estela de juego entre ambos
-BX_B, BY_B = 102, HOR - 66
-disc(BX_B, BY_B, 5, '#ff4c58')
-disc(BX_B - 1, BY_B - 1, 3, '#ffd858')
-put(BX_B - 2, BY_B - 2, '#ffffff')
-for k_arc in range(-12, 13, 4):
-    ax_p = BX_B + k_arc
-    ay_p = BY_B + (k_arc * k_arc) // 18 + 3
-    over(ax_p, ay_p, PAL['elec'][1], 0.72)
-if ANIM:
-    RUNAS.append([BX_B, BY_B])
-    RUNAS.append([120, HOR - 54])
-else:
-    glow(BX_B, BY_B, 7, '#ffaa44', 0.45)
-    glow(120, HOR - 54, 5, PAL['elec'][0], 0.50)
-
-# Pequeño farol en el muelle de Masadora
-for xx_m in range(190, 224):
-    put(xx_m, HOR - 5, PAL['wall'][1])
-for px_d in (194, 210):
-    for yy in range(HOR - 9, HOR + 1):
-        put(px_d, yy, PAL['rama'][0])
-if ANIM:
-    FAROLES.append([194, HOR - 11, 9])
-
-# 7. Reflejo en el mar turquesa de Greed Island (sin columna duplicada de sol/luna)
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['nen'][1], PAL['ola'][0]), reflejo_astro=False)
-
-# 8. Rama tropical orgánica en esquina superior derecha (sin interferir con el HUD ni tapar islas)
-lz.rama([(644, 32), (608, 44), (572, 54), (546, 60)], 6, 1.4, PAL['rama'][0], PAL['rama'][1])
-lz.rama([(600, 46), (588, 76)], 3.5, 1, PAL['rama'][0], PAL['rama'][1])
-HOJA = PAL['hoja']
-for cx, cy, R in ((626, 30, 24), (590, 42, 22), (558, 52, 18), (586, 70, 16)):
-    cells = {}
-    for _ in range(int(R * 1.1) + 6):
-        ox, oy = random.randint(-R // 2, R // 2), random.randint(-R // 2, R // 2)
-        rr = random.randint(2, max(4, R // 3))
-        for dy in range(-rr, rr + 1):
-            for dx in range(-rr, rr + 1):
-                d = math.hypot(dx, dy)
-                if d <= rr and (d < rr * 0.72 or random.random() < 0.55):
-                    cells[(cx + ox + dx, cy + oy + dy)] = 1
-    for (x, y) in cells:
-        v = ((x - cx) + (y - cy)) / (2.0 * R) + random.uniform(-0.24, 0.24)
-        put(x, y, HOJA['l' if v < -0.32 else ('c' if v < 0.05 else ('m' if v < 0.42 else ('d' if v < 0.72 else 'x')))])
+# Pelota luminosa de Nen en el aire entre Gon y Killua
+bx, by_ball = 240, 290
+glow(bx, by_ball, 13, PAL['nen'][0], 0.34)
+disc(bx, by_ball, 4, PAL['ball'][0])
+disc(bx - 1, by_ball - 1, 2, PAL['ball'][1])
+RUNAS.extend([(bx, by_ball), (bx - 5, by_ball + 2), (bx + 5, by_ball - 2)])
 
 aplica_vineta(lz, PAL['vig'])
 out = ARGS[0] if ARGS else '.'
 datos = dict(
     W=W, H=H, estrellas=ESTRELLAS, ventanas=VENTANAS, faroles=FAROLES, runas=RUNAS,
-    chimenea=CHIMENEA, destellos=DESTELLOS, luna=[MX, MY, MR],
+    chimenea=None, destellos=DESTELLOS, luna=[MX, MY, MR],
 )
 exporta_salida(lz, out, FASE, ANIM, NUBES, datos)

@@ -1,8 +1,9 @@
 {
   "id": "spiderman-miles-morales",
   "nombre": "Marvel's Spider-Man · Azotea de Harlem",
-  "subtitulo": "Manhattan · Gárgola y Skyline Nocturno",
-  "descripcion": "Gárgola vigilando Manhattan desde una azotea de Harlem frente al Hudson y el depósito neoyorquino.",
+  "subtitulo": "Manhattan · Azotea de Brooklyn y Skyline",
+  "descripcion": "Miles Morales vigilando el horizonte iluminado de Manhattan desde una azotea de ladrillo en Brooklyn.",
+  "sin_lago": true,
   "cielo_fondo": "#090616",
   "modo_pajaros": "grullas",
   "modo_heroe": "miles_morales",

@@ -90,37 +90,44 @@ for base, amp, seed, col, mist, nv in ((236, 84, 11, PAL['mont'][0], PAL['mist']
                 cc = mix(PAL['nieve'][0], PAL['nieve'][1], min(1.0, d / 11.0))
             put(x, y, cc)
 
-# Orilla boscosa nivelada bajo la cabaña (meseta plana en x=42..130, y=HOR-14)
+# Pradera alpina continua de Buena y sendero de piedra (y = HOR-18..H, sin lago)
 ST0, ST1, ST2, ST3 = PAL['stone']
-for x in range(0, 210):
-    if x < 42:
-        gy = HOR - 18 + int((x / 42.0) * 4)
-    elif x <= 130:
-        gy = HOR - 14
-    else:
-        gy = HOR - 14 + int(((x - 130) / 80.0) ** 1.3 * 16)
-    for y in range(gy, HOR + 1):
-        c_g = PAL['pino'][1] if (x + y) % 3 else PAL['pino'][0]
-        if y <= gy + 2:
-            c_g = PAL['nieve'][1] if (x % 9 == 0) else PAL['pino'][1]
+r_meadow = Ruido(4081)
+for y in range(HOR - 20, H):
+    t_y = (y - (HOR - 20)) / float(H - (HOR - 20))
+    for x in range(W):
+        # Colina izquierda elevada donde reposa la cabaña
+        ridge = HOR - 22 + int(8 * math.sin(x * 0.012)) + (-6 if x < 175 else 0)
+        if y < ridge:
+            continue
+        c_g = PAL['pino'][2] if ((x + y) % 17 == 0 and y < HOR + 20) else (PAL['pino'][1] if (x + y) % 3 else PAL['pino'][0])
+        if t_y > 0.35 and fbm(r_meadow, x * 0.04 + y * 0.08) > 0.58:
+            c_g = mix(c_g, PAL['pino'][2], 0.38)
+        # Sendero sinuoso empedrado desde los peldaños del monolito hacia el primer plano
+        if y >= HOR - 4:
+            path_cx = 320 - int(48 * math.sin((y - (HOR - 4)) / 48.0))
+            path_hw = 22 + int((y - (HOR - 4)) * 0.34)
+            if abs(x - path_cx) <= path_hw:
+                in_edge = abs(x - path_cx) > path_hw - 3
+                c_g = ST0 if in_edge else (ST2 if ((x // 5 + y // 4) % 3 == 0) else ST1)
         put(x, y, c_g)
 
-# Cabaña rústica con cimiento de piedra hundido hasta y=HOR-10 (sin bordes colgantes)
-for y in range(240, HOR - 10):
-    for x in range(62, 114):
-        if y >= HOR - 16:
+# Cabaña rústica anidada con cimiento amplio en la loma boscosa izquierda
+for y in range(236, HOR - 4):
+    for x in range(60, 118):
+        if y >= HOR - 14:
             put(x, y, ST1 if ((x // 4 + y // 3) % 2) else ST0)
         else:
-            put(x, y, ST2 if x < 98 else ST1)
-for y in range(224, 242):
-    hw = 30 - (241 - y) * 14 // 17
-    for x in range(88 - hw, 88 + hw + 1):
+            put(x, y, ST2 if x < 100 else ST1)
+for y in range(220, 238):
+    hw = 32 - (237 - y) * 14 // 17
+    for x in range(89 - hw, 89 + hw + 1):
         put(x, y, PAL['roof'][2] if (y % 3 == 0) else PAL['roof'][1])
-for y in range(214, 232):
-    for x in range(100, 107):
+for y in range(210, 228):
+    for x in range(102, 109):
         put(x, y, ST1)
-CHIMENEA = [103, 213]
-for wx, wy in ((70, 248), (82, 248), (94, 248), (76, 258)):
+CHIMENEA = [105, 209]
+for wx, wy in ((68, 244), (82, 244), (96, 244), (75, 256)):
     if ANIM:
         VENTANAS.append([wx, wy])
     else:
@@ -128,19 +135,19 @@ for wx, wy in ((70, 248), (82, 248), (94, 248), (76, 258)):
             for dx in range(2):
                 put(wx + dx, wy + dy, PAL['win'])
 
-# Promontorio central ancho y sólido (x=224..416) soportando todos los escalones del Monolito
-for y in range(HOR - 12, HOR + 1):
-    extra = y - (HOR - 12)
-    for x in range(246 - extra * 2, 394 + extra * 2):
+# Explanada empedrada sólida del Santuario del Teletransporte sobre la pradera (x=218..422)
+for y in range(HOR - 12, HOR + 10):
+    extra = max(0, y - (HOR - 12))
+    for x in range(238 - extra, 402 + extra):
         put(x, y, ST1 if (y % 4 == 0 or (x + y) % 9 == 0) else ST0)
-for step, sx0, sx1, sy in ((0, 268, 372, HOR - 16), (1, 282, 358, HOR - 20)):
-    for y in range(sy, HOR - 11):
+for step, sx0, sx1, sy in ((0, 260, 380, HOR - 16), (1, 278, 362, HOR - 21)):
+    for y in range(sy, HOR - 9):
         for x in range(sx0, sx1):
             put(x, y, ST3 if y == sy else ST2)
 
 # Dos pilares rúnicos y dintel curvo + cristal de maná flotante en el centro
 for px in (294, 336):
-    for y in range(178, HOR - 19):
+    for y in range(178, HOR - 20):
         for dx in range(11):
             put(px + dx, y, ST3 if dx < 3 else (ST2 if dx < 8 else ST1))
         if ANIM and y % 9 == 4 and 188 < y < HOR - 24:
@@ -164,9 +171,9 @@ for y in range(198, 232):
 if not ANIM:
     glow(320, 215, 16, PAL['mana'][1], 0.45)
 
-# Faroles de piedra junto al santuario
-for fx, fy in ((274, HOR - 21), (366, HOR - 21), (132, 264)):
-    for yy in range(fy, fy + 8):
+# Faroles de piedra junto al santuario y a lo largo del sendero
+for fx, fy in ((274, HOR - 22), (366, HOR - 22), (138, 272), (242, 322), (374, 344)):
+    for yy in range(fy, fy + 9):
         put(fx, yy, ST1)
     if ANIM:
         FAROLES.append([fx, fy - 1, 8])
@@ -174,7 +181,7 @@ for fx, fy in ((274, HOR - 21), (366, HOR - 21), (132, 264)):
         put(fx, fy - 1, PAL['win'])
         glow(fx, fy - 1, 6, PAL['win'], 0.55)
 
-# Pinos enmarcando izquierda y derecha
+# Pinos enmarcando izquierda y derecha arraigados en distintos planos de la pradera
 def pino(px, by, h):
     for i in range(h):
         y = by - h + i
@@ -182,10 +189,9 @@ def pino(px, by, h):
         for dx in range(-hw, hw + 1):
             put(px + dx, y, PAL['pino'][0] if dx >= 0 else PAL['pino'][1])
 
-for px, ph in ((16, 60), (38, 48), (156, 44), (566, 46), (594, 62), (620, 52)):
-    pino(px, HOR + 2, ph)
+for px, py, ph in ((18, 294, 66), (42, 278, 52), (154, 286, 48), (192, 328, 44), (512, 318, 50), (566, 288, 54), (596, 314, 68), (622, 298, 56)):
+    pino(px, py, ph)
 
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=('#ffe6a0', '#f4ead2'))
 aplica_vineta(lz, PAL['vig'])
 
 out = ARGS[0] if ARGS else '.'

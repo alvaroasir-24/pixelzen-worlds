@@ -320,15 +320,16 @@ else:
     disc(208, HOR - 85, 2, MANA_HI)
     glow(208, HOR - 85, 9, MANA_HI, 0.65)
 
-# Viaducto / muelle de piedra sólido desde la terraza (x ~ 234..320) sobre el agua
-for yy in range(HOR - 10, HOR + 1):
-    for xx in range(288, 318):
+# Viaducto / muelle de piedra sólido desde la terraza (x ~ 234..322) con tajamares en el agua
+for yy in range(HOR - 12, HOR + 2):
+    for xx in range(288, 322):
         put(xx, yy, CL1 if (xx + yy) % 4 else CL0)
 for ax in (254, 276, 298):
-    for yy in range(HOR - 12, HOR + 1):
-        for dx in (-1, 0, 1, 2):
+    for yy in range(HOR - 12, HOR + 3):
+        hw_p = 3 if yy > HOR - 4 else 2
+        for dx in range(-hw_p, hw_p + 1):
             put(ax + dx, yy, BS0 if dx > 0 else BS1)
-for x in range(234, 316):
+for x in range(234, 320):
     put(x, HOR - 13, BS2)
     put(x, HOR - 12, BS1)
 

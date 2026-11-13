@@ -412,8 +412,8 @@ for y in range(HOR - 22, HOR + 1):
 # 5. Lago
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO)
 
-# 6. Arco rúnico antiguo de los Seis Mundos (con enredaderas y gema flotante)
-AX, ABY = 435, 340
+# 6. Arco rúnico antiguo de los Seis Mundos cimentado sobre un islote rocoso con musgo (x ~ 410..495)
+AX, ABY = 452, 294
 AR0, AR1, AR2 = PAL['arch']
 
 def arco_runico(cx, by, plot, record_runes=False):
@@ -487,18 +487,23 @@ for dy in range(0, 76):
     if dy % 4 == 3:
         continue
     sh = 1 if (dy // 2) % 2 else -1
-    a = max(0.1, 0.62 - dy * 0.006)
+    a = max(0.1, 0.52 - dy * 0.0055)
     for (x, y), c in mask.items():
-        if y == ABY - 1 - dy and 0 <= x + sh < W and ABY + dy < H:
-            over(x + sh, ABY + dy, mix(c, PAL['arch_ref'], 0.35), a)
-for dx in (-21, 21):
-    for yy in range(ABY - 5, ABY + 1):
-        for x in range(AX + dx - 9, AX + dx + 10):
-            put(x, yy, AR2 if yy == ABY - 5 else (AR1 if yy == ABY - 4 else AR0))
-    for x in range(AX + dx - 15, AX + dx + 16):
-        if abs(x - (AX + dx)) > 8 and dith(x, ABY + 1, 0.6):
-            over(x, ABY + 1, '#78c4c8', 0.75)
-arco_runico(AX, ABY - 5, put, record_runes=True)
+        if y == ABY - 1 - dy and 0 <= x + sh < W and ABY + 14 + dy < H:
+            over(x + sh, ABY + 14 + dy, mix(c, PAL['arch_ref'], 0.35), a)
+# Islote sólido de roca y musgo anclando ambos pilares del arco rúnico sobre la orilla
+for yy in range(ABY - 6, ABY + 12):
+    t_i = (yy - (ABY - 6)) / 17.0
+    hw_i = int(34 + 14 * math.sin(t_i * math.pi * 0.72))
+    for x in range(AX - hw_i, AX + hw_i + 1):
+        c_rock = PAL['isla'][2] if yy < ABY - 3 else (AR2 if yy == ABY - 3 else (AR1 if (x + yy) % 5 else AR0))
+        if yy >= ABY + 8:
+            c_rock = AR0
+        put(x, yy, c_rock)
+for x in range(AX - 48, AX + 49):
+    if abs(x - AX) > 28 and dith(x, ABY + 12, 0.55):
+        over(x, ABY + 12, '#78c4c8', 0.65)
+arco_runico(AX, ABY - 4, put, record_runes=True)
 
 # 7. Barca con viajero mago (guiño Roxy/Rudeus)
 BX, BY = 300, 318

@@ -158,16 +158,42 @@ SP0, SP1, SP2 = PAL['spire']
 CR0, CR1, CR2 = PAL['crimson']
 GD0, GD1 = PAL['gold']
 
-# Risco helado amplio bajo TODO el Castillo de Picas (meseta plana en HOR-26 de x=96..316 hasta x=64..348 en HOR)
+# Llanura nevada continua y acantilados de roca helada del Reino de Picas (y = HOR-16..H, sin lago)
+r_snow = Ruido(731)
+for y in range(HOR - 16, H):
+    t_y = (y - (HOR - 16)) / float(H - (HOR - 16))
+    for x in range(W):
+        horizon_s = HOR - 16 + int(5 * math.sin(x * 0.012))
+        if y < horizon_s:
+            continue
+        drift = math.sin(x * 0.025 + y * 0.08 + 2.0 * fbm(r_snow, x * 0.015 + y * 0.031))
+        if drift > 0.15 or t_y < 0.28:
+            c = mix(PAL['nieve'][0], PAL['nieve'][1], 0.25 + 0.55 * t_y)
+        else:
+            c = mix(PAL['dais'][1], PAL['nieve'][1], 0.35 + 0.25 * (1.0 - t_y))
+        if (x * 13 + y * 29) % 43 == 0:
+            c = mix(c, PAL['castle'][0], 0.28)
+        put(x, y, c)
+
+# Risco helado sólido bajo TODO el Castillo de Picas descendiendo orgánicamente bajo los ventisqueros de nieve
 r_cliff = Ruido(701)
-for y in range(HOR - 26, HOR + 1):
-    t = (y - (HOR - 26)) / 26.0
-    x_l = int(96 - t * 34)
-    x_r = int(316 + t * 34)
-    for x in range(max(0, x_l), min(W, x_r)):
+for x in range(0, 385):
+    t_edge = max(0.0, min(1.0, (x - 45) / 55.0))
+    y_bot = int(342 + 22 * math.sin(x * 0.024 + 0.8) + 12 * fbm(r_cliff, x * 0.03))
+    x_top_l = 96
+    x_top_r = 316
+    for y in range(HOR - 26, y_bot):
+        t = (y - (HOR - 26)) / max(1.0, float(y_bot - (HOR - 26)))
+        xl = int(x_top_l - t * 92)
+        xr = int(x_top_r + t * 56)
+        if not (xl <= x <= xr):
+            continue
         n = r_cliff(x * 0.14 + y * 0.21)
         c = CS2 if y < HOR - 23 else (CS1 if n > 0.48 else CS0)
-        if y < HOR - 20 and r_cliff(x * 0.09) > 0.54:
+        if y > y_bot - 14:
+            sn_mix = min(1.0, (y - (y_bot - 14)) / 12.0)
+            c = mix(c, PAL['nieve'][1], 0.82 * sn_mix)
+        elif y < HOR - 20 and r_cliff(x * 0.09) > 0.54:
             c = mix(c, PAL['nieve'][1], 0.55)
         put(x, y, c)
 
@@ -247,14 +273,20 @@ for r_ring, col_r in ((24, CR1), (17, PAL['grav'][1]), (10, PAL['spatial'][1])):
 if not ANIM:
     glow(Q_CX, Q_CY, 12, CR0, 0.35)
 
-# 5. Bastión / Terraza real de la TRÍADA OSCURA (x = 292..474, superficie firme sin nieve sobre las botas)
+# 5. Bastión / Terraza real firme de ASTA fundiéndose en la ladera nevada
 DX0, DX1, DY_TOP = 292, 476, HOR - 24
 r_dais = Ruido(709)
-for y in range(DY_TOP, HOR + 1):
-    for x in range(DX0 - (y - DY_TOP) // 2, min(W, DX1 + (y - DY_TOP) // 2)):
+for y in range(DY_TOP, 392):
+    t_b = (y - DY_TOP) / 136.0
+    for x in range(max(0, DX0 - int(t_b * 52)), min(W, DX1 + int(t_b * 82))):
+        drift_bot = 366 + int(16 * math.sin(x * 0.028 + 1.2) + 8 * fbm(r_dais, x * 0.035))
+        if y > drift_bot:
+            continue
         c = PAL['dais'][1] if r_dais(x * 0.16 + y * 0.22) > 0.46 else PAL['dais'][0]
         if (y - DY_TOP) % 8 == 0 and r_dais(x * 0.08) > 0.35:
             c = PAL['dais'][2]
+        if y > drift_bot - 12:
+            c = mix(c, PAL['nieve'][1], min(1.0, (y - (drift_bot - 12)) / 11.0))
         put(x, y, c)
 for x in range(DX0, DX1 + 1):
     put(x, DY_TOP, PAL['dais'][2])
@@ -365,17 +397,7 @@ for fx in (300, 468):
 
 CHIMENEA = [142, top_izq - 1]
 
-# 6. Reflejo en el lago helado de Picas (sin astro duplicado en Monitor 2)
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['crimson'][2], PAL['ola'][0]), reflejo_astro=False)
-
-# Grietas de hielo en las orillas inferiores del lago
-r_ice = random.Random(71)
-for hx_i in range(0, 120, 8):
-    for dy in range(4, 18):
-        if r_ice.random() < 0.6:
-            over(hx_i + (dy % 3), HOR + dy, PAL['nieve'][1], 0.45)
-
-# 7. Pinos nevados enmarcando los bordes extremos (sin invadir la escena)
+# 6. Pinos nevados enmarcando laderas del Reino de Picas (sin lago)
 def pino_nevado(px, by, h):
     p0, p1, sn = PAL['pino']
     for i in range(h):
@@ -387,8 +409,8 @@ def pino_nevado(px, by, h):
             for dx in range(-hw, 1):
                 over(px + dx, y, sn, 0.72)
 
-for px, ph in ((14, 52), (34, 44), (54, 34), (590, 44), (612, 58), (630, 48)):
-    pino_nevado(px, HOR + 2, ph)
+for px, py, ph in ((14, 304, 58), (36, 336, 52), (58, 294, 42), (558, 296, 48), (588, 332, 62), (618, 308, 56)):
+    pino_nevado(px, py, ph)
 
 aplica_vineta(lz, PAL['vig'])
 out = ARGS[0] if ARGS else '.'

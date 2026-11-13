@@ -90,19 +90,38 @@ for base, amp, seed, col, mist in ((238, 92, 31, PAL['mont'][0], PAL['mist'][0])
 R0, R1, R2, R3 = PAL['rock']
 CR0, CR1, CR2 = PAL['crimson']
 
-# Dos acantilados de obsidiana escarpados anclando las torres gemelas y los cristales (0..238 y 402..640)
-for x0, x1, slope_left in ((0, 238, False), (402, 640, True)):
-    for x in range(x0, x1):
-        edge_d = (x - x0) if slope_left else (x1 - 1 - x)
-        top_r = HOR - 18 + max(0, (18 - edge_d) // 2)
-        for y in range(top_r, HOR + 1):
-            c = R2 if y <= top_r + 2 else (R1 if (x + y) % 5 == 0 else R0)
+# Cañón volcánico profundo y acantilados continuos hasta y = 400 (sin lago a ras de HOR)
+r_can = Ruido(911)
+for y in range(HOR - 18, H):
+    t_y = (y - (HOR - 18)) / float(H - (HOR - 18))
+    for x in range(W):
+        canyon_half = 86 + int(34 * t_y + 7 * math.sin(y * 0.06))
+        if abs(x - 320) <= canyon_half:
+            # Oscuridad del abismo arriba -> río de magma serpenteante emergiendo suavemente de la bruma (t_y > 0.25)
+            stream_cx = 320 + int(22 * math.sin(y * 0.045 - 0.5))
+            stream_hw = int((14 + 34 * t_y) * min(1.0, max(0.0, (y - 298) / 40.0)))
+            dist_s = abs(x - stream_cx)
+            if stream_hw > 2 and dist_s < stream_hw:
+                fade_top = min(1.0, (y - 298) / 36.0)
+                ripple = 0.5 + 0.5 * math.sin(y * 0.25 + fbm(r_can, x * 0.06 + y * 0.04) * 4.0)
+                lava_c = mix(PAL['lava'][0], PAL['lava'][1], 0.35 * (1.0 - dist_s / float(stream_hw)) * ripple)
+                c = mix('#0a0312', lava_c, fade_top * 0.85)
+            else:
+                c = mix('#08020d', R0, 0.22 + 0.25 * (1.0 - t_y))
+            put(x, y, c)
+        else:
+            edge_dist = abs(x - 320) - canyon_half
+            n_val = fbm(r_can, x * 0.04 + y * 0.11)
+            c = R2 if edge_dist < 5 else (R1 if n_val > 0.52 else R0)
+            if y < HOR - 14:
+                c = R2
             put(x, y, c)
 
 for cx in (202, 438):
-    # Zócalo amplio cimentado dentro de la roca hasta HOR
-    for y in range(HOR - 22, HOR + 1):
-        hw_b = 26 + (y - (HOR - 22)) // 3
+    # Contrafuertes de piedra bajando profundamente por el borde del acantilado hasta y = 396
+    for y in range(HOR - 22, H - 4):
+        d_b = min(45, y - (HOR - 22))
+        hw_b = 26 + d_b // 3
         for dx in range(-hw_b, hw_b + 1):
             put(cx + dx, y, R2 if dx < -hw_b // 2 else (R1 if dx < hw_b // 3 else R0))
     for y in range(118, HOR - 18):
@@ -166,7 +185,6 @@ for fx in (194, 232, 408, 446):
         put(fx, HOR - 27, CR2)
         glow(fx, HOR - 27, 7, PAL['lava'][1], 0.55)
 
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(CR2, PAL['lava'][1]))
 aplica_vineta(lz, PAL['vig'])
 
 out = ARGS[0] if ARGS else '.'

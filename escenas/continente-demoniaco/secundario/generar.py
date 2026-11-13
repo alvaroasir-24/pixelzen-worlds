@@ -148,21 +148,40 @@ AR0, AR1, AR2, AR3 = PAL['armor']
 MANA_HI, MANA_LO = PAL['mana']
 WARM = '#ff7848'
 
-# Acantilado escarpado con cumbre plana en x=68..302 para anclar el Castillo de Atofe sin huecos
+# Llenura volcánica y meseta escarpada de basalto extendiéndose sólidamente hasta y = 400 (sin lago)
 r_rock = Ruido(803)
-for x in range(18, 338):
+for y in range(HOR - 18, H):
+    t_y = (y - (HOR - 18)) / float(H - (HOR - 18))
+    for x in range(W):
+        ground_top = HOR - 18 + int(6 * math.sin(x * 0.014))
+        if y < ground_top:
+            continue
+        c = mix(CL1, CL0, 0.25 + 0.55 * t_y) if r_rock(x * 0.08 + y * 0.16) > 0.45 else CL0
+        # Grietas de lava tenues en el suelo volcánico frontal
+        fissure = abs(math.sin(x * 0.025 + y * 0.06 + 2.5 * fbm(r_rock, x * 0.015 + y * 0.031)))
+        if t_y > 0.35 and fissure < 0.045:
+            c = mix(PAL['lava'][1], PAL['lava'][0], 0.45)
+        elif (x * 11 + y * 19) % 37 == 0:
+            c = mix(c, CL2, 0.35)
+        put(x, y, c)
+
+# Acantilado escarpado con cumbre plana en x=68..302 hundiéndose hasta el suelo inferior (y=362)
+for x in range(10, 354):
     if x < 68:
-        ridge = HOR - 14 - int((x - 18) * 0.6)
+        ridge = HOR - 14 - int((x - 10) * 0.52)
     elif x <= 302:
         ridge = HOR - 44
     else:
-        ridge = HOR - 44 + int((x - 302) * 1.2)
-    for y in range(max(0, ridge), HOR + 1):
+        ridge = HOR - 44 + int((x - 302) * 1.15)
+    bot_cliff = min(H - 1, 344 + int(18 * math.sin(x * 0.022)))
+    for y in range(max(0, ridge), bot_cliff + 1):
         c = CL2 if y < ridge + 4 else (CL1 if r_rock(x * 0.14 + y * 0.22) > 0.48 else CL0)
         if (y - ridge) % 10 == 0 and r_rock(x * 0.09) > 0.42:
             c = CL2
         if y == ridge:
             c = CL3
+        if y > bot_cliff - 6:
+            c = mix(c, CL0, 0.55)
         put(x, y, c)
 
 # Muralla principal del Castillo de Atofe (x = 80..294) hundida en el risco hasta HOR - 40
@@ -248,15 +267,16 @@ for x in range(290, 366):
     for yy in range(HOR - 42, HOR - 35):
         put(x, yy, AR1 if yy == HOR - 42 else CS0)
     if x % 14 == 0:
-        for yy in range(HOR - 35, HOR + 1):
+        for yy in range(HOR - 35, HOR + 42):
             for dx in range(3):
                 put(x + dx, yy, CS1 if dx == 0 else CS0)
 
-# 4. Promontorio derecho (x = 342..470) con RUDEUS GREYRAT lanzando un hechizo con Aqua Heartia
-PX0, PX1, PY_TOP = 344, 468, HOR - 38
-for y in range(PY_TOP, HOR + 1):
+# 4. Promontorio derecho (x = 344..495) fundido en el valle rocoso hasta y = 372
+PX0, PX1, PY_TOP = 344, 476, HOR - 38
+for y in range(PY_TOP, 376):
     d_y = y - PY_TOP
-    for x in range(max(0, PX0 - d_y // 2), min(W, PX1 + d_y)):
+    x_end = min(W, PX1 + d_y + d_y // 2)
+    for x in range(max(0, PX0 - d_y // 3), x_end):
         c = CL2 if d_y < 4 else (CL1 if r_rock(x * 0.14 + y * 0.22) > 0.48 else CL0)
         if d_y % 10 == 0 and r_rock(x * 0.09) > 0.45:
             c = CL2
@@ -343,11 +363,8 @@ def dibuja_rudeus(cx, by):
 
 dibuja_rudeus(410, PY_TOP)
 
-# 5. Reflejo en el mar de obsidiana (sin duplicar astro en Monitor 2)
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['filo'], PAL['ola'][0]), reflejo_astro=False)
-
-# 6. Hongos bioluminiscentes del Continente Demoníaco en primer plano
-for hx_m, hy_m, hr in ((36, 376, 8), (60, 384, 5), (596, 372, 9), (620, 382, 6)):
+# 5. Rocas en primer plano y hongos bioluminiscentes del Continente Demoníaco arraigados al suelo
+for hx_m, hy_m, hr in ((36, 372, 8), (60, 382, 5), (596, 368, 9), (620, 380, 6)):
     for yy in range(hy_m, min(H, hy_m + 18)):
         for dx in range(-2, 3):
             put(hx_m + dx, yy, PAL['shroom_stem'][0 if dx >= 0 else 1])

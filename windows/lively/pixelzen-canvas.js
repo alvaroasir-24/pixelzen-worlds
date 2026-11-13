@@ -342,7 +342,7 @@
       const opNub = [noche ? 1 - wA : 0, noche ? wA : 1 - wB, wB];
       const fasesN = ['nubes-noche', 'nubes-dorado', 'nubes-dia'];
       D.nubes.forEach((nb, i) => {
-        const v = 0.035 + (i % 4) * 0.012;
+        const v = 0.11 + (i % 4) * 0.035;
         const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2]);
         for (let k = 0; k < 3; k++) {
           if (opNub[k] <= 0.01) continue;
@@ -389,23 +389,25 @@
           });
         }
       }
-      for (const o of olas) {
-        px(o[5] ? T.color_olas[0] : T.color_olas[1],
-          (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * wB),
-          o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
-      }
-      if (conAstro && cuerpoOp > 0.02) {
-        const col = s.e > -1 ? T.color_reflejo_sol : T.color_reflejo_luna;
-        for (let i = 0; i < 38; i++) {
-          const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);
-          px(col, cuerpoOp * (0.75 - d * 0.005) * osc(0.07, i * 1.7),
-            cuerpoX - w / 2 + 3 * Math.sin(t * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * osc(0.09, i * 2.2)), 1);
+      if (!T.sin_lago) {
+        for (const o of olas) {
+          px(o[5] ? T.color_olas[0] : T.color_olas[1],
+            (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * wB),
+            o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
         }
-        const dx = cuerpoX - 352;
-        D.destellos.forEach((ds, i) => {
-          const o = cuerpoOp * Math.pow(Math.max(0, Math.sin(t * 0.16 + i * 0.9)), 3);
-          if (o > 0.004) px(T.color_destello, o, ds[0] + dx, ds[1], 2, 1);
-        });
+        if (conAstro && cuerpoOp > 0.02) {
+          const col = s.e > -1 ? T.color_reflejo_sol : T.color_reflejo_luna;
+          for (let i = 0; i < 38; i++) {
+            const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);
+            px(col, cuerpoOp * (0.75 - d * 0.005) * osc(0.07, i * 1.7),
+              cuerpoX - w / 2 + 3 * Math.sin(t * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * osc(0.09, i * 2.2)), 1);
+          }
+          const dx = cuerpoX - 352;
+          D.destellos.forEach((ds, i) => {
+            const o = cuerpoOp * Math.pow(Math.max(0, Math.sin(t * 0.16 + i * 0.9)), 3);
+            if (o > 0.004) px(T.color_destello, o, ds[0] + dx, ds[1], 2, 1);
+          });
+        }
       }
       const esBrasas = T.modo_particulas === 'brasas_mana';
       hojas.forEach((p, i) => {

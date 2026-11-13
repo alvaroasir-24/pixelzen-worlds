@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PixelZen Worlds - Spider-Man Miles Morales (Bloqueo): Azotea de Harlem sobre Manhattan."""
+"""PixelZen Worlds - Miles Morales (Bloqueo): Azotea de Brooklyn frente a Manhattan."""
 import math
 import os
 import random
@@ -7,41 +7,41 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
-    HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
-    render_estrellas, render_lago, render_nubes,
+    HOR, Lienzo, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
+    exporta_salida, exporta_sprites_si_aplica, mix, render_cielo,
+    render_estrellas, render_nubes,
 )
 
 ARGS = [a for a in sys.argv[1:] if not a.startswith('--')]
 ANIM = '--anim' in sys.argv
 FASE = os.environ.get('PZ_FASE', 'noche')
 SKYM = os.environ.get('PZ_SKY', 'normal')
-random.seed(1610)
+random.seed(6109)
 
 PALETAS = {
     'noche': dict(
-        sky=['#040614', '#080c24', '#101638', '#1a224e', '#263066', '#36427c', '#4a5692', '#646ea6', '#828aba', '#a4a6cc'],
-        bldg=('#0b0e20', '#141a34', '#222b4c', '#344068'),
-        roof=('#121422', '#202438', '#343a54', '#4e5676'),
-        neon=('#ff2e4c', '#00e5ff', '#ffd840'), win='#ffd478',
-        agua='#090d22', ola=('#64c8f0', '#38548a', '#162044'),
-        vig=0.72, nube=['#222c52', '#303e6a', '#425282', '#56689a', '#6e80b2', '#1c2444'],
+        sky=['#050410', '#0a071c', '#120c2c', '#1e1240', '#2d1852', '#3f1e62', '#562670', '#70307a', '#8e3c82', '#ae4c88'],
+        city=('#0c0b18', '#151428', '#222140', '#34325c'),
+        brick=('#2e1a28', '#422638', '#563448'),
+        roof=('#181726', '#242336', '#34324c'),
+        red='#ff2a55', cyan='#00e5ff', win='#ffd26a',
+        vig=0.72, nube=['#2c1c48', '#3c245a', '#522c6c', '#6a387c', '#86488a', '#24163a'],
     ),
     'dorado': dict(
-        sky=['#140824', '#240e38', '#3a164c', '#5a225c', '#803262', '#a8485e', '#ce6456', '#ea8652', '#faae60', '#ffd680'],
-        bldg=('#1c1228', '#2a1c38', '#3e2a4e', '#563c68'),
-        roof=('#1c1422', '#2e2236', '#483650', '#664e6e'),
-        neon=('#ff3658', '#48f0ff', '#ffe066'), win='#ffca68',
-        agua='#1e122c', ola=('#ffa270', '#845074', '#381e42'),
-        vig=0.80, nube=['#5c2c52', '#823c5c', '#aa5260', '#d0725c', '#f09a64', '#4a2244'],
+        sky=['#1a0826', '#2c0e38', '#461448', '#6a1c50', '#92264e', '#ba3642', '#dc4e36', '#f27038', '#fc9848', '#ffc464'],
+        city=('#1c1428', '#2c203c', '#423056', '#5c4674'),
+        brick=('#4c2632', '#6a3642', '#864852'),
+        roof=('#261e32', '#362c44', '#4a3e5c'),
+        red='#ff3864', cyan='#48e8ff', win='#ffde84',
+        vig=0.80, nube=['#66284a', '#8c3656', '#b44858', '#da6656', '#f48e60', '#50203c'],
     ),
     'dia': dict(
-        sky=['#1e529e', '#2e68b6', '#4482cc', '#609cde', '#80b6ec', '#a2cef4', '#c0e2f8', '#daf0fc', '#ecf6fc', '#f8faee'],
-        bldg=('#22304c', '#324468', '#48608a', '#6480ae'),
-        roof=('#242a3c', '#384058', '#525e7c', '#7282a4'),
-        neon=('#ff3658', '#00d8f0', '#ffd440'), win='#fff09e',
-        agua='#24548a', ola=('#c4ecfc', '#6ea2d0', '#365e8c'),
-        vig=0.90, nube=['#ffffff', '#eef6fc', '#ffffff', '#e4f0fa', '#fafaf8', '#d8e8f4'],
+        sky=['#1b4e96', '#2a64ae', '#3e7cc4', '#5896d8', '#78b0e6', '#9ac6f0', '#b8daf4', '#d4eaf8', '#eaf4fa', '#f6f8ec'],
+        city=('#24344e', '#364c6c', '#4e6a90', '#6c8bb2'),
+        brick=('#5e3842', '#7c4c56', '#9a646e'),
+        roof=('#384458', '#4c5c74', '#647690'),
+        red='#ff2a55', cyan='#00c8e8', win='#fff2a8',
+        vig=0.92, nube=['#ffffff', '#eef6fc', '#ffffff', '#e4f0fa', '#fafaf8', '#dbe8f4'],
     ),
 }
 PAL = PALETAS[FASE]
@@ -49,193 +49,159 @@ ESTRELLAS, VENTANAS, FAROLES, RUNAS, DESTELLOS, NUBES = [], [], [], [], [], []
 lz = Lienzo()
 put, over, disc, glow = lz.put, lz.over, lz.disc, lz.glow
 
-render_cielo(lz, PAL['sky'], SKYM, FASE)
+render_cielo(lz, PAL['sky'], SKYM, FASE, aurora_cols=('#ff2a55', '#00e5ff'))
 exporta_sprites_si_aplica(
     lz,
-    lambda: dibuja_luna_estandar(lz, 104, 104, 38, halo='#a8c4ff', base='#f8f8f0', sombra='#bec6dc', crater='#9aa4be', crater_hi='#b2bcd4'),
-    lambda: dibuja_sol_estandar(lz, 104, 104, 22, halo='#ffe49c', centro='#fffef4', borde='#ffc45c', rayo='#ffe088'),
+    lambda: dibuja_luna_estandar(lz, 104, 104, 38, halo='#ff78a8', base='#fff4fa', sombra='#dcc4d8', crater='#b89eb8', crater_hi='#ccb4ca'),
+    lambda: dibuja_sol_estandar(lz, 104, 104, 22, halo='#ffe2a8', centro='#fffef2', borde='#ffc45c', rayo='#ffdf8a'),
 )
-render_estrellas(lz, FASE, ANIM, ESTRELLAS)
+render_estrellas(lz, FASE, ANIM, ESTRELLAS, colors=['#ffd8e8', '#b8f4ff', '#e4c8ff'])
 
-MX, MY = 480, 74
-CX_ASTRO = MX if FASE == 'noche' else (MX - 32 if FASE == 'dorado' else MX - 60)
+MX, MY = 420, 72
+CX_ASTRO = MX if FASE == 'noche' else (MX - 30 if FASE == 'dorado' else MX - 60)
 if not ANIM:
     if FASE == 'noche':
-        dibuja_luna_estandar(lz, CX_ASTRO, MY, 38, halo='#a8c4ff', base='#f8f8f0', sombra='#bec6dc', crater='#9aa4be', crater_hi='#b2bcd4')
+        dibuja_luna_estandar(lz, CX_ASTRO, MY, 38, halo='#ff78a8', base='#fff4fa', sombra='#dcc4d8', crater='#b89eb8', crater_hi='#ccb4ca')
     else:
-        dibuja_sol_estandar(lz, CX_ASTRO, MY - (10 if FASE == 'dia' else -14), 22, halo='#ffe49c', centro='#fffef4', borde='#ffc45c', rayo='#ffe088')
+        dibuja_sol_estandar(lz, CX_ASTRO, MY - (12 if FASE == 'dia' else -14), 22, halo='#ffe2a8', centro='#fffef2', borde='#ffc45c', rayo='#ffdf8a')
 
-render_nubes(lz, [(95, 58, 175, PAL['nube'][0], 3), (320, 48, 160, PAL['nube'][1], 3), (520, 114, 150, PAL['nube'][2], 2)], NUBES, ANIM)
+render_nubes(lz, [(105, 58, 175, PAL['nube'][0], 3), (305, 48, 165, PAL['nube'][1], 3), (505, 110, 150, PAL['nube'][2], 2)], NUBES, ANIM)
 
-B0, B1, B2, B3 = PAL['bldg']
-# Skyline denso de Manhattan (izquierda a derecha) con retranqueos y malecón continuo en HOR
-edificios = [
-    (6, 168, 42, False), (52, 204, 36, False), (92, 134, 46, True), (144, 186, 40, False),
-    (190, 106, 48, True), (244, 198, 38, False), (288, 156, 44, False), (338, 182, 36, False),
-    (380, 92, 52, True), (438, 172, 42, False), (486, 196, 38, False), (530, 146, 46, True), (582, 184, 50, False),
+C0, C1, C2, C3 = PAL['city']
+# Relleno continuo del cielo inferior entre rascacielos (y = HOR..304)
+if SKYM == 'normal':
+    for y in range(HOR, 305):
+        for x in range(W):
+            put(x, y, PAL['sky'][-1])
+# Cañón profundo de rascacielos de Manhattan extendiéndose hasta detrás de la azotea (y=305)
+torres = [
+    (6, 176, 46, 0), (54, 198, 40, 0), (96, 116, 54, 26), (152, 166, 46, 0),
+    (200, 92, 58, 34), (260, 184, 44, 0), (306, 138, 52, 0), (360, 162, 44, 0),
+    (406, 78, 56, 32), (464, 152, 48, 0), (514, 176, 44, 0), (560, 120, 52, 24), (614, 158, 30, 0),
 ]
-for bx, top_y, bw, aguja in edificios:
-    if aguja:
-        # Retranqueo escalonado clásico Art-Deco bajo la aguja
-        cw = max(14, bw - 14)
-        cx_t = bx + (bw - cw) // 2
-        for y in range(top_y - 12, top_y):
-            for x in range(cx_t, cx_t + cw):
-                put(x, y, B3 if x < cx_t + 3 else (B2 if x < cx_t + cw - 3 else B1))
-    for y in range(top_y, HOR - 6):
-        for x in range(bx, bx + bw):
-            c = B3 if x < bx + 5 else (B2 if x < bx + bw // 2 else (B1 if x < bx + bw - 5 else B0))
-            if (y - top_y) % 16 == 0:
-                c = B0
-            put(x, y, c)
-    # Remate / cornisa superior
-    for x in range(bx, bx + bw):
-        put(x, top_y, B3)
-    if aguja:
-        ax = bx + bw // 2
-        spire_top = top_y - 36
-        for y in range(spire_top, top_y - 12):
-            for dx in range(-1, 2):
-                put(ax + dx, y, B2 if dx == 0 else B0)
+for bx, top_y, bw, spire in torres:
+    for y in range(top_y, 312):
+        for x in range(bx, min(W, bx + bw)):
+            col = C3 if x < bx + 5 else (C2 if x < bx + bw - 8 else C0)
+            if y % 12 == 0:
+                col = mix(col, C1, 0.5)
+            put(x, y, col)
+    if spire:
+        sx = bx + bw // 2
+        for y in range(top_y - spire, top_y):
+            put(sx, y, C3)
         if ANIM:
-            FAROLES.append([ax, spire_top - 1, 7])
+            FAROLES.append([sx, top_y - spire - 1, 7])
         else:
-            put(ax, spire_top - 1, PAL['neon'][0])
-    for wy in range(top_y + 10, HOR - 14, 11):
-        for wx in range(bx + 7, bx + bw - 7, 10):
-            if (wx + wy) % 7 != 0:
-                if ANIM and FASE != 'dia':
+            put(sx, top_y - spire - 1, PAL['red'])
+    for wy in range(top_y + 10, 294, 10):
+        for wx in range(bx + 8, min(W - 4, bx + bw - 8), 10):
+            if (wx * 7 + wy * 13) % 5 != 0:
+                if ANIM:
                     VENTANAS.append([wx, wy])
                 else:
-                    win_c = B1 if FASE == 'dia' else PAL['win']
-                    for dy in range(4):
+                    for dy in range(3):
                         for dx in range(2):
-                            put(wx + dx, wy + dy, win_c)
+                            put(wx + dx, wy + dy, PAL['win'])
 
-# Malecón continuo del río Hudson anclando todo el skyline (x = 0..W, y = HOR-6..HOR)
-for y in range(HOR - 6, HOR + 1):
-    for x in range(W):
-        c = B3 if y == HOR - 6 else (B2 if (x // 6 + y) % 2 == 0 else B0)
-        put(x, y, c)
-for fx_m in range(18, W - 12, 34):
-    put(fx_m, HOR - 7, B0)
-    put(fx_m, HOR - 8, B2)
-    if FASE != 'dia':
-        put(fx_m, HOR - 9, PAL['win'])
+# SÓLIDA AZOTEA DE LADRILLO DE BROOKLYN EN PRIMER PLANO (y = 294..400, sin lago ni tiras flotantes)
+BR0, BR1, BR2 = PAL['brick']
+RF0, RF1, RF2 = PAL['roof']
+# Muro frontal/pretil superior de la azotea (y = 294..326) y suelo plano de grava/asfalto (y = 326..400)
+for x in range(W):
+    for y in range(294, 300):
+        put(x, y, RF2 if y < 296 else C0)
+    for y in range(300, 328):
+        brick_seam = (y % 4 == 0) or ((x + (y // 4) * 5) % 10 == 0)
+        put(x, y, BR0 if brick_seam else (BR2 if x < 240 else BR1))
+    for y in range(328, H):
+        strip = ((x + y * 2) % 19 == 0)
+        put(x, y, RF0 if (y == 328 or strip) else (RF1 if y < 362 else RF2))
 
-# Reflejo urbano en el río Hudson antes de dibujar la cornisa del primer plano
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=('#ffe49c', '#88d8ff'))
+# Claraboya / ventilación en el techo y chimenea derecha bien apoyadas en la azotea
+for y in range(334, 356):
+    for x in range(214, 272):
+        put(x, y, C0 if (y == 334 or x == 214 or x == 271) else (C3 if y < 342 else C2))
+for y in range(310, 344):
+    for x in range(336, 366):
+        put(x, y, BR0 if (y % 4 == 0) else BR1)
 
-# Cornisa y azotea de piedra en primer plano (parte inferior y laterales para no tapar el lago central)
-RF0, RF1, RF2, RF3 = PAL['roof']
-for y in range(342, H):
-    for x in range(W):
-        put(x, y, RF3 if y < 347 else (RF2 if y < 354 else (RF1 if (x + y) % 11 else RF0)))
-for y in range(298, 342):
-    for x in range(24, 152):
-        c = RF2 if x < 140 else RF0
-        if y % 8 == 0 or (x + (y // 8) * 10) % 18 == 0:
-            c = RF1 if x < 140 else RF0
-        put(x, y, c)
-for x in range(20, 156):
-    for y in range(292, 299):
-        put(x, y, RF3 if y < 295 else RF1)
+# Cartel neón Araña apoyado con patas metálicas sobre la losa de la azotea (y = 266..318)
+for px in (466, 514):
+    for y in range(296, 318):
+        put(px, y, C0)
+        put(px + 1, y, C3)
+for y in range(266, 297):
+    for x in range(460, 522):
+        edge = (x in (460, 461, 520, 521) or y in (266, 267, 295, 296))
+        put(x, y, PAL['red'] if edge else C0)
+for dx in range(-8, 9):
+    for dy in range(-5, 6):
+        if abs(dx) + abs(dy) * 2 <= 9 or (abs(dx) == abs(dy) * 2 and abs(dx) <= 6):
+            put(491 + dx, 281 + dy, PAL['red'])
+if ANIM:
+    RUNAS.extend([[491, 281], [462, 268], [519, 268]])
 
-# Miles Morales sentado/agachado en la esquina del pretil izquierdo vigilando Manhattan (Spider-Verse hoodie + Jordans)
-MILES_PERCH = [
-    "..............OOOOOOOO............",
-    "............OOKKKKKKKKOO..........",
-    "...........OKKKKKKKKKKKKO.........",
-    "..........OKKKKKKKrKKKKKKO........",
-    "..........OKWWKKKKrKKWWKKO........",
-    "..........OKWWWKKKrKWWWKKO........",
-    "...........OKWWKKKrKKWWKO.........",
-    "............OKKKKKKKKKKO..........",
-    "............OORRRRRRRROO..........",
-    "..........OOORRRRRRRRRROOO........",
-    ".........ORRRRRKKKKKKRRRRRO.......",
-    "........ORRRRRKKRRRRKKRRRRRO......",
-    ".......ORRRRKKKRRRRRRKKKRRRRO.....",
-    "......ORRRKKKKKKRRRRKKKKKKRRRO....",
-    ".....OSSOOKKKKKKKRRKKKKKKKOOSSO...",
-    "....OSS..ORRKKKKKKKKKKKKRRO..SSO..",
-    "...OO....ORRRKKKKKKKKKKRRRO...OO..",
-    ".........ORRRRRKKKKKKRRRRRO.......",
-    ".........OORRRRKKKKKKRRRROO.......",
-    "..........OKKKKKKKKKKKKKKO........",
-    ".........OKKKKKOOOOOOKKKKKO.......",
-    "........OKKKKKO......OKKKKKO......",
-    "........OKKKKO........OKKKKO......",
-    ".......OKSSSKO........OKSSSKO.....",
-    ".......OKKKKO..........OKKKKO.....",
-    "......OKKKKO............OKKKKO....",
-    ".....ORRRRRO............ORRRRRO...",
-    ".....ORWWWRRO..........ORRRWWRO...",
-    ".....OWWWWWWO..........OWWWWWWO...",
-    "......OOOOOO............OOOOOO....",
-]
-w_mp = max(len(r) for r in MILES_PERCH)
-MILES_PERCH = [r.ljust(w_mp, '.') for r in MILES_PERCH]
-miles_cmap = {
-    'O': '#090a10',
-    'K': '#161826',
-    'S': '#2b304c',
-    'R': '#cc2034',
-    'r': '#7c1424',
-    'W': '#f2f7ff',
-}
-pinta_sprite(lz, 88, 297, MILES_PERCH, miles_cmap)
-put(69, 282, PAL['neon'][1])
-put(67, 284, PAL['neon'][2])
-put(71, 285, PAL['neon'][1])
-if not ANIM:
-    glow(69, 283, 5, PAL['neon'][1], 0.55)
-else:
-    RUNAS.append([69, 283])
+# Depósito de agua neoyorquino con patas firmes clavadas en el pretil y cubierta (x = 540..610, y = 212..342)
+for x in range(548, 602):
+    for y in range(228, 274):
+        c_t = C3 if x < 562 else (C2 if x < 588 else C0)
+        if y in (240, 256, 272):
+            c_t = C0
+        put(x, y, c_t)
+for dy in range(18):
+    hw = 28 - dy * 28 // 18
+    for dx in range(-hw, hw + 1):
+        put(575 + dx, 228 - dy, C3 if dx < 0 else C1)
+# Vigas y patas de acero bajando solidamente sobre zapatas en el techo (y=274..340)
+for lx in (554, 594):
+    for y in range(274, 340):
+        put(lx, y, C0); put(lx + 1, y, C2)
+    for dx in range(-4, 6):
+        put(lx + dx, 340, C0); put(lx + dx, 339, C3)
+for t in range(34):
+    put(555 + t * 39 // 34, 278 + t, C1)
+    put(594 - t * 39 // 34, 278 + t, C1)
 
-# Letrero neón con emblema de araña en el tejado derecho + depósito de agua neoyorquino con refuerzos
-for rx_n in range(472, 518):
-    for ry_n in range(304, 326):
-        c_s = PAL['neon'][0] if ry_n in (304, 325) or rx_n in (472, 517) else '#0c0d18'
-        put(rx_n, ry_n, c_s)
-for px_p in (480, 510):
-    for py_p in range(326, 343):
-        put(px_p, py_p, RF0)
-put(495, 315, PAL['neon'][0])
-for dx_s, dy_s in ((-4, -2), (-2, -1), (2, -1), (4, -2), (-4, 2), (-2, 1), (2, 1), (4, 2), (0, -2), (0, 2)):
-    put(495 + dx_s, 315 + dy_s, PAL['neon'][0])
-
-for sx in (546, 586):
-    for y in range(266, 343):
-        for dx in range(4):
-            put(sx + dx, y, RF0)
-for y in range(272, 342):
-    t_b = (y - 272) / 70.0
-    bx_l = int(548 + 40 * t_b)
-    bx_r = int(588 - 40 * t_b)
-    put(bx_l, y, RF1)
-    put(bx_l + 1, y, RF0)
-    put(bx_r, y, RF1)
-    put(bx_r + 1, y, RF0)
-for y in range(222, 268):
-    for x in range(538, 598):
-        c_wt = RF3 if x < 554 else (RF2 if x < 582 else RF1)
-        if y in (234, 250):
-            c_wt = RF0
-        put(x, y, c_wt)
-for y in range(208, 224):
-    hw = 34 * (y - 208) // 16
-    for x in range(568 - hw, 568 + hw + 1):
-        put(x, y, RF2 if x < 568 else RF0)
-for fx, c_n in ((524, PAL['neon'][0]), (608, PAL['neon'][1]), (146, PAL['neon'][2])):
-    if ANIM:
-        FAROLES.append([fx, 290 if fx < 200 else 248, 9])
-    else:
-        put(fx, 290 if fx < 200 else 248, c_n)
-        glow(fx, 290 if fx < 200 else 248, 7, c_n, 0.55)
+# MILES MORALES agachado en postura atlética sobre el pretil izquierdo (cx = 104, pie firme en y = 294)
+MX_H, BY_H = 104, 294
+# Sombra de apoyo sobre el pretil
+for dx in range(-9, 10):
+    over(MX_H + dx, BY_H, '#05040a', 0.65)
+# Zapatillas rojas/blancas y piernas flexionadas en cuclillas
+for sx in (-8, -7, -6, 6, 7, 8):
+    put(MX_H + sx, BY_H, '#f0f4fc')
+    put(MX_H + sx, BY_H - 1, '#e62448')
+for dx, dy in ((-7, -2), (-6, -3), (-5, -4), (-4, -5), (-3, -6), (7, -2), (6, -3), (5, -4), (4, -5), (3, -6)):
+    put(MX_H + dx, BY_H + dy, '#11111d')
+    put(MX_H + dx - (1 if dx > 0 else -1), BY_H + dy, '#1a192c')
+# Torso inclinado hacia adelante con V roja y emblema
+for dy in range(-12, -5):
+    hw = 4 if dy > -10 else 5
+    for dx in range(-hw, hw + 1):
+        col = '#0e0e19'
+        if dy in (-11, -10) and abs(dx) >= 3:
+            col = '#ff2a55'
+        elif dy in (-9, -8, -7) and abs(dx) <= 1:
+            col = '#ff2a55'
+        put(MX_H + dx, BY_H + dy, col)
+# Brazos apoyados en las rodillas / pretil
+for k in range(1, 6):
+    put(MX_H - 5 - k // 2, BY_H - 10 + k * 2, '#141422')
+    put(MX_H + 5 + k // 2, BY_H - 10 + k * 2, '#141422')
+# Cabeza inclinada con capucha/máscara y lentes blancos rasgados
+for dy in range(-20, -12):
+    hw = 4 if dy in (-20, -13, -12) else 5
+    for dx in range(-hw, hw + 1):
+        put(MX_H + dx, BY_H + dy, '#10101c')
+for ex in (-3, 2):
+    put(MX_H + ex, BY_H - 16, '#ffffff')
+    put(MX_H + ex + (0 if ex < 0 else 1), BY_H - 17, '#ffffff')
+    put(MX_H + ex + (1 if ex < 0 else 0), BY_H - 16, '#ffb8c8')
+if ANIM:
+    RUNAS.extend([[MX_H - 10, BY_H - 8], [MX_H + 10, BY_H - 8]])
 
 aplica_vineta(lz, PAL['vig'])
-
 out = ARGS[0] if ARGS else '.'
 datos = dict(W=W, H=H, estrellas=ESTRELLAS, ventanas=VENTANAS, faroles=FAROLES, runas=RUNAS, destellos=DESTELLOS, luna=[MX, MY, 38])
 exporta_salida(lz, out, FASE, ANIM, NUBES, datos)

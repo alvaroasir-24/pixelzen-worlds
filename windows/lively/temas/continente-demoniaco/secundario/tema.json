@@ -1,9 +1,10 @@
 {
   "id": "continente-demoniaco",
   "pantalla": "secundaria",
-  "nombre": "Continente Demoníaco · Castillo de Atofe",
-  "subtitulo": "Fortaleza del Rey Demonio Inmortal · Atoferatofe Raibaku",
-  "descripcion": "En los confines volcánicos del Continente Demoníaco se alza el inexpugnable Castillo de Atofe con sus torreones con cuernos, puente fortificado y la imponente Rey Demonio Inmortal Atoferatofe Raibaku desplegando sus alas negras y su espadón.",
+  "nombre": "Continente Demoníaco · Fortaleza Basalto",
+  "subtitulo": "Rikarisu y Rudeus Greyrat · Invocación Arcana",
+  "descripcion": "Sobre las mesetas volcánicas del Continente Demoníaco se alza la imponente fortaleza de basalto con torres con cuernos, grietas de lava y Rudeus Greyrat conjurando un hechizo con Aqua Heartia.",
+  "sin_lago": true,
   "cielo_fondo": "#12041a",
   "modo_pajaros": "wyverns",
   "color_pajaros": "#16071e",

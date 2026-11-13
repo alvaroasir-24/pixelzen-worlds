@@ -141,21 +141,44 @@ for gx in (ACX - 10, ACX, ACX + 10):
     else:
         put(gx, ACY + 16, PAL['gold'][1])
 
-# Malecón urbano ancho con basamento sólido bajo la Torre Celestial y el skyline (y = HOR-8..HOR)
-for y in range(HOR - 8, HOR + 1):
+# Gran plaza metropolitana y avenida iluminada hasta el primer plano (y = HOR-8..H, sin lago)
+for y in range(HOR - 8, H):
+    t_y = (y - (HOR - 8)) / float(H - (HOR - 8))
     for x in range(W):
-        put(x, y, T0 if y > HOR - 3 else (T1 if y > HOR - 7 else T3))
-for fx in range(48, 600, 72):
-    if 244 <= fx <= 396:
-        continue
-    for y in range(HOR - 15, HOR - 8):
-        put(fx, y, T0)
-    if ANIM:
-        FAROLES.append([fx, HOR - 16, 6])
-    else:
-        put(fx, HOR - 16, PAL['cyan'])
+        if y < HOR + 8:
+            c = T2 if (x % 18 == 0 or y == HOR - 8) else T1
+        else:
+            cx_d = (x - 320.0) / max(0.32, 0.32 + t_y * 1.25)
+            in_avenue = abs(cx_d) < 74.0
+            in_median = abs(cx_d) < 4.5 and (y % 14 < 8)
+            if in_avenue:
+                if in_median:
+                    c = mix(T3, PAL['gold'][0], 0.65)
+                elif abs(abs(cx_d) - 70.0) < 3.0:
+                    c = T3
+                else:
+                    c = T0 if (y % 16 == 0) else mix(T0, T1, 0.45)
+            else:
+                seam = abs((cx_d % 24.0) - 12.0) > 11.2 or ((y - HOR) % int(7 + t_y * 8) == 0)
+                c = T0 if seam else mix(T1, T2, 0.35 + 0.3 * (1.0 - t_y))
+        put(x, y, c)
 
-render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=('#ffe498', '#c8e8ff'))
+# Escalinata ceremonial en la base de la Torre Celestial
+for sy, hw_s in ((HOR - 12, 76), (HOR - 5, 92), (HOR + 2, 110)):
+    for y in range(sy, sy + 7):
+        for x in range(320 - hw_s, 320 + hw_s + 1):
+            put(x, y, T3 if y == sy else (T2 if x < 320 else T1))
+
+# Arboleda urbana y farolas a ambos lados de la gran avenida
+for lx, ly in ((220, 294), (420, 294), (176, 322), (464, 322), (126, 356), (514, 356), (48, 272), (120, 272), (520, 272), (592, 272)):
+    for yy in range(ly, ly + 10):
+        put(lx, yy, T0)
+    if ANIM:
+        FAROLES.append([lx, ly - 1, 7])
+    else:
+        put(lx, ly - 1, PAL['cyan'])
+        glow(lx, ly - 1, 5, PAL['cyan'], 0.45)
+
 aplica_vineta(lz, PAL['vig'])
 
 out = ARGS[0] if ARGS else '.'

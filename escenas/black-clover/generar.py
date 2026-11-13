@@ -246,10 +246,10 @@ for base, amp, seed, fr, col, mist in CAPAS:
             if dith(x, top + k, (1 - k / 16) * 0.38):
                 over(x, top + k, mist, 0.5)
 
-# Cerro rocoso base y silueta del Castillo Real del Trébol al fondo derecho (x ~ 490..580, bajo el HUD)
-for x in range(488, 582):
-    t_h = 1.0 - abs(x - 535) / 47.0
-    ridge_k = HOR - int(22 * min(1.0, t_h * 1.45))
+# Cerro rocoso continuo hasta el borde derecho bajo el Castillo Real del Trébol (x = 452..640)
+for x in range(452, W):
+    t_h = max(0.0, 1.0 - max(0.0, (535 - x)) / 83.0)
+    ridge_k = HOR - int(22 * min(1.0, t_h * 1.15) * (0.85 if x > 565 else 1.0))
     for yy in range(ridge_k, HOR + 1):
         put(x, yy, PAL['mont'][3] if yy < ridge_k + 4 else PAL['mont'][4])
 for yy in range(HOR - 36, HOR - 18):
