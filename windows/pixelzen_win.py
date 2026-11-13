@@ -175,7 +175,7 @@ public class PzWallMulti {{
                 dw.SetWallpaper(id, primPath);
             }}
         }}
-        SystemParametersInfoW(20, 0, primPath, 3);
+        if (count == 0) {{ SystemParametersInfoW(20, 0, primPath, 3); }}
     }}
 }}
 '@

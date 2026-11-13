@@ -119,7 +119,7 @@ public static class PzcRenderer {
         }
     }
 
-    public static void RenderFrame(string temaDir, DateTime dt, string outPath, int[][] nubes, bool conAstro) {
+    public static void RenderFrame(string temaDir, DateTime dt, double elapsedSec, string outPath, int[][] nubes, bool conAstro) {
         string imgDir = Path.Combine(temaDir, "images");
         double e, az, H, H0;
         Solar(dt, 40.4, -3.7, out e, out az, out H, out H0);
@@ -170,13 +170,18 @@ public static class PzcRenderer {
                     for (int i = 0; i < 3; i++) {
                         if (opNub[i] > 0.01) hojas[i] = LoadCached(Path.Combine(imgDir, fnNub[i]));
                     }
+                    int idx = 0;
                     foreach (var nb in nubes) {
                         if (nb.Length < 5) continue;
+                        double vel = 3.5 + (idx % 3) * 1.4;
+                        int nx = ((int)Math.Round(nb[0] + elapsedSec * vel)) % (640 + nb[2]);
+                        int drawX = nx - nb[2];
                         for (int i = 0; i < 3; i++) {
                             if (hojas[i] != null) {
-                                DrawAlphaCrop(g, hojas[i], nb[0], nb[1], 0, nb[4], nb[2], nb[3], opNub[i]);
+                                DrawAlphaCrop(g, hojas[i], drawX, nb[1], 0, nb[4], nb[2], nb[3], opNub[i]);
                             }
                         }
+                        idx++;
                     }
                 } finally {
                     for (int i = 0; i < 3; i++) if (hojas[i] != null) hojas[i].Dispose();
@@ -215,7 +220,7 @@ public static class PzcRenderer {
             if ((int)i == primIdx || soloUno) dw.SetWallpaper(id, p1);
             else dw.SetWallpaper(id, p2);
         }
-        SystemParametersInfoW(20, 0, p1, 3);
+        if (count == 0) SystemParametersInfoW(20, 0, p1, 3);
     }
 }
 '@
@@ -243,15 +248,14 @@ $SecDir = Join-Path $TemaDir 'secundario'
 $TieneSec = ($Monitores -ge 2) -and (Test-Path (Join-Path $SecDir 'images'))
 $nubesSec = if ($TieneSec) { Leer-Nubes $SecDir } else { ,@() }
 
-$TmpPrim = Join-Path $env:TEMP "pixelzen_${Tema}_m1.png"
-$TmpSec = Join-Path $env:TEMP "pixelzen_${Tema}_m2.png"
-
 $ahoraIni = Get-Date
 $horaIni = $ahoraIni.Hour + ($ahoraIni.Minute / 60.0) + ($ahoraIni.Second / 3600.0)
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$intervaloMs = if ($Modo -eq 'demo') { 2000 } elseif ($Modo -eq '90m') { 5000 } else { 60000 }
+$intervaloMs = if ($Modo -eq 'demo') { 1000 } elseif ($Modo -eq '90m') { 3000 } else { 30000 }
+$slot = 0
 
 while ($true) {
+    $elapsed = $sw.Elapsed.TotalSeconds
     $d = Get-Date
     if ($Modo -eq 'fija') {
         $hv = $Hora % 24.0
@@ -259,14 +263,14 @@ while ($true) {
         $mm = [int][Math]::Floor(($hv - $hh) * 60)
         $d = [DateTime]::new($d.Year, $d.Month, $d.Day, $hh, $mm, 0)
     } elseif ($Modo -eq '90m') {
-        $hv = ($horaIni + ($sw.Elapsed.TotalSeconds / 5400.0) * 24.0) % 24.0
+        $hv = ($horaIni + ($elapsed / 5400.0) * 24.0) % 24.0
         $hh = [int][Math]::Floor($hv)
         $rem = ($hv - $hh) * 60.0
         $mm = [int][Math]::Floor($rem)
         $ss = [int][Math]::Floor(($rem - $mm) * 60.0)
         $d = [DateTime]::new($d.Year, $d.Month, $d.Day, $hh, $mm, [Math]::Min(59, $ss))
     } elseif ($Modo -eq 'demo') {
-        $hv = (($sw.Elapsed.TotalSeconds % 90.0) / 90.0) * 24.0
+        $hv = (($elapsed % 90.0) / 90.0) * 24.0
         $hh = [int][Math]::Floor($hv)
         $rem = ($hv - $hh) * 60.0
         $mm = [int][Math]::Floor($rem)
@@ -274,9 +278,14 @@ while ($true) {
         $d = [DateTime]::new($d.Year, $d.Month, $d.Day, $hh, $mm, [Math]::Min(59, $ss))
     }
 
-    [PzcRenderer]::RenderFrame($TemaDir, $d, $TmpPrim, $nubesPrim, $true)
+    $suf = if (($slot % 2) -eq 0) { 'a' } else { 'b' }
+    $slot++
+    $TmpPrim = Join-Path $env:TEMP "pixelzen_${Tema}_m1_${suf}.png"
+    $TmpSec = Join-Path $env:TEMP "pixelzen_${Tema}_m2_${suf}.png"
+
+    [PzcRenderer]::RenderFrame($TemaDir, $d, $elapsed, $TmpPrim, $nubesPrim, $true)
     if ($TieneSec) {
-        [PzcRenderer]::RenderFrame($SecDir, $d, $TmpSec, $nubesSec, $false)
+        [PzcRenderer]::RenderFrame($SecDir, $d, $elapsed, $TmpSec, $nubesSec, $false)
         [PzcRenderer]::ApplyWallpapers($TmpPrim, $TmpSec, $false)
     } else {
         [PzcRenderer]::ApplyWallpapers($TmpPrim, $TmpPrim, $true)

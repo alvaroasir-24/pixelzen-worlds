@@ -137,7 +137,7 @@ public class PzWallApp {
                 dw.SetWallpaper(id, p2);
             }
         }
-        SystemParametersInfoW(20, 0, p1, 3);
+        if (count == 0) { SystemParametersInfoW(20, 0, p1, 3); }
     }
 }
 '@
@@ -156,7 +156,14 @@ function Aplicar-Todo($c) {
         if ($oldPy) { Stop-Process -Id ([int]$oldPy) -Force -ErrorAction SilentlyContinue }
     }
     $py = Resolver-Python
-    if ($py -and $c.modo -ne 'fija') {
+    $pyConPillow = $false
+    if ($py) {
+        try {
+            & $py -c "import PIL" 2>$null
+            $pyConPillow = ($LASTEXITCODE -eq 0)
+        } catch { $pyConPillow = $false }
+    }
+    if ($pyConPillow -and $c.modo -ne 'fija') {
         $flag = if ($c.modo -eq 'demo') { '--demo' } elseif ($c.modo -eq 'real') { '--real' } else { '--90m' }
         $proc = Start-Process -FilePath $py -ArgumentList "`"$(Join-Path $Aqui 'pixelzen_win.py')`" --tema $($c.tema) --monitores $($c.monitores) $flag" -WindowStyle Hidden -PassThru
         if ($proc) { Set-Content -Path $pyPidFile -Value $proc.Id -Encoding ASCII }
