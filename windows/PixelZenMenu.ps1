@@ -388,6 +388,13 @@ function Obtener-Version {
 }
 
 function Cargar-Temas {
+    $mapaSerie = @{
+        'fittoa'                  = @{ serie = 'Mushoku Tensei'; titulo = 'Región de Fittoa' }
+        'continente-demoniaco'    = @{ serie = 'Mushoku Tensei'; titulo = 'Continente Demoníaco' }
+        'black-clover'            = @{ serie = 'Black Clover'; titulo = 'Aldea de Hage' }
+        'hunter-x-hunter'         = @{ serie = 'Hunter × Hunter'; titulo = 'Isla Ballena' }
+        'spiderman-miles-morales' = @{ serie = 'Spider-Man: Miles Morales'; titulo = 'Brooklyn y Manhattan' }
+    }
     $lista = @()
     if (Test-Path $TemasDir) {
         foreach ($d in (Get-ChildItem -Path $TemasDir -Directory | Sort-Object Name)) {
@@ -413,6 +420,9 @@ function Cargar-Temas {
                 elseif ($raw.descripcion) { $m1 = [string]$raw.descripcion }
             } catch {}
 
+            $serie = if ($raw -and $raw.serie) { [string]$raw.serie } elseif ($mapaSerie.ContainsKey($id)) { $mapaSerie[$id].serie } else { $anime }
+            if ($mapaSerie.ContainsKey($id)) { $titulo = $mapaSerie[$id].titulo }
+
             $sj = Join-Path $d.FullName 'secundario\tema.json'
             if (Test-Path $sj) {
                 try {
@@ -430,17 +440,26 @@ function Cargar-Temas {
                     elseif ($braw.subtitulo) { $m3 = [string]$braw.subtitulo }
                 } catch {}
             }
-            $lista += @{ id = $id; anime = $anime; titulo = $titulo; m1 = $m1; m2 = $m2; m3 = $m3 }
+            $lista += @{ id = $id; serie = $serie; anime = $serie; titulo = $titulo; m1 = $m1; m2 = $m2; m3 = $m3 }
         }
     }
     if ($lista.Count -eq 0) {
-        return @(@{ id = 'fittoa'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena'; m2 = 'Reino de Asura'; m3 = 'Santuario del Teletransporte' })
+        return @(@{ id = 'fittoa'; serie = 'Mushoku Tensei'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena'; m2 = 'Reino de Asura'; m3 = 'Santuario del Teletransporte' })
     }
     return $lista
 }
 
 $VersionActual = Obtener-Version
 $temas = Cargar-Temas
+$seriesList = @()
+$seriesByName = [ordered]@{}
+foreach ($t in $temas) {
+    if (-not $seriesByName.Contains($t.serie)) {
+        $seriesByName[$t.serie] = @()
+        $seriesList += $t.serie
+    }
+    $seriesByName[$t.serie] += $t
+}
 
 $screens = [System.Windows.Forms.Screen]::AllScreens
 $monSummary = ($screens | ForEach-Object -Begin { $i = 1 } -Process {
@@ -569,12 +588,65 @@ $xaml = @"
       <!-- Área Principal de Páginas -->
       <Border Grid.Column="2" Background="#0B1124" BorderBrush="#233252" BorderThickness="1" CornerRadius="10" Padding="14">
         <Grid>
-          <!-- PÁGINA 1: ELEGIR MUNDO (Tarjetas visuales) -->
+          <!-- PÁGINA 1: SERIES -> TEMAS -> IMÁGENES POR PANTALLA -->
           <ScrollViewer x:Name="PageMundos" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-              <TextBlock Text="¿Qué mundo quieres ver en tu escritorio?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
-              <TextBlock Text="Haz clic en cualquier tarjeta para previsualizar ambos monitores y luego pulsa Aplicar abajo." Foreground="#8FA2C2" FontSize="12" Margin="0,3,0,12" TextWrapping="Wrap"/>
-              <StackPanel x:Name="ListaTarjetasMundos"/>
+              <!-- Paso 1: Elegir Serie -->
+              <StackPanel x:Name="PanelSeries">
+                <TextBlock Text="¿Qué serie quieres ver en tu escritorio?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
+                <TextBlock Text="Elige una serie. Si tiene varios escenarios podrás escoger el mundo; si solo tiene uno pasarás directo a elegir las imágenes de tus pantallas." Foreground="#8FA2C2" FontSize="12" Margin="0,3,0,12" TextWrapping="Wrap"/>
+                <StackPanel x:Name="ListaSeries"/>
+              </StackPanel>
+
+              <!-- Paso 2: Elegir Tema dentro de la Serie (cuando tiene >1 tema) -->
+              <StackPanel x:Name="PanelTemasSerie" Visibility="Collapsed">
+                <DockPanel Margin="0,0,0,10">
+                  <Button x:Name="BtnVolverASeries" Content="← Volver a Series" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
+                  <TextBlock x:Name="TxtSerieTitulo" Text="Mushoku Tensei" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                </DockPanel>
+                <TextBlock Text="Esta serie incluye varios escenarios. Selecciona el que quieras configurar:" Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                <StackPanel x:Name="ListaTarjetasMundos"/>
+              </StackPanel>
+
+              <!-- Paso 3: Elegir qué imagen va en cada monitor y en Pantalla de Bloqueo -->
+              <StackPanel x:Name="PanelImagenesTema" Visibility="Collapsed">
+                <DockPanel Margin="0,0,0,8">
+                  <Button x:Name="BtnVolverDeImagenes" Content="← Volver" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
+                  <TextBlock x:Name="TxtTemaImagenesTitulo" Text="Región de Fittoa" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+                <TextBlock Text="Elige qué escena del mundo quieres mostrar en cada monitor y en la pantalla de bloqueo (puedes repetir la misma en todas):" Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,8" TextWrapping="Wrap"/>
+
+                <WrapPanel Margin="0,0,0,10">
+                  <Button x:Name="BtnRepetirPrincipal" Content="✨ Usar Escena 1 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,4" FontSize="11"/>
+                  <Button x:Name="BtnRepetirSecundaria" Content="✨ Usar Escena 2 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,4" FontSize="11"/>
+                  <Button x:Name="BtnRepetirBloqueo" Content="✨ Usar Escena 3 en todas" Style="{StaticResource PillBtn}" Margin="0,0,0,4" FontSize="11"/>
+                </WrapPanel>
+
+                <Border Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="🖥️ Monitor Principal" Foreground="#54DED4" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                    <UniformGrid x:Name="GridPickerM1" Columns="3"/>
+                  </StackPanel>
+                </Border>
+
+                <Border x:Name="PanelPickerM2" Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="🖥️ Monitor Secundario" Foreground="#E6B45A" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
+                    <UniformGrid x:Name="GridPickerM2" Columns="3"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                  <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                      <CheckBox x:Name="ChkBloqueoMenu" Content="🔒 Pantalla de Bloqueo de Windows" FontWeight="Bold" Foreground="#88C8FF" Margin="0"/>
+                    </DockPanel>
+                    <UniformGrid x:Name="GridPickerBloq" Columns="3"/>
+                  </StackPanel>
+                </Border>
+
+                <Button x:Name="BtnIrAPantallasLuz" Content="⚙️ Ajustar n.º de monitores o ciclo de luz →" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Margin="0,2,0,4"/>
+              </StackPanel>
             </StackPanel>
           </ScrollViewer>
 
@@ -848,7 +920,7 @@ if (Test-Path $IconPath) {
 }
 
 $el = @{}
-foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -871,11 +943,137 @@ function Cargar-Bitmap($ruta) {
 
 $cfg = Cargar-Config
 $script:selectedTema = if ($cfg.tema) { $cfg.tema } else { 'fittoa' }
+$initTemaObj = $temas | Where-Object { $_.id -eq $script:selectedTema } | Select-Object -First 1
+$script:selectedSerie = if ($initTemaObj) { $initTemaObj.serie } else { $seriesList[0] }
 $script:previewFase = Detectar-Fase $cfg.modo $cfg.horaFija
+$script:mundoVista = 'series'
+$script:syncingCombos = $false
+$script:seriesCards = @{}
+$script:seriesBadges = @{}
 $script:worldCards = @{}
 $script:worldBadges = @{}
+$script:worldSeries = @{}
+$script:pickerItems = @()
 
-# Construir tarjetas visuales de mundos
+function New-CardBadge {
+    $bc = [System.Windows.Media.BrushConverter]::new()
+    $badge = New-Object System.Windows.Controls.Border
+    $badge.Background = $bc.ConvertFromString('#183E46')
+    $badge.BorderBrush = $bc.ConvertFromString('#54DED4')
+    $badge.BorderThickness = [System.Windows.Thickness]::new(1)
+    $badge.CornerRadius = [System.Windows.CornerRadius]::new(4)
+    $badge.Padding = [System.Windows.Thickness]::new(5, 1, 5, 1)
+    $badge.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
+    [System.Windows.Controls.DockPanel]::SetDock($badge, [System.Windows.Controls.Dock]::Right)
+    $bTxt = New-Object System.Windows.Controls.TextBlock
+    $bTxt.Text = 'ACTIVO'
+    $bTxt.FontSize = 9
+    $bTxt.FontWeight = [System.Windows.FontWeights]::Bold
+    $bTxt.Foreground = $bc.ConvertFromString('#54DED4')
+    $badge.Child = $bTxt
+    return $badge
+}
+
+function New-CardThumb([string]$thumbPath, [int]$width = 108, [int]$height = 68) {
+    $imgWrap = New-Object System.Windows.Controls.Border
+    $imgWrap.CornerRadius = [System.Windows.CornerRadius]::new(5)
+    $imgWrap.Height = $height
+    if ($width -gt 0) { $imgWrap.Width = $width }
+    $imgWrap.ClipToBounds = $true
+    $imgWrap.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#060916')
+    $thumb = New-Object System.Windows.Controls.Image
+    $thumb.Stretch = [System.Windows.Media.Stretch]::UniformToFill
+    [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($thumb, [System.Windows.Media.BitmapScalingMode]::NearestNeighbor)
+    if ($thumbPath) { $thumb.Source = Cargar-Bitmap $thumbPath }
+    $imgWrap.Child = $thumb
+    return $imgWrap
+}
+
+# Paso 1: Construir tarjetas visuales por Serie
+foreach ($sName in $seriesList) {
+    $sTemas = $seriesByName[$sName]
+    $repTema = $sTemas | Where-Object { $_.id -eq $script:selectedTema } | Select-Object -First 1
+    if (-not $repTema) { $repTema = $sTemas[0] }
+
+    $bdS = New-Object System.Windows.Controls.Border
+    $bdS.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#101832')
+    $bdS.BorderThickness = [System.Windows.Thickness]::new(1.5)
+    $bdS.CornerRadius = [System.Windows.CornerRadius]::new(8)
+    $bdS.Padding = [System.Windows.Thickness]::new(9)
+    $bdS.Margin = [System.Windows.Thickness]::new(0, 0, 0, 9)
+    $bdS.Cursor = [System.Windows.Input.Cursors]::Hand
+
+    $gS = New-Object System.Windows.Controls.Grid
+    $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = [System.Windows.GridLength]::new(108)
+    $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = [System.Windows.GridLength]::new(10)
+    $c3 = New-Object System.Windows.Controls.ColumnDefinition; $c3.Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+    $null = $gS.ColumnDefinitions.Add($c1); $null = $gS.ColumnDefinitions.Add($c2); $null = $gS.ColumnDefinitions.Add($c3)
+
+    $thumbPath = Resolver-Preview $repTema.id 'dorado' 'principal'
+    if (-not $thumbPath) { $thumbPath = Resolver-Preview $repTema.id 'noche' 'principal' }
+    $imgWrap = New-CardThumb $thumbPath 108 68
+    [System.Windows.Controls.Grid]::SetColumn($imgWrap, 0)
+    $null = $gS.Children.Add($imgWrap)
+
+    $info = New-Object System.Windows.Controls.StackPanel
+    $topRow = New-Object System.Windows.Controls.DockPanel
+    $lblTitle = New-Object System.Windows.Controls.TextBlock
+    $lblTitle.Text = $sName
+    $lblTitle.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F3EAD6')
+    $lblTitle.FontSize = 14
+    $lblTitle.FontWeight = [System.Windows.FontWeights]::Bold
+    $null = $topRow.Children.Add($lblTitle)
+
+    $badgeS = New-CardBadge
+    $null = $topRow.Children.Add($badgeS)
+
+    $lblSub = New-Object System.Windows.Controls.TextBlock
+    if ($sTemas.Count -gt 1) {
+        $titulos = ($sTemas | ForEach-Object { $_.titulo }) -join ' · '
+        $lblSub.Text = "$($sTemas.Count) temas disponibles: $titulos"
+    } else {
+        $lblSub.Text = "1 tema: $($sTemas[0].titulo)"
+    }
+    $lblSub.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#9EB0CC')
+    $lblSub.FontSize = 11.5
+    $lblSub.Margin = [System.Windows.Thickness]::new(0, 4, 0, 2)
+    $lblSub.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
+
+    $lblHint = New-Object System.Windows.Controls.TextBlock
+    $lblHint.Text = if ($sTemas.Count -gt 1) { 'Pulsa para elegir escenario dentro de la serie →' } else { 'Pulsa para elegir imágenes de pantallas y bloqueo →' }
+    $lblHint.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E6B45A')
+    $lblHint.FontSize = 10.5
+
+    $null = $info.Children.Add($topRow)
+    $null = $info.Children.Add($lblSub)
+    $null = $info.Children.Add($lblHint)
+    [System.Windows.Controls.Grid]::SetColumn($info, 2)
+    $null = $gS.Children.Add($info)
+
+    $bdS.Child = $gS
+    $bdS.Tag = $sName
+    $bdS.Add_MouseLeftButtonUp({
+        param($sender, $e)
+        $sNameClick = [string]$sender.Tag
+        $script:selectedSerie = $sNameClick
+        $listaS = $seriesByName[$sNameClick]
+        if ($listaS.Count -gt 1) {
+            if (-not ($listaS | Where-Object { $_.id -eq $script:selectedTema })) {
+                $script:selectedTema = $listaS[0].id
+            }
+            Cambia-VistaMundo 'temas'
+        } else {
+            $script:selectedTema = $listaS[0].id
+            Cambia-VistaMundo 'imagenes'
+        }
+        Actualiza-Vista
+    })
+    $script:seriesCards[$sName] = $bdS
+    $script:seriesBadges[$sName] = $badgeS
+    $null = $el.ListaSeries.Children.Add($bdS)
+}
+
+# Paso 2: Construir tarjetas visuales de mundos (filtradas por Serie)
 foreach ($t in $temas) {
     $tid = $t.id
     $bd = New-Object System.Windows.Controls.Border
@@ -892,61 +1090,39 @@ foreach ($t in $temas) {
     $c3 = New-Object System.Windows.Controls.ColumnDefinition; $c3.Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
     $null = $g.ColumnDefinitions.Add($c1); $null = $g.ColumnDefinitions.Add($c2); $null = $g.ColumnDefinitions.Add($c3)
 
-    $imgWrap = New-Object System.Windows.Controls.Border
-    $imgWrap.CornerRadius = [System.Windows.CornerRadius]::new(5)
-    $imgWrap.Height = 68
-    $imgWrap.ClipToBounds = $true
-    $imgWrap.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#060916')
-    $thumb = New-Object System.Windows.Controls.Image
-    $thumb.Stretch = [System.Windows.Media.Stretch]::UniformToFill
-    [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($thumb, [System.Windows.Media.BitmapScalingMode]::NearestNeighbor)
-    $thumbPath = Resolver-Preview $tid 'dorado' $false
-    if (-not $thumbPath) { $thumbPath = Resolver-Preview $tid 'noche' $false }
-    $thumb.Source = Cargar-Bitmap $thumbPath
-    $imgWrap.Child = $thumb
+    $thumbPath = Resolver-Preview $tid 'dorado' 'principal'
+    if (-not $thumbPath) { $thumbPath = Resolver-Preview $tid 'noche' 'principal' }
+    $imgWrap = New-CardThumb $thumbPath 108 68
     [System.Windows.Controls.Grid]::SetColumn($imgWrap, 0)
     $null = $g.Children.Add($imgWrap)
 
     $info = New-Object System.Windows.Controls.StackPanel
     $topRow = New-Object System.Windows.Controls.DockPanel
     $lblTitle = New-Object System.Windows.Controls.TextBlock
-    $lblTitle.Text = "$($t.anime) · $($t.titulo)"
+    $lblTitle.Text = $t.titulo
     $lblTitle.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F3EAD6')
-    $lblTitle.FontSize = 13
+    $lblTitle.FontSize = 13.5
     $lblTitle.FontWeight = [System.Windows.FontWeights]::Bold
     $null = $topRow.Children.Add($lblTitle)
 
-    $badge = New-Object System.Windows.Controls.Border
-    $badge.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#183E46')
-    $badge.BorderBrush = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#54DED4')
-    $badge.BorderThickness = [System.Windows.Thickness]::new(1)
-    $badge.CornerRadius = [System.Windows.CornerRadius]::new(4)
-    $badge.Padding = [System.Windows.Thickness]::new(5, 1, 5, 1)
-    $badge.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
-    [System.Windows.Controls.DockPanel]::SetDock($badge, [System.Windows.Controls.Dock]::Right)
-    $bTxt = New-Object System.Windows.Controls.TextBlock
-    $bTxt.Text = 'ACTIVO'
-    $bTxt.FontSize = 9
-    $bTxt.FontWeight = [System.Windows.FontWeights]::Bold
-    $bTxt.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#54DED4')
-    $badge.Child = $bTxt
+    $badge = New-CardBadge
     $null = $topRow.Children.Add($badge)
 
     $lblM1 = New-Object System.Windows.Controls.TextBlock
-    $lblM1.Text = "M1: $($t.m1)"
+    $lblM1.Text = "Escena 1: $($t.m1)"
     $lblM1.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#9EB0CC')
     $lblM1.FontSize = 11
     $lblM1.Margin = [System.Windows.Thickness]::new(0, 3, 0, 1)
     $lblM1.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $lblM2 = New-Object System.Windows.Controls.TextBlock
-    $lblM2.Text = "M2: $($t.m2)"
+    $lblM2.Text = "Escena 2: $($t.m2)"
     $lblM2.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E6B45A')
     $lblM2.FontSize = 11
     $lblM2.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $lblM3 = New-Object System.Windows.Controls.TextBlock
-    $lblM3.Text = "🔒 $($t.m3)"
+    $lblM3.Text = "Escena 3 (Bloqueo): $($t.m3)"
     $lblM3.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#88C8FF')
     $lblM3.FontSize = 10.5
     $lblM3.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
@@ -962,13 +1138,74 @@ foreach ($t in $temas) {
     $bd.Tag = $tid
     $bd.Add_MouseLeftButtonUp({
         param($sender, $e)
-        $script:selectedTema = $sender.Tag
+        $tidClick = [string]$sender.Tag
+        $script:selectedTema = $tidClick
+        $script:selectedSerie = $script:worldSeries[$tidClick]
+        Cambia-VistaMundo 'imagenes'
         Actualiza-Vista
     })
     $script:worldCards[$tid] = $bd
     $script:worldBadges[$tid] = $badge
+    $script:worldSeries[$tid] = $t.serie
     $null = $el.ListaTarjetasMundos.Children.Add($bd)
 }
+
+# Paso 3: Construir selector visual de las 3 imágenes para Monitor Principal, Secundario y Bloqueo
+function Build-PickerRow($grid, [string]$rol) {
+    $bc = [System.Windows.Media.BrushConverter]::new()
+    foreach ($esc in @('principal', 'secundaria', 'bloqueo')) {
+        $card = New-Object System.Windows.Controls.Border
+        $card.Background = $bc.ConvertFromString('#0B1228')
+        $card.BorderBrush = $bc.ConvertFromString('#263759')
+        $card.BorderThickness = [System.Windows.Thickness]::new(1.5)
+        $card.CornerRadius = [System.Windows.CornerRadius]::new(6)
+        $card.Padding = [System.Windows.Thickness]::new(5)
+        $card.Margin = [System.Windows.Thickness]::new(3)
+        $card.Cursor = [System.Windows.Input.Cursors]::Hand
+
+        $sp = New-Object System.Windows.Controls.StackPanel
+        $imgWrap = New-Object System.Windows.Controls.Border
+        $imgWrap.CornerRadius = [System.Windows.CornerRadius]::new(4)
+        $imgWrap.Height = 56
+        $imgWrap.ClipToBounds = $true
+        $imgWrap.Background = $bc.ConvertFromString('#060916')
+        $img = New-Object System.Windows.Controls.Image
+        $img.Stretch = [System.Windows.Media.Stretch]::UniformToFill
+        [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($img, [System.Windows.Media.BitmapScalingMode]::NearestNeighbor)
+        $imgWrap.Child = $img
+
+        $lbl = New-Object System.Windows.Controls.TextBlock
+        $lbl.Foreground = $bc.ConvertFromString('#D6E0EE')
+        $lbl.FontSize = 10.5
+        $lbl.FontWeight = [System.Windows.FontWeights]::SemiBold
+        $lbl.Margin = [System.Windows.Thickness]::new(1, 4, 1, 0)
+        $lbl.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
+        $lbl.TextAlignment = [System.Windows.TextAlignment]::Center
+
+        $null = $sp.Children.Add($imgWrap)
+        $null = $sp.Children.Add($lbl)
+        $card.Child = $sp
+        $card.Tag = @{ rol = $rol; escena = $esc }
+        $card.Add_MouseLeftButtonUp({
+            param($sender, $e)
+            $info = $sender.Tag
+            if ($info.rol -eq 'bloqueo') { $el.ChkBloqueo.IsChecked = $true }
+            $cmbMap = @{
+                'principal'  = $el.CmbFondoPrincipal
+                'secundaria' = $el.CmbFondoSecundaria
+                'bloqueo'    = $el.CmbFondoBloqueo
+            }
+            Set-ComboByTag $cmbMap[$info.rol] $info.escena 0
+            Actualiza-Vista
+        })
+        $null = $grid.Children.Add($card)
+        $script:pickerItems += @{ rol = $rol; escena = $esc; card = $card; img = $img; lbl = $lbl }
+    }
+}
+
+Build-PickerRow $el.GridPickerM1 'principal'
+Build-PickerRow $el.GridPickerM2 'secundaria'
+Build-PickerRow $el.GridPickerBloq 'bloqueo'
 
 # Inicializar valores desde config.json
 $el.RbMon1.IsChecked = ($cfg.monitores -le 1)
@@ -997,6 +1234,7 @@ function Set-ComboByTag($cmb, [string]$tag, [int]$defIdx = 0) {
 }
 
 $el.ChkBloqueo.IsChecked = [bool]$cfg.usarBloqueo
+$el.ChkBloqueoMenu.IsChecked = [bool]$cfg.usarBloqueo
 Set-ComboByTag $el.CmbFondoPrincipal ([string]$cfg.fondoPrincipal) 0
 Set-ComboByTag $el.CmbFondoSecundaria ([string]$cfg.fondoSecundario) 1
 Set-ComboByTag $el.CmbFondoBloqueo ([string]$cfg.fondoBloqueo) 2
@@ -1034,6 +1272,24 @@ function Lee-FormConfig {
     }
 }
 
+function Cambia-VistaMundo([string]$vista) {
+    $script:mundoVista = $vista
+    $el.PanelSeries.Visibility       = if ($vista -eq 'series')   { 'Visible' } else { 'Collapsed' }
+    $el.PanelTemasSerie.Visibility   = if ($vista -eq 'temas')    { 'Visible' } else { 'Collapsed' }
+    $el.PanelImagenesTema.Visibility = if ($vista -eq 'imagenes') { 'Visible' } else { 'Collapsed' }
+
+    if ($vista -eq 'temas') {
+        $el.TxtSerieTitulo.Text = $script:selectedSerie
+        foreach ($k in $script:worldCards.Keys) {
+            $script:worldCards[$k].Visibility = if ($script:worldSeries[$k] -eq $script:selectedSerie) { 'Visible' } else { 'Collapsed' }
+        }
+    } elseif ($vista -eq 'imagenes') {
+        $tmeta = $temas | Where-Object { $_.id -eq $script:selectedTema } | Select-Object -First 1
+        if ($tmeta) { $el.TxtTemaImagenesTitulo.Text = "$($tmeta.serie) · $($tmeta.titulo)" }
+    }
+    $el.PageMundos.ScrollToHome()
+}
+
 function Cambia-Pestana($cual) {
     $pages = @{ 'mundos' = $el.PageMundos; 'pantallas' = $el.PagePantallas; 'hud' = $el.PageHud; 'sistema' = $el.PageSistema }
     $navs = @{ 'mundos' = $el.NavMundos; 'pantallas' = $el.NavPantallas; 'hud' = $el.NavHud; 'sistema' = $el.NavSistema }
@@ -1053,12 +1309,37 @@ function Cambia-Pestana($cual) {
     }
 }
 
+function Aplicar-EscenaTodas([string]$escena) {
+    $script:syncingCombos = $true
+    $el.ChkBloqueo.IsChecked = $true
+    $el.ChkBloqueoMenu.IsChecked = $true
+    Set-ComboByTag $el.CmbFondoPrincipal $escena 0
+    Set-ComboByTag $el.CmbFondoSecundaria $escena 0
+    Set-ComboByTag $el.CmbFondoBloqueo $escena 0
+    $script:syncingCombos = $false
+    Actualiza-Vista
+}
+
 function Actualiza-Vista {
     $bc = [System.Windows.Media.BrushConverter]::new()
     $tid = $script:selectedTema
     $tmeta = $temas | Where-Object { $_.id -eq $tid } | Select-Object -First 1
+    $activeSerie = if ($tmeta) { $tmeta.serie } else { $script:selectedSerie }
 
-    # Resaltar tarjeta elegida
+    # Resaltar serie activa
+    foreach ($sK in $script:seriesCards.Keys) {
+        if ($sK -eq $activeSerie) {
+            $script:seriesCards[$sK].BorderBrush = $bc.ConvertFromString('#54DED4')
+            $script:seriesCards[$sK].Background = $bc.ConvertFromString('#152346')
+            $script:seriesBadges[$sK].Visibility = 'Visible'
+        } else {
+            $script:seriesCards[$sK].BorderBrush = $bc.ConvertFromString('#263759')
+            $script:seriesCards[$sK].Background = $bc.ConvertFromString('#101832')
+            $script:seriesBadges[$sK].Visibility = 'Collapsed'
+        }
+    }
+
+    # Resaltar tarjeta de mundo elegida
     foreach ($k in $script:worldCards.Keys) {
         if ($k -eq $tid) {
             $script:worldCards[$k].BorderBrush = $bc.ConvertFromString('#54DED4')
@@ -1076,8 +1357,10 @@ function Actualiza-Vista {
     $el.CardMon1.BorderBrush = $bc.ConvertFromString($(if (-not $dosMon) { '#54DED4' } else { '#2A3C64' }))
     $el.CardMon2.BorderBrush = $bc.ConvertFromString($(if ($dosMon) { '#54DED4' } else { '#2A3C64' }))
 
+    $usarBloq = [bool]$el.ChkBloqueo.IsChecked
     # Nombres de escenas del mundo en los selectores por pantalla
     $script:syncingCombos = $true
+    $el.ChkBloqueoMenu.IsChecked = $usarBloq
     foreach ($cmb in @($el.CmbFondoPrincipal, $el.CmbFondoSecundaria, $el.CmbFondoBloqueo)) {
         foreach ($item in $cmb.Items) {
             switch ([string]$item.Tag) {
@@ -1093,8 +1376,9 @@ function Actualiza-Vista {
     $fsTag = if ($el.CmbFondoSecundaria.SelectedItem) { [string]$el.CmbFondoSecundaria.SelectedItem.Tag } else { 'secundaria' }
     $fbTag = if ($el.CmbFondoBloqueo.SelectedItem) { [string]$el.CmbFondoBloqueo.SelectedItem.Tag } else { 'bloqueo' }
     $el.PanelComboSec.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
-    $usarBloq = [bool]$el.ChkBloqueo.IsChecked
+    $el.PanelPickerM2.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
     $el.PanelComboBloq.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
+    $el.GridPickerBloq.Opacity = if ($usarBloq) { 1.0 } else { 0.45 }
 
     function Nombre-EscenaVariante([string]$tag) {
         switch ($tag) {
@@ -1104,13 +1388,37 @@ function Actualiza-Vista {
         }
     }
 
+    # Actualizar encabezados e imágenes del Paso 3 (Selector visual por pantalla)
+    $el.TxtTemaImagenesTitulo.Text = "$($tmeta.serie) · $($tmeta.titulo)"
+    $el.BtnRepetirPrincipal.Content  = "✨ Repetir: $($tmeta.m1)"
+    $el.BtnRepetirSecundaria.Content = "✨ Repetir: $($tmeta.m2)"
+    $el.BtnRepetirBloqueo.Content    = "✨ Repetir: $($tmeta.m3)"
+
+    $prevCache = @{
+        'principal'  = Cargar-Bitmap (Resolver-Preview $tid $script:previewFase 'principal')
+        'secundaria' = Cargar-Bitmap (Resolver-Preview $tid $script:previewFase 'secundaria')
+        'bloqueo'    = Cargar-Bitmap (Resolver-Preview $tid $script:previewFase 'bloqueo')
+    }
+    $selMap = @{ 'principal' = $fpTag; 'secundaria' = $fsTag; 'bloqueo' = $fbTag }
+    foreach ($pi in $script:pickerItems) {
+        $pi.img.Source = $prevCache[$pi.escena]
+        $pi.lbl.Text = Nombre-EscenaVariante $pi.escena
+        $esSel = ($selMap[$pi.rol] -eq $pi.escena) -and ($pi.rol -ne 'bloqueo' -or $usarBloq)
+        if ($esSel) {
+            $pi.card.BorderBrush = $bc.ConvertFromString('#54DED4')
+            $pi.card.Background  = $bc.ConvertFromString('#152346')
+            $pi.lbl.Foreground   = $bc.ConvertFromString('#54DED4')
+        } else {
+            $pi.card.BorderBrush = $bc.ConvertFromString('#263759')
+            $pi.card.Background  = $bc.ConvertFromString('#0B1228')
+            $pi.lbl.Foreground   = $bc.ConvertFromString('#D6E0EE')
+        }
+    }
+
     # Imágenes de vista previa M1, M2 y Bloqueo
-    $p1 = Resolver-Preview $tid $script:previewFase $fpTag
-    $p2 = Resolver-Preview $tid $script:previewFase $fsTag
-    $pb = Resolver-Preview $tid $script:previewFase $fbTag
-    $el.ImgPrev1.Source = Cargar-Bitmap $p1
-    $el.ImgPrev2.Source = Cargar-Bitmap $p2
-    $el.ImgPrevBloqueo.Source = Cargar-Bitmap $pb
+    $el.ImgPrev1.Source = $prevCache[$fpTag]
+    $el.ImgPrev2.Source = $prevCache[$fsTag]
+    $el.ImgPrevBloqueo.Source = $prevCache[$fbTag]
     $el.TxtPrev1Title.Text = "PANTALLA 1 · $(Nombre-EscenaVariante $fpTag)"
     $el.PanelPrev2.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
     $el.TxtM2Sub.Text = "En tu 2.º monitor: $(Nombre-EscenaVariante $fsTag)"
@@ -1152,12 +1460,22 @@ function Actualiza-Vista {
     $modoTxt = switch ($modo) { 'real' { 'Hora real' } 'demo' { 'Pase rápido 90s' } 'fija' { "Fija $($el.TxtHoraVal.Text)" } default { 'Suave 90m' } }
     $nStats = @($el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio | Where-Object { $_.IsChecked }).Count
     $hudTxt = if ($hudOn) { "$nStats cajitas activas" } else { 'HUD desactivado' }
-    $bloqTxt = if ($usarBloq) { 'Activa' } else { 'Sin cambio' }
-    $el.TxtResumen.Text = "Mundo: $($tmeta.titulo)`nPantallas: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nInfo: $hudTxt"
+    $bloqTxt = if ($usarBloq) { Nombre-EscenaVariante $fbTag } else { 'Sin cambio' }
+    $el.TxtResumen.Text = "Serie: $($tmeta.serie)`nTema: $($tmeta.titulo)`nPantallas: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nInfo: $hudTxt"
 }
 
 # Eventos de navegación y controles
-$el.NavMundos.Add_Click({ Cambia-Pestana 'mundos' })
+$el.NavMundos.Add_Click({ Cambia-Pestana 'mundos'; Cambia-VistaMundo 'series' })
+$el.BtnVolverASeries.Add_Click({ Cambia-VistaMundo 'series' })
+$el.BtnVolverDeImagenes.Add_Click({
+    $listaS = $seriesByName[$script:selectedSerie]
+    if ($listaS -and $listaS.Count -gt 1) { Cambia-VistaMundo 'temas' } else { Cambia-VistaMundo 'series' }
+})
+$el.BtnRepetirPrincipal.Add_Click({ Aplicar-EscenaTodas 'principal' })
+$el.BtnRepetirSecundaria.Add_Click({ Aplicar-EscenaTodas 'secundaria' })
+$el.BtnRepetirBloqueo.Add_Click({ Aplicar-EscenaTodas 'bloqueo' })
+$el.BtnIrAPantallasLuz.Add_Click({ Cambia-Pestana 'pantallas' })
+
 $el.NavPantallas.Add_Click({ Cambia-Pestana 'pantallas' })
 $el.NavHud.Add_Click({ Cambia-Pestana 'hud' })
 $el.NavSistema.Add_Click({ Cambia-Pestana 'sistema' })
@@ -1169,8 +1487,20 @@ $el.RbMon2.Add_Checked({ Actualiza-Vista })
 foreach ($cmbV in $el.CmbFondoPrincipal, $el.CmbFondoSecundaria, $el.CmbFondoBloqueo) {
     $cmbV.Add_SelectionChanged({ if (-not $script:syncingCombos) { Actualiza-Vista } })
 }
-$el.ChkBloqueo.Add_Checked({ Actualiza-Vista })
-$el.ChkBloqueo.Add_Unchecked({ Actualiza-Vista })
+$el.ChkBloqueo.Add_Checked({ if (-not $script:syncingCombos) { Actualiza-Vista } })
+$el.ChkBloqueo.Add_Unchecked({ if (-not $script:syncingCombos) { Actualiza-Vista } })
+$el.ChkBloqueoMenu.Add_Checked({
+    if (-not $script:syncingCombos) {
+        $script:syncingCombos = $true; $el.ChkBloqueo.IsChecked = $true; $script:syncingCombos = $false
+        Actualiza-Vista
+    }
+})
+$el.ChkBloqueoMenu.Add_Unchecked({
+    if (-not $script:syncingCombos) {
+        $script:syncingCombos = $true; $el.ChkBloqueo.IsChecked = $false; $script:syncingCombos = $false
+        Actualiza-Vista
+    }
+})
 $el.CmbModo.Add_SelectionChanged({
     if ($el.CmbModo.SelectedItem.Tag -eq 'fija') {
         $script:previewFase = Detectar-Fase 'fija' $el.SldHora.Value
@@ -1269,6 +1599,7 @@ $el.BtnBuscarUpdate.Add_Click({
 
 $el.BtnRestaurar.Add_Click({
     $script:selectedTema = 'fittoa'
+    $script:selectedSerie = 'Mushoku Tensei'
     $el.RbMon2.IsChecked = $true
     $el.ChkBloqueo.IsChecked = $true
     Set-ComboByTag $el.CmbFondoPrincipal 'principal' 0
@@ -1369,6 +1700,7 @@ foreach ($t in $temas) {
     $sub.Add_Click({
         param($s, $e)
         $script:selectedTema = $s.Tag
+        $script:selectedSerie = $script:worldSeries[$s.Tag]
         $c = Lee-FormConfig
         $c.tema = $s.Tag
         $fase = Aplicar-Todo $c
@@ -1418,6 +1750,7 @@ $win.Add_Closing({
 })
 
 Cambia-Pestana 'mundos'
+Cambia-VistaMundo 'series'
 Actualiza-Vista
 
 if ($Tray) {
