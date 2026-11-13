@@ -257,8 +257,8 @@ for gx_k in (312, 338):
     for yy in range(HOR - 64, HOR - 42):
         put(gx_k + 4, yy, AR3 if yy < HOR - 58 else AR1)  # lanza
 
-# 4. Promontorio derecho (x = 356..466) con ATOFERATOFE RAIBAKU (Atofe) representada
-PX0, PX1, PY_TOP = 356, 466, HOR - 44
+# 4. Promontorio derecho (x = 342..470) con ATOFERATOFE RAIBAKU (Atofe) fiel al diseño original
+PX0, PX1, PY_TOP = 344, 468, HOR - 38
 for y in range(PY_TOP, HOR + 1):
     d_y = y - PY_TOP
     for x in range(max(0, PX0 - d_y // 2), min(W, PX1 + d_y)):
@@ -268,96 +268,142 @@ for y in range(PY_TOP, HOR + 1):
         put(x, y, c)
 
 def dibuja_atofe(cx, by):
-    """Atoferatofe Raibaku: Rey Demonio Inmortal con alas negras gigantes, cuernos, capa y espadón."""
-    wg0, wg1, wg2 = PAL['wing']
-    hr0, hr1 = PAL['hair']
-    cp0, cp1 = PAL['cape']
+    """Atoferatofe Raibaku: piel azul cobalto, cuerno central único, melena blanca voluminosa,
+    alas carmesí pequeñas tras los hombros, armadura gris oscuro y espadón rojo horizontal."""
+    # Paleta fiel a la referencia (adaptada sutilmente a la fase del cielo)
+    skin = mix('#5c72b8', PAL['filo'], 0.08 if FASE == 'dia' else 0.0)
+    skin_d = '#3e4f8e'
+    skin_h = '#7d95dc'
+    hair = mix('#ece9df', PAL['filo'], 0.06 if FASE != 'noche' else 0.0)
+    hair_m = '#c8c4b8'
+    hair_d = '#969288'
+    horn = '#243062'
+    horn_h = '#4658a4'
+    wing_m = '#a81e30'
+    wing_d = '#6e101e'
+    arm_h = '#58607a'
+    arm_m = '#383d4f'
+    arm_d = '#212533'
+    scab = '#981e2c'
+    scab_d = '#66121d'
+    sil = '#dcdce6'
+    out = '#100c18'
+    eye = '#ff4c24'
+    eye_h = '#ffb844'
 
-    # 1) ENORMES ALAS DEMONÍACAS NEGRAS (desplegadas ±31 px alrededor de su espalda)
-    for sgn in (-1, 1):
-        for t in range(32):
-            wx = cx + sgn * (4 + t)
-            wy_top = by - 36 - int(22 * math.sin(t / 31.0 * math.pi * 0.72)) + (t // 6)
-            wy_bot = by - 20 - int(8 * math.sin(t / 31.0 * math.pi)) + (t // 4)
-            for yy in range(wy_top, max(wy_top + 1, wy_bot)):
-                if yy > wy_bot - 4 and (t % 7) in (3, 4):
-                    continue
-                c = wg1 if (yy < wy_top + 3) else (wg2 if (t % 8 == 0) else wg0)
-                put(wx, yy, c)
-            put(wx, wy_top, AR3 if t < 6 else wg2)
-        for k in range(5):
-            put(cx + sgn * (22 + k // 2), by - 56 - k, wg1)
+    # Sprite pixel art exacto (59x69 px): cada caracter mapea a un color nítido
+    # . = transparente, O = contorno oscuro
+    cmap = {
+        'O': out,
+        'H': hair, 'h': hair_m, 'g': hair_d,
+        'N': horn, 'n': horn_h,
+        'S': skin, 's': skin_d, 'L': skin_h,
+        'E': eye, 'e': eye_h,
+        'W': wing_m, 'w': wing_d,
+        'A': arm_h, 'M': arm_m, 'D': arm_d,
+        'R': scab, 'r': scab_d, 'G': sil,
+    }
 
-    # 2) Capa carmesí ondeando detrás
-    for yy in range(by - 35, by - 4):
-        shift = (yy - (by - 35)) // 3
-        for dx in range(-9 - shift, -2):
-            put(cx + dx, yy, cp1 if abs(dx) > 6 else cp0)
+    # Espada horizontal detrás de la cintura + vaina roja con detalles plateados
+    # Se dibuja primero para quedar detrás del cuerpo y brazos igual que en la referencia
+    # Capa oscura interior detrás de las piernas (como en la referencia)
+    spr = [
+        "............................OO.............................",
+        ".........................OOOHHOOO..........................",
+        ".......................OOHHHNHHHHOO........................",
+        "...............O......OOHHHHNNHHHHHO......O................",
+        "..............OWO....OOHHHHHNNHHHHHHO....OWO...............",
+        ".............OWwWO...OOHHHHHNNHHHHHHO...OWwWO..............",
+        "............OWwwwWO..OOHHHHNNnHHHHHHO..OWwwwWO.............",
+        "...........OWwwwwwWO.OOHHHHSSSHHHHHHO.OWwwwwwWO............",
+        "...........OWWwwwwwWOOOHHLSSsSSLHHHHOOOWwwwwwWWO...........",
+        "............OWWWwwwwWOHHHSESsSsSESHHHOWwwwwWWWWO...........",
+        "............OWWWWWwwWOHHHSeSsSsSeSHHHOWwwWWWWWO............",
+        ".............OWWWWWwWOHHHHSSsSsSSHHHHOWwWWWWWO.............",
+        "..............OWWWWWWOOOHHHHSSSHHHHHOOWWWWWWO..............",
+        ".............OHhOWWWWO.OOHODMMMDDOHO.OWWWWOOhHO............",
+        "............OHHHhOOWOOOMMMMAAMMDDMOOOOOWOOhHHHHO...........",
+        "...........OHHHHHhOOOMMMMMMAMMMAMMMMMMOOOhHHHHHHO..........",
+        "..........OHHHHHHhOOAMMMSMMMMMMMMMSMMMAOOOhHHHHHHO.........",
+        ".........OHHHHHHHhOOAMMMSsMAAMMAAMsSMMAOOOhHHHHHHHO........",
+        "........OHHHHHHHHhOOAMMsSMMMMMMMMMMsMMAOOOhHHHHHHHHO.......",
+        ".......OHHHHHHHHhhOODMMsSMMMMMMMMMMsMMDDOOhHHHHHHHHHO......",
+        "........OHHHHHHHhhOODMsSDMMMAMAMMMDsSDDOOOhHHHHHHHHO.......",
+        ".......OHHHHHHHHhhOOOMsSDMMMAMAMMMDMsMOOOOhHHHHHHHHO.......",
+        "......OHHHHHHHHhhhOOOMMDMMMMAMAMMMMDMMOOOOhhhhhhhhhHO......",
+        ".......OOHHHHHhhhhOOOMMMDDDDGGDDDDMMMOOOOhhhhhHHHOO........",
+        "........OOHHHHhhhhOOOMMMMMMMMMMMMMMMMOOOOhhhhhHOO..........",
+        ".........OOHhhggggOOMMMMMDMMMMMMDMMMMOOggggghOO............",
+        "...........OOOOOOO.OMMMMMDMMMMMMDMMMMO.OOOOOO..............",
+        "..................OOMMMDDDDDDDDDDMMMMOO....................",
+        "..................OMMDDDDMDMMMDMDDMMMO.....................",
+        "....OO............OMMDDMMMMMMMMDDMMMO................OOOO..",
+        "...OGGOOOOO..OOO..OMDDMMMDMMMDDMMMDDMO......OOOOOOOOGGRGGO.",
+        "..OGGGGGGGGGGGGGOOOMDMMMDMMMMMDMMMDDMO...OOORRRRRRRGGGGGGGO",
+        "...OGGOOOOOOMMMGGOOMDMMDMODDDOMDMMMDMOOORRRRRRRRRGGGGGRGGO.",
+        "....OO......OOGGGOMDMMDOO...OODMMMDMOOORRRRRRRRGRGGGGGO....",
+        "..................OMDMMO.OSSBO.OMMMDMO.ORRRRGGGGGGGOOO.....",
+        "..................OMMDMO.OSSBO.OMMDMMO..OOOOOOOOOO.........",
+        "..................OOMDMOOSSSOOSSSOOMDOO....................",
+        "...................OOMDOOSSsO.OsSSOMDO.....................",
+        "....................OO.OODDD...DDDO.OO.....................",
+        ".......................OOSSs...sSSOO.......................",
+        ".......................OODDD...DDDOO.......................",
+        ".......................OOSSs...sSSOO.......................",
+        ".......................OODDD...DDDOO.......................",
+        ".......................OOSSs...sSSOO.......................",
+        ".......................OAMMMO.OMMMAO.......................",
+        ".......................OAMMMO.OMMMAO.......................",
+        ".......................OADDDO.ODDDDO.......................",
+        ".......................OMMDMO.OMDMMO.......................",
+        "......................OAMMDMO.OMDMMAO......................",
+        "......................OAMMDMO.OMDMMAO......................",
+        "......................OMMDDMO.OMDDMMO......................",
+        "......................OMMDDMO.OMDDMMO......................",
+        "......................ODDDDO...ODDDDO......................",
+        "......................OMMMMO...OMMMMO......................",
+        "......................ODDDDO...ODDDDO......................",
+        ".....................OAMMDO.....ODMMAo.....................",
+        ".....................ODDDDO.....ODDDDO.....................",
+        "....................OAMMDO.......ODMMAo....................",
+        "....................ODDDDO.......ODDDDO....................",
+        "...................OAMMDO.........ODMMAo...................",
+        "...................ODDDDO.........ODDDDO...................",
+        "..................OADDDDO.........ODDDDAO..................",
+        "..................OOOOOO...........OOOOOO..................",
+    ]
+    cmap['B'] = '#0d0a12'
+    cmap['o'] = out
 
-    # 3) Melena larga gris-violeta fluyendo por los costados del torso (sin tapar los hombros ni formar triángulo ancho)
-    for yy in range(by - 45, by - 22):
-        for dx in (-5, -4, 4, 5):
-            put(cx + dx, yy, hr1 if dx > 0 else hr0)
-        if yy < by - 40:
-            for dx in range(-4, 5):
-                put(cx + dx, yy, hr0)
+    sw = len(spr[0])
+    sh = len(spr)
+    x0 = cx - sw // 2
+    y0 = by - sh + 1
 
-    # 4) Armadura negra pesada (piernas, cintura, peto metálico con reflejos y hombreras afiladas)
-    for yy in range(by - 18, by):
-        for dx in (-5, -4, -3, 2, 3, 4):
-            put(cx + dx, yy, AR1 if abs(dx) < 4 else AR0)
-        put(cx - 4, by - 10, AR3)
-        put(cx + 3, by - 10, AR3)
-    for yy in range(by - 35, by - 18):
-        hw = 6 if yy < by - 28 else 4
+    # Faldón negro interior detrás entre las piernas (como la capa oscura de su armadura)
+    for dy in range(36, 56):
+        hw = 7 + (dy - 36) // 5
         for dx in range(-hw, hw + 1):
-            c = AR3 if abs(dx) == 0 and by - 32 <= yy <= by - 25 else (AR2 if abs(dx) < 3 else (AR1 if abs(dx) < hw else AR0))
-            put(cx + dx, yy, c)
-    # Hombreras de armadura negra afiladas
-    for sgn in (-1, 1):
-        for k in range(7):
-            put(cx + sgn * (5 + k), by - 35 - k // 2, AR3 if k < 3 else AR2)
-            put(cx + sgn * (5 + k), by - 34 - k // 2, AR1)
+            if dy > 50 and ((dx + dy) % 3 == 0):
+                continue
+            put(cx + dx, y0 + dy, '#12131e')
 
-    # 5) Cabeza nítida, ojos carmesí y CUERNOS DEMONÍACOS CURVOS altos sobre el cielo
-    for yy in range(by - 44, by - 35):
-        for dx in range(-3, 4):
-            put(cx + dx, yy, '#e8d4e8' if yy > by - 42 else hr0)
-    put(cx - 1, by - 39, MANA_HI)
-    put(cx + 1, by - 39, MANA_HI)
-    for sgn in (-1, 1):
-        for t in range(13):
-            hx = cx + sgn * (3 + int(t * 0.72))
-            hy = by - 44 - int(math.sin(t / 12.0 * math.pi * 0.78) * 10)
-            put(hx, hy, AR3 if t < 5 else hr0)
-            put(hx, hy + 1, DM2 if t > 7 else AR1)
+    for ry, row in enumerate(spr):
+        for rx, ch in enumerate(row):
+            col = cmap.get(ch)
+            if col:
+                put(x0 + rx, y0 + ry, col)
 
-    # 6) ESPADÓN DEMONÍACO GIGANTE apoyado sobre su hombro derecho
-    for t in range(46):
-        sx = cx + 8 + t // 3
-        sy = by - t
-        for w_b in range(-1, 2):
-            c = AR3 if w_b == -1 else (MANA_HI if t % 9 == 0 else AR0)
-            put(sx + w_b, sy, c)
-    for dx in range(-4, 5):
-        put(cx + 10 + dx, by - 14, DM2)
+    # Reflejo brillante en ojos rojo-naranja
+    put(x0 + 27, y0 + 9, eye_h)
+    put(x0 + 31, y0 + 9, eye_h)
+
     if ANIM:
-        RUNAS.append([cx + 22, by - 44])
-        RUNAS.append([cx, by - 34])
+        RUNAS.append([cx, y0 + 5])
     else:
-        glow(cx + 22, by - 44, 7, MANA_LO, 0.55)
-        glow(cx, by - 36, 9, MANA_LO, 0.32)
+        glow(cx, y0 + 6, 8, MANA_LO, 0.25)
 
 dibuja_atofe(406, PY_TOP)
-
-# Estandarte desgarrado de Atofe en el borde derecho del risco
-for yy in range(PY_TOP - 32, PY_TOP):
-    put(452, yy, AR3)
-for yy in range(PY_TOP - 31, PY_TOP - 16):
-    for dx in range(1, 11):
-        if yy > PY_TOP - 21 and dx > (PY_TOP - 16 - yy) * 2:
-            continue
-        put(452 + dx, yy, DM1 if dx % 3 else DM0)
 
 # 5. Reflejo en el mar de obsidiana (sin duplicar astro en Monitor 2)
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['filo'], PAL['ola'][0]), reflejo_astro=False)

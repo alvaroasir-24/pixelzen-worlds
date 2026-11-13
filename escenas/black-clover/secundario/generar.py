@@ -246,13 +246,13 @@ for r_ring, col_r in ((24, CR1), (17, PAL['grav'][1]), (10, PAL['spatial'][1])):
 if not ANIM:
     glow(Q_CX, Q_CY, 12, CR0, 0.35)
 
-# 5. Bastión / Terraza elevada de la TRÍADA OSCURA (x = 304..468, fuera de la zona HUD)
-DX0, DX1, DY_TOP = 306, 466, HOR - 30
+# 5. Bastión / Terraza real de la TRÍADA OSCURA (x = 292..474, despejada para apreciar sus siluetas)
+DX0, DX1, DY_TOP = 294, 472, HOR - 24
 r_dais = Ruido(709)
 for y in range(DY_TOP, HOR + 1):
     for x in range(DX0 - (y - DY_TOP) // 2, min(W, DX1 + (y - DY_TOP) // 2)):
         c = PAL['dais'][1] if r_dais(x * 0.16 + y * 0.22) > 0.46 else PAL['dais'][0]
-        if (y - DY_TOP) % 9 == 0 and r_dais(x * 0.08) > 0.35:
+        if (y - DY_TOP) % 8 == 0 and r_dais(x * 0.08) > 0.35:
             c = PAL['dais'][2]
         put(x, y, c)
 for x in range(DX0, DX1 + 1):
@@ -260,132 +260,206 @@ for x in range(DX0, DX1 + 1):
     if x % 8 < 4:
         put(x, DY_TOP - 1, PAL['nieve'][1])
 
-# Pilares / monolitos oscuros ENTRE los miembros de la Tríada (para recortar nítidamente sus cabezas contra el cielo)
-for px_t in (312, 360, 412, 460):
-    for yy in range(DY_TOP - 46, DY_TOP):
-        hw = 4 if yy > DY_TOP - 38 else max(1, 4 - (DY_TOP - 38 - yy) // 2)
-        for dx in range(-hw, hw + 1):
-            put(px_t + dx, yy, SP1 if dx < 0 else SP0)
+
+def _pinta_sprite(cx, by, spr, cmap):
+    """Pinta una matriz pixel-art centrada horizontalmente en cx con base en by."""
+    sw = len(spr[0])
+    sh = len(spr)
+    x0 = cx - sw // 2
+    y0 = by - sh + 1
+    for ry, row in enumerate(spr):
+        for rx, ch in enumerate(row):
+            col = cmap.get(ch)
+            if col:
+                put(x0 + rx, y0 + ry, col)
+    return x0, y0
+
 
 def dibuja_zenon(cx, by):
-    """Zenon Zogratis: abrigo alto oscuro, pelo alborotado, magia de Hueso blanco y Cubos Espaciales."""
+    """Zenon Zogratis: cabello negro alborotado, marca demoníaca en ojo/frente,
+    abrigo largo azul marino de cuello alto con ribete claro, huesos blancos y cubos espaciales."""
     sp0, sp1, sp2 = PAL['spatial']
     bn0, bn1, bn2 = PAL['bone']
-    # Abrigo largo negro-azulado con cuello alto y marca demoníaca
-    for yy in range(by - 28, by):
-        hw = 5 if yy < by - 14 else 7
-        for dx in range(-hw, hw + 1):
-            put(cx + dx, yy, SP1 if abs(dx) == hw else '#100e1c')
-    # Cuello alto abierto en V
-    for yy in range(by - 33, by - 26):
-        for dx in (-4, -3, 3, 4):
-            put(cx + dx, yy, '#22223a')
-    # Cabeza y pelo oscuro alborotado
-    for yy in range(by - 41, by - 31):
-        for dx in range(-3, 4):
-            put(cx + dx, yy, '#e8d8d0' if yy > by - 37 else '#141224')
-    for dx, dh in ((-4, 3), (-2, 5), (0, 6), (2, 5), (4, 3)):
-        for k in range(dh):
-            put(cx + dx, by - 39 - k, '#161428')
-    put(cx - 2, by - 34, sp1)  # marca demoníaca en mejilla
-    put(cx - 1, by - 33, sp0)
-    # Picos de Magia de Hueso blanco saliendo de hombros/espalda
-    for sx, sy, ex, ey in ((cx - 5, by - 24, cx - 19, by - 37), (cx + 5, by - 22, cx + 18, by - 34), (cx - 4, by - 14, cx - 16, by - 18)):
-        steps = 14
-        for s in range(steps + 1):
-            px = int(sx + (ex - sx) * s / steps)
-            py = int(sy + (ey - sy) * s / steps)
-            put(px, py, bn1 if s > steps // 2 else bn0)
-            put(px, py + 1, bn2)
-    # Cubos de Magia Espacial flotando alrededor
-    for qx, qy, qr in ((cx - 16, by - 48, 5), (cx + 15, by - 49, 4)):
+
+    # Cubos de Magia Espacial flotando arriba a los lados
+    for qx, qy, qr in ((cx - 21, by - 58, 6), (cx + 19, by - 56, 5)):
         for dy in range(-qr, qr + 1):
             for dx in range(-qr, qr + 1):
                 if abs(dx) == qr or abs(dy) == qr:
                     put(qx + dx, qy + dy, sp2)
                 else:
-                    over(qx + dx, qy + dy, sp1, 0.45)
+                    over(qx + dx, qy + dy, sp1, 0.38)
         if ANIM:
             RUNAS.append([qx, qy])
         else:
-            glow(qx, qy, 7, sp1, 0.45)
+            glow(qx, qy, 8, sp1, 0.45)
+
+    # Picos afilados de Magia de Hueso blanco saliendo desde su espalda
+    for sx, sy, ex, ey, th in (
+        (cx - 5, by - 36, cx - 26, by - 50, 2),
+        (cx + 5, by - 34, cx + 25, by - 48, 2),
+        (cx - 6, by - 22, cx - 22, by - 26, 1),
+        (cx + 6, by - 20, cx + 22, by - 22, 1),
+    ):
+        steps = 22
+        for s in range(steps + 1):
+            px = int(sx + (ex - sx) * s / steps)
+            py = int(sy + (ey - sy) * s / steps)
+            w_cur = max(0, int(th * (1 - s / (steps + 2))))
+            for d_w in range(-w_cur, w_cur + 1):
+                put(px, py + d_w, bn1 if d_w <= 0 else bn0)
+            put(px, py + w_cur + 1, bn2)
+
+    cmap = {
+        'O': '#08060e',
+        'K': '#141522', 'k': '#26293e',
+        'S': '#ead8cf', 's': '#c9b3a8',
+        'M': '#6844b8', 'e': '#22142e',
+        'C': '#182038', 'c': '#283458', 'd': '#101424',
+        'T': '#d2daf0', 't': '#8e98b6',
+        'P': '#12121a', 'B': '#1c1e2a',
+    }
+    spr = [
+        "...........OO.OO...........",
+        ".........OOKOKKOO..........",
+        "........OKKKKKKKKO.........",
+        ".......OKkkKKKKkkKO........",
+        ".......OKKKKKKKKKKO........",
+        "......OKKSSSSSMSSKKO.......",
+        "......OKKSeSSMSSeSKO.......",
+        ".......OKSSSSMSSSSO........",
+        ".......OKSsSSSSSsKO........",
+        "........OOSSSSSSOO.........",
+        "........OTOOssOOTO.........",
+        ".......OTCTSSSSSTCTO.......",
+        "......OTCCCTssTCCCCTO......",
+        ".....OCCCCCCTTTCCCCCCO.....",
+        ".....OCCCCCCKTKCCCCCCO.....",
+        "....OCCCdCCCKPKCCCdCCCO....",
+        "....OCCCdCCCKTKCCCdCCCO....",
+        "....OCCcdCCCKPKCCCdcCCO....",
+        "....OCCcdCCCKPKCCCdcCCO....",
+        "....OCCCdCCKTKTKCCdCCCO....",
+        ".....OCCdCCTKKKTCCdCCO.....",
+        ".....OSSdCCKKKKKCCdSSO.....",
+        "......OOOCCCTKTCCCOOO......",
+        "........OCCCtKtCCCO........",
+        "........OCCCtKtCCCO........",
+        ".......OCCCCtKtCCCCO.......",
+        ".......OCCCdKKKdCCCO.......",
+        ".......OCCCdOOOdCCCO.......",
+        "......OCCCCO...OCCCCO......",
+        "......OCCCdO...OdCCCO......",
+        "......OCCdO.....OdCCO......",
+        "......OCdOO.....OOdCO......",
+        "......OOO.OPO.OPO.OOO......",
+        "..........OPO.OPO..........",
+        "..........OPO.OPO..........",
+        "..........OPO.OPO..........",
+        "..........OPO.OPO..........",
+        "..........OBO.OBO..........",
+        "..........OBO.OBO..........",
+        ".........OBBO.OBBO.........",
+        ".........OOOO.OOOO.........",
+    ]
+    _pinta_sprite(cx, by, spr, cmap)
+
 
 def dibuja_dante(cx, by):
-    """Dante Zogratis (centro): líder de la Tríada, corona dorada y esferas de Gravedad."""
+    """Dante Zogratis (centro): líder con corona real dorada, barba, abrigo negro-carmesí
+    con hombreras reales, espada oscura y esferas negras de Magia de Gravedad."""
     gr0, gr1, gr2 = PAL['grav']
-    # Capa imperial ancha + cuerpo alto
-    for yy in range(by - 32, by):
-        hw = 7 + (yy - (by - 32)) // 6
-        for dx in range(-hw, hw + 1):
-            c = CR1 if abs(dx) >= hw - 1 else ('#160b18' if abs(dx) > 3 else '#2c182c')
-            put(cx + dx, yy, c)
-    # Hombreras doradas y cinturón real
-    for dx in range(-8, 9):
-        if abs(dx) >= 4:
-            put(cx + dx, by - 31, GD0)
-            put(cx + dx, by - 30, GD1)
-        put(cx + dx, by - 17, GD1)
-    # Espada oscura clavada al costado
-    for yy in range(by - 30, by):
-        put(cx + 9, yy, '#1a1420')
-        put(cx + 10, yy, CR1)
-    for dx in range(6, 14):
-        put(cx + dx, by - 25, GD0)
-    # Cabeza, barba oscura, pelo peinado atrás y corona
-    for yy in range(by - 43, by - 33):
-        for dx in range(-4, 5):
-            if yy >= by - 35 and abs(dx) <= 3:
-                put(cx + dx, yy, '#22141e')  # barba oscura
-            else:
-                put(cx + dx, yy, '#e6cfc2' if yy > by - 40 else '#22141e')
-    for dx in (-4, -2, 0, 2, 4):
-        put(cx + dx, by - 46, GD0)
-        put(cx + dx, by - 45, CR2)
-    for dx in range(-3, 4):
-        put(cx + dx, by - 44, GD1)
-    put(cx, by - 41, gr1)  # marca frontal
-    # Esferas negras de Magia de Gravedad con halo carmesí + rocas flotando
-    for gx, gy, gr_r in ((cx - 18, by - 42, 6), (cx + 17, by - 38, 5), (cx, by - 58, 4)):
+
+    # Esferas de Magia de Gravedad orbitando alrededor de Dante
+    for gx, gy, gr_r in ((cx - 23, by - 46, 6), (cx + 22, by - 42, 6), (cx, by - 64, 5)):
         disc(gx, gy, gr_r, gr0)
-        for ang in range(0, 360, 20):
+        for ang in range(0, 360, 15):
             rad = math.radians(ang)
             put(int(gx + (gr_r + 1) * math.cos(rad)), int(gy + (gr_r + 1) * math.sin(rad)), gr1)
+            if ang % 45 == 0:
+                put(int(gx + (gr_r + 2) * math.cos(rad)), int(gy + (gr_r + 2) * math.sin(rad)), gr2)
         if ANIM:
             RUNAS.append([gx, gy])
         else:
             glow(gx, gy, gr_r + 5, gr1, 0.55)
 
-def dibuja_vanica(cx, by):
-    """Vanica Zogratis: vestido gótico carmesí, coletas, parche y Magia de Sangre."""
-    bl0, bl1, bl2 = PAL['blood']
-    # Vestido gótico carmesí-negro
-    for yy in range(by - 26, by):
-        hw = 4 if yy < by - 16 else 4 + (yy - (by - 16)) // 3
-        for dx in range(-hw, hw + 1):
-            c = bl1 if yy > by - 14 and abs(dx) < hw - 1 else '#1a0a14'
-            put(cx + dx, yy, c)
-    # Cinta / faja roja
+    cmap = {
+        'O': '#08050b',
+        'G': '#f4c648', 'g': '#b8821e',
+        'R': '#d82238', 'r': '#881224', 'L': '#ff5268',
+        'H': '#2a181a', 'h': '#462a2a',
+        'S': '#e6cfc4', 's': '#bfa298',
+        'M': '#d81c36',
+        'K': '#14101c', 'k': '#261e34', 'd': '#0c0912',
+        'V': '#761426', 'v': '#a61c34',
+        'W': '#201e2c', 'w': '#7c829e',
+    }
+    spr = [
+        "...........O...O...O...........",
+        "..........OGOOOGOOOGO..........",
+        ".........OGRGOGGGOGGRO.........",
+        ".........OGGGGGGGGGGGGO........",
+        ".........OHHHHHHHHHHHHO........",
+        "........OHhhSSSMSMSShHHO.......",
+        "........OHSSSeSSSeSSSHHO.......",
+        "........OHSSSSSsSSSSSHHO.......",
+        ".........OSSHSSSSSHSSO.........",
+        "..........OSHHHHHHHSO..........",
+        "..........OOHHHHHHHOO..........",
+        ".......OOOOOOsssssOOOOOO.......",
+        "......ORRRGGOSSSSSOGGRRRO......",
+        ".....ORRRRGGKVvvvVKGGGRRRO.....",
+        "....ORrrrGGKVVvvvVVKGGrrrRO....",
+        "....OKKKKGGKVVGVGVVKGKKKKKO....",
+        "...OKkkkkKKKVVvGvVVKKkkkkkKO...",
+        "...OKkkkKKKKVVvvvVVKKKKkkkKO...",
+        "...OKkkKKKKdVVGGGVVdKKKKkkKO...",
+        "...OKkKKKKKdKKGGGKKdKKKKKkKO...",
+        "...OKKKKKKKdKGGGGGKdKKKKKKKO...",
+        "...OKKdKKKKdKVVVVVKdKKKKdKKO...",
+        "...OSSdKKKKdKVVvVVKdKKKKdSSO...",
+        "....OOOKKKKdKVVvVVKdKKKKOOO....",
+        "......OKKKKdKVVVVVKdKKKO.......",
+        "......OKKKdOKVvvvVKOKKKO.......",
+        "......OKKdO.OKVVVKO.OKKO.......",
+        ".....OKKdO..OKVVVKO..OKKO......",
+        ".....OKdO...OKKKKKO...OKKO.....",
+        ".....OKO....OKKOOKKO...OKO.....",
+        "............OKKOOKKO...........",
+        "............OKKOOKKO...........",
+        "............OKKOOKKO...........",
+        "............OKKOOKKO...........",
+        "...........OKKKOOKKKO..........",
+        "...........OddOO.OOddO.........",
+        "..........OddOO...OOddO........",
+        "..........OOOO.....OOOO........",
+    ]
+    _pinta_sprite(cx, by, spr, cmap)
+
+    # Espada oscura pesada apoyada al costado izquierdo/derecho de Dante
+    sx = cx + 14
+    for yy in range(by - 32, by):
+        put(sx, yy, '#222030')
+        put(sx + 1, yy, '#d82238' if yy % 6 == 0 else '#7c829e')
     for dx in range(-4, 5):
-        put(cx + dx, by - 17, bl1)
-    # Cabeza + coletas dobles visibles contra el cielo y parche en ojo derecho
-    for yy in range(by - 37, by - 27):
-        for dx in range(-3, 4):
-            put(cx + dx, yy, '#eedad2' if yy > by - 34 else '#181022')
-    # Coletas oscuras abiertas hacia los lados
-    for dx_s in (-1, 1):
-        for dy in range(10):
-            put(cx + dx_s * (4 + dy // 4), by - 36 + dy, '#181022')
-            put(cx + dx_s * (5 + dy // 4), by - 35 + dy, '#241832')
-    put(cx + 1, by - 32, '#0a060c')  # parche
-    put(cx - 1, by - 32, bl1)       # ojo rojo/marca
-    # Espirales y orbes de Magia de Sangre carmesí
-    for t in range(32):
-        ang = t * 0.28
-        sx = int(cx + math.cos(ang) * (10 + t * 0.3))
-        sy = int(by - 12 - t * 1.15)
+        put(sx + dx, by - 31, '#f4c648')
+    put(sx, by - 34, '#d82238')
+    put(sx, by - 33, '#f4c648')
+
+
+def dibuja_vanica(cx, by):
+    """Vanica Zogratis: coleta lateral enorme, parche en ojo derecho, marca de Megicula,
+    vestimenta gótica negro-carmesí y látigos espirales de Magia de Sangre."""
+    bl0, bl1, bl2 = PAL['blood']
+
+    # Tentáculos / espirales de Magia de Sangre carmesí tras y alrededor de Vanica
+    for t in range(44):
+        ang = t * 0.24
+        sx = int(cx + math.cos(ang) * (12 + t * 0.34))
+        sy = int(by - 10 - t * 1.15)
         put(sx, sy, bl1 if t % 3 else bl2)
         put(sx + 1, sy, bl0)
-    for bx_s, by_s in ((cx - 13, by - 36), (cx + 14, by - 42)):
+    for bx_s, by_s in ((cx - 17, by - 42), (cx + 19, by - 38)):
         disc(bx_s, by_s, 3, bl1)
         put(bx_s - 1, by_s - 1, bl2)
         if ANIM:
@@ -393,19 +467,69 @@ def dibuja_vanica(cx, by):
         else:
             glow(bx_s, by_s, 6, bl0, 0.55)
 
-dibuja_zenon(334, DY_TOP)
-dibuja_dante(386, DY_TOP)
-dibuja_vanica(438, DY_TOP)
+    cmap = {
+        'O': '#08050d',
+        'H': '#1d142a', 'h': '#372450',
+        'S': '#f2ded8', 's': '#d2b4ac',
+        'P': '#0d0912',
+        'M': '#ff2c78', 'E': '#d61c38',
+        'R': '#c81c34', 'r': '#821022', 'L': '#ff6a80',
+        'K': '#16121e', 'k': '#2a2238',
+    }
+    spr = [
+        "........OOOO........OOOOOOO........",
+        ".......OHHHHO.....OHHHHHhhhO.......",
+        "......OHhHHHHO...OHHHHHHHHHhhO.....",
+        ".....OHHHHHHHHO.OHHHHHHHHHHHhhO....",
+        ".....OHHhhHHHHOOHHHHHHHHHHHHHhhO...",
+        "....OHHSSSHHHHOOHHHHHHHhhHHHHHhhO..",
+        "....OHSSPPPSHHO.OOHHHHHHhhHHHHHHO..",
+        "....OHSSEPPMSHO...OOHHHHHhhHHHHHO..",
+        ".....OHSSSSSSHO.....OOHHHHHhHHHHO..",
+        "......OSSSSSSO........OOHHHHhhhO...",
+        ".......OOssOO...........OOHHHHO....",
+        "......OKRRRKKO............OOOO.....",
+        ".....ORRRRRRRKO....................",
+        "....OSSRrrRRRSSO...................",
+        "...OSSROKKKKORSSO..................",
+        "...OO..ORKKRO..OO..................",
+        ".......ORLLRO......................",
+        "......OKRRRRKO.....................",
+        ".....OKKRRRRKKO....................",
+        ".....OKkRRRRkKO....................",
+        "....OKKKrRRrKKKO...................",
+        "....OKKKrRRrKKKO...................",
+        ".....OOSSOOSSOO....................",
+        "......OSSOOSSO.....................",
+        "......OSSOOSSO.....................",
+        "......OKKOOKKO.....................",
+        "......OKKOOKKO.....................",
+        "......OKKOOKKO.....................",
+        "......OKKOOKKO.....................",
+        "......ORROORRO.....................",
+        "......OKKOOKKO.....................",
+        "......OKKOOKKO.....................",
+        ".....OKKKOOKKKO....................",
+        ".....OKKKOOKKKO....................",
+        ".....OKKKOOKKKO....................",
+        ".....OOOO..OOOO....................",
+    ]
+    _pinta_sprite(cx, by, spr, cmap)
 
-# Runas/faroles en los bordes de la terraza
-for fx in (312, 360, 412, 460):
-    for yy in range(DY_TOP - 8, DY_TOP):
+
+dibuja_zenon(330, DY_TOP)
+dibuja_dante(388, DY_TOP)
+dibuja_vanica(446, DY_TOP)
+
+# Pequeños braseros rúnicos bajos en los extremos de la terraza (sin tapar a la Tríada)
+for fx in (300, 468):
+    for yy in range(DY_TOP - 7, DY_TOP):
         put(fx, yy, SP0)
     if ANIM:
-        FAROLES.append([fx, DY_TOP - 9, 9])
+        FAROLES.append([fx, DY_TOP - 8, 9])
     else:
-        put(fx, DY_TOP - 9, CR2)
-        glow(fx, DY_TOP - 9, 6, CR1, 0.55)
+        put(fx, DY_TOP - 8, CR2)
+        glow(fx, DY_TOP - 8, 6, CR1, 0.55)
 
 CHIMENEA = [142, top_izq - 1]
 
