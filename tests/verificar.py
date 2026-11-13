@@ -11,13 +11,21 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMAS = [
-    'fittoa',
-    'continente-demoniaco',
-    'hunter-x-hunter',
-    'black-clover',
-    'spiderman-miles-morales',
-]
+
+
+def descubrir_temas():
+    esc_dir = os.path.join(ROOT, 'escenas')
+    res = []
+    for nombre in sorted(os.listdir(esc_dir)):
+        if nombre.startswith('_'):
+            continue
+        if os.path.isfile(os.path.join(esc_dir, nombre, 'generar.py')):
+            res.append(nombre)
+    assert res, f'No se encontraron temas en {esc_dir}'
+    return res
+
+
+TEMAS = descubrir_temas()
 IMAGENES_REQUERIDAS = (
     'cielo-dia.png', 'cielo-dorado.png', 'cielo-noche.png',
     'escena-dia.png', 'escena-dorado.png', 'escena-noche.png',

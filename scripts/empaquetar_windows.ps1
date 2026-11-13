@@ -18,7 +18,10 @@ New-Item -Path $OutDir -ItemType Directory -Force | Out-Null
 
 try {
     $Ico = Join-Path $Raiz 'windows\pixelzen.ico'
-    Write-Host '==> Copiando archivos de runtime (sin carpetas de desarrollo)...'
+    $VersionPath = Join-Path $Raiz 'VERSION'
+    $VerStr = if (Test-Path $VersionPath) { (Get-Content $VersionPath -Raw).Trim() } else { '1.0.0' }
+    Write-Host "==> Copiando archivos de runtime v$VerStr (sin carpetas de desarrollo)..."
+    Set-Content -Path (Join-Path $AppStage 'VERSION') -Value $VerStr -Encoding ASCII
     foreach ($fn in @('PixelZenMenu.ps1', 'PixelZenHud.ps1', 'PixelZenCiclo.ps1', 'PixelZenApp.vbs', 'pixelzen_win.py', 'datos_win.py', 'pixelzen.ico')) {
         Copy-Item -Path (Join-Path $Raiz "windows\$fn") -Destination (Join-Path $AppStage $fn) -Force
     }

@@ -238,13 +238,61 @@ if (Test-Path $appPidFile) {
 }
 Set-Content -Path $appPidFile -Value $PID -Encoding ASCII
 
-$temas = @(
-    @{ id = 'fittoa'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena, Mansión Greyrat y Gran Roble'; m2 = 'Reino de Asura y Base de Perugius (Chaos Breaker)' },
-    @{ id = 'continente-demoniaco'; anime = 'Mushoku Tensei'; titulo = 'Continente Demoníaco'; m1 = 'Ciudadela de Rikarisu y Cristales Carmesí'; m2 = 'Castillo de Atofe y Atoferatofe Raibaku' },
-    @{ id = 'hunter-x-hunter'; anime = 'Hunter × Hunter'; titulo = 'Isla Ballena'; m1 = 'Cabaña de Mito-san, Gon pescando y Árbol del Mundo'; m2 = 'Greed Island (Anillo G.I., Book! y Cartas)' },
-    @{ id = 'black-clover'; anime = 'Black Clover'; titulo = 'Aldea de Hage'; m1 = 'Iglesia de Hage, Cráneo del Demonio y Antimagia'; m2 = 'Reino de Picas y la Tríada Oscura' },
-    @{ id = 'spiderman-miles-morales'; anime = 'Marvel Spider-Man'; titulo = 'Brooklyn & Manhattan'; m1 = 'Brooklyn, Puente, Estatua de la Libertad y Miles'; m2 = 'Midtown Manhattan, Metro Elevado y Harlem' }
-)
+function Obtener-Version {
+    foreach ($vp in @((Join-Path $Aqui 'VERSION'), (Join-Path $Raiz 'VERSION'))) {
+        if (Test-Path $vp) {
+            $txt = (Get-Content $vp -Raw -ErrorAction SilentlyContinue).Trim()
+            if ($txt) { return $txt }
+        }
+    }
+    return '1.1.0'
+}
+
+function Cargar-Temas {
+    $lista = @()
+    if (Test-Path $TemasDir) {
+        foreach ($d in (Get-ChildItem -Path $TemasDir -Directory | Sort-Object Name)) {
+            $id = $d.Name
+            if ($id.StartsWith('_')) { continue }
+            $tj = Join-Path $d.FullName 'tema.json'
+            if (-not (Test-Path $tj)) { continue }
+            $anime = 'PixelZen'
+            $titulo = $id
+            $m1 = 'Escena principal'
+            $m2 = 'Continuación de la historia'
+            try {
+                $raw = Get-Content $tj -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($raw.nombre) {
+                    $titulo = [string]$raw.nombre
+                    if ($titulo -match '^([^·]+)·\s*(.+)$') {
+                        $anime = $Matches[1].Trim()
+                        $titulo = $Matches[2].Trim()
+                    }
+                }
+                if ($raw.anime) { $anime = [string]$raw.anime }
+                if ($raw.subtitulo) { $m1 = [string]$raw.subtitulo }
+                elseif ($raw.descripcion) { $m1 = [string]$raw.descripcion }
+            } catch {}
+
+            $sj = Join-Path $d.FullName 'secundario\tema.json'
+            if (Test-Path $sj) {
+                try {
+                    $sraw = Get-Content $sj -Raw -Encoding UTF8 | ConvertFrom-Json
+                    if ($sraw.nombre) { $m2 = [string]$sraw.nombre }
+                    elseif ($sraw.subtitulo) { $m2 = [string]$sraw.subtitulo }
+                } catch {}
+            }
+            $lista += @{ id = $id; anime = $anime; titulo = $titulo; m1 = $m1; m2 = $m2 }
+        }
+    }
+    if ($lista.Count -eq 0) {
+        return @(@{ id = 'fittoa'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena'; m2 = 'Reino de Asura' })
+    }
+    return $lista
+}
+
+$VersionActual = Obtener-Version
+$temas = Cargar-Temas
 
 $screens = [System.Windows.Forms.Screen]::AllScreens
 $monSummary = ($screens | ForEach-Object -Begin { $i = 1 } -Process {
@@ -502,9 +550,12 @@ $xaml = @"
 
               <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12">
                 <StackPanel>
-                  <TextBlock Text="Estado de componentes" Foreground="#E6B45A" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                  <TextBlock x:Name="TxtDiag" Text="" Foreground="#B9C6DA" FontSize="12" TextWrapping="Wrap" LineHeight="19" Margin="0,0,0,8"/>
-                  <Button x:Name="BtnRestaurar" Content="Restablecer ajustes recomendados" Style="{StaticResource PillBtn}" HorizontalAlignment="Left"/>
+                  <TextBlock Text="Estado y actualizaciones" Foreground="#E6B45A" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                  <TextBlock x:Name="TxtDiag" Text="" Foreground="#B9C6DA" FontSize="12" TextWrapping="Wrap" LineHeight="19" Margin="0,0,0,10"/>
+                  <StackPanel Orientation="Horizontal">
+                    <Button x:Name="BtnBuscarUpdate" Content="🔄 Buscar actualización" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#54DED4" Margin="0,0,8,0"/>
+                    <Button x:Name="BtnRestaurar" Content="Restablecer ajustes recomendados" Style="{StaticResource PillBtn}"/>
+                  </StackPanel>
                 </StackPanel>
               </Border>
             </StackPanel>
@@ -603,7 +654,7 @@ if (Test-Path $IconPath) {
 }
 
 $el = @{}
-foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -738,10 +789,10 @@ if ($el.CmbModo.SelectedIndex -lt 0) { $el.CmbModo.SelectedIndex = 0 }
 
 # Diagnóstico sencillo
 $pyPath = Resolver-Python
-$pyMsg = if ($pyPath) { "✅ Animación automática y vista web listas (Python detectado)." } else { "⚠️ Python no encontrado: puedes cambiar fondos manualmente, pero el ciclo automático y navegador requieren Python." }
+$pyMsg = if ($pyPath) { "✅ Animación solar automática y vista web listas (Python detectado)." } else { "✅ Animación solar nativa activa (no requiere Python)." }
 $deskLnk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'PixelZen Worlds.lnk'
 $lnkMsg = if (Test-Path $deskLnk) { "✅ Acceso directo ya creado en tu Escritorio." } else { "ℹ️ Aún no tienes acceso directo en el Escritorio (puedes crearlo arriba)." }
-$el.TxtDiag.Text = "✅ $($screens.Count) pantalla(s) detectadas.`n✅ Los 5 mundos y sus 5 continuaciones están compilados y listos.`n$pyMsg`n$lnkMsg"
+$el.TxtDiag.Text = "ℹ️ Versión instalada: v$VersionActual`n✅ $($screens.Count) pantalla(s) detectadas.`n✅ $($temas.Count) mundos con continuación de historia listos.`n$pyMsg`n$lnkMsg"
 
 function Lee-FormConfig {
     return [ordered]@{
@@ -906,6 +957,43 @@ $el.BtnAccesoDirecto.Add_Click({
 })
 $el.ChkAutoInicio.Add_Checked({ Set-AutoInicio $true; $el.TxtEstado.Text = "✅ PixelZen se aplicará automáticamente al iniciar Windows." })
 $el.ChkAutoInicio.Add_Unchecked({ Set-AutoInicio $false; $el.TxtEstado.Text = "Auto-inicio con Windows desactivado." })
+$el.BtnBuscarUpdate.Add_Click({
+    $el.TxtEstado.Text = "🔄 Buscando actualizaciones en GitHub Releases..."
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/davidlpizano/pixelzen-worlds/releases/latest' -Headers @{ 'User-Agent' = 'PixelZenWorlds' } -TimeoutSec 10
+        $remTag = ([string]$rel.tag_name).TrimStart('v', 'V')
+        if ([version]$remTag -le [version]$VersionActual) {
+            $el.TxtEstado.Text = "✅ Ya tienes la última versión (v$VersionActual)."
+            return
+        }
+        $asset = $rel.assets | Where-Object { $_.name -eq 'PixelZenWorlds-Setup.exe' } | Select-Object -First 1
+        if (-not $asset) {
+            $el.TxtEstado.Text = "✨ Nueva versión v$remTag disponible en GitHub Releases."
+            Start-Process ([string]$rel.html_url)
+            return
+        }
+        $resp = [System.Windows.MessageBox]::Show(
+            "Hay una versión nueva disponible (v$remTag, actual v$VersionActual).`n¿Quieres descargarla e instalarla ahora? Tus ajustes se conservarán.",
+            "Actualización · PixelZen Worlds",
+            [System.Windows.MessageBoxButton]::YesNo,
+            [System.Windows.MessageBoxImage]::Question
+        )
+        if ($resp -ne [System.Windows.MessageBoxResult]::Yes) {
+            $el.TxtEstado.Text = "Actualización pospuesta (disponible v$remTag)."
+            return
+        }
+        $tmpSetup = Join-Path $env:TEMP 'PixelZenWorlds-Setup.exe'
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpSetup -UseBasicParsing
+        Start-Process -FilePath $tmpSetup
+        $script:realClose = $true
+        $win.Close()
+    } catch {
+        $el.TxtEstado.Text = "⚠️ No se pudo consultar GitHub automáticamente. Abriendo página de Releases..."
+        Start-Process 'https://github.com/davidlpizano/pixelzen-worlds/releases'
+    }
+})
+
 $el.BtnRestaurar.Add_Click({
     $script:selectedTema = 'fittoa'
     $el.RbMon2.IsChecked = $true

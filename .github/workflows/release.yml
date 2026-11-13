@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Etiqueta de la release (ej. v1.0.0)'
+        description: 'Etiqueta de la release (ej. v1.1.0)'
         required: false
-        default: 'v1.0.0'
+        default: 'v1.1.0'
 
 permissions:
   contents: write
@@ -84,7 +84,7 @@ jobs:
           if [ "${{ github.ref_type }}" = "tag" ]; then
             echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           else
-            echo "name=${{ github.event.inputs.tag || 'v1.0.0' }}" >> "$GITHUB_OUTPUT"
+            echo "name=${{ github.event.inputs.tag || 'v1.1.0' }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Publicar en GitHub Releases

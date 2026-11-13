@@ -312,10 +312,17 @@ namespace PixelZenSetup {
                         }
                     }
 
+                    string appVersion = "1.0.0";
+                    string verFile = Path.Combine(appDir, "VERSION");
+                    if (File.Exists(verFile)) {
+                        string txt = File.ReadAllText(verFile).Trim();
+                        if (!string.IsNullOrEmpty(txt)) appVersion = txt;
+                    }
+
                     using (var unKey = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\PixelZenWorlds")) {
                         if (unKey != null) {
                             unKey.SetValue("DisplayName", "PixelZen Worlds");
-                            unKey.SetValue("DisplayVersion", "1.0.0");
+                            unKey.SetValue("DisplayVersion", appVersion);
                             unKey.SetValue("Publisher", "PixelZen Worlds");
                             unKey.SetValue("DisplayIcon", icoPath);
                             unKey.SetValue("InstallLocation", appDir);

@@ -19,6 +19,7 @@ cp "$RAIZ/src/ubicacion.py" "$PKG/src/"
 cp "$RAIZ/src/datos.py" "$PKG/src/"
 cp "$RAIZ/fuentes/DepartureMono-Regular.otf" "$PKG/fuentes/"
 cp "$RAIZ/LICENSE" "$PKG/"
+[ -f "$RAIZ/VERSION" ] && cp "$RAIZ/VERSION" "$PKG/"
 
 if [ -d "$RAIZ/windows/lively/temas" ]; then
   cp -a "$RAIZ/windows/lively/temas/." "$PKG/temas/"

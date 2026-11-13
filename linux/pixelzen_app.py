@@ -5,10 +5,14 @@ Permite al usuario final elegir mundo con miniaturas y vista previa M1/M2,
 configurar 1 o 2 monitores, elegir modo solar/ciclo y personalizar el panel HUD
 sin tener que usar la terminal ni editar archivos.
 """
+import json
 import os
 import shutil
+import stat
 import subprocess
 import sys
+import threading
+import urllib.request
 
 try:
     import gi
@@ -27,44 +31,81 @@ EXT_DIR = os.path.expanduser(f'~/.local/share/gnome-shell/extensions/{UUID}')
 SCHEMA_DIR = os.path.join(EXT_DIR, 'schemas')
 SCHEMA_ID = 'org.gnome.shell.extensions.pixelzen'
 SVC_CICLO90 = 'pixelzen-ciclo90.service'
+RELEASES_API = 'https://api.github.com/repos/davidlpizano/pixelzen-worlds/releases/latest'
+RELEASES_URL = 'https://github.com/davidlpizano/pixelzen-worlds/releases'
 
-TEMAS = [
-    {
-        'id': 'fittoa',
-        'anime': 'Mushoku Tensei',
-        'titulo': 'Región de Fittoa',
-        'm1': 'Aldea de Buena, Mansión Greyrat y Gran Roble',
-        'm2': 'Reino de Asura y Base de Perugius (Chaos Breaker)',
-    },
-    {
-        'id': 'continente-demoniaco',
-        'anime': 'Mushoku Tensei',
-        'titulo': 'Continente Demoníaco',
-        'm1': 'Ciudadela de Rikarisu y Cristales Carmesí',
-        'm2': 'Castillo de Atofe y Atoferatofe Raibaku',
-    },
-    {
-        'id': 'hunter-x-hunter',
-        'anime': 'Hunter × Hunter',
-        'titulo': 'Isla Ballena',
-        'm1': 'Cabaña de Mito-san, Gon pescando y Árbol del Mundo',
-        'm2': 'Greed Island (Anillo G.I., Book! y Cartas)',
-    },
-    {
-        'id': 'black-clover',
-        'anime': 'Black Clover',
-        'titulo': 'Aldea de Hage',
-        'm1': 'Iglesia de Hage, Cráneo del Demonio y Antimagia',
-        'm2': 'Reino de Picas y la Tríada Oscura',
-    },
-    {
-        'id': 'spiderman-miles-morales',
-        'anime': 'Marvel Spider-Man',
-        'titulo': 'Brooklyn & Manhattan',
-        'm1': 'Brooklyn, Puente, Estatua de la Libertad y Miles',
-        'm2': 'Midtown Manhattan, Metro Elevado y Harlem',
-    },
-]
+
+def _leer_version():
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(app_dir)
+    for vp in (os.path.join(app_dir, 'VERSION'), os.path.join(repo_root, 'VERSION')):
+        if os.path.isfile(vp):
+            try:
+                txt = open(vp, 'r', encoding='utf-8').read().strip()
+                if txt:
+                    return txt
+            except Exception:
+                pass
+    return '1.1.0'
+
+
+def _cargar_temas():
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    bases = [
+        os.path.join(EXT_DIR, 'temas'),
+        os.path.join(repo_root, 'windows', 'lively', 'temas'),
+        os.path.join(repo_root, 'escenas'),
+    ]
+    encontrados = {}
+    for base in bases:
+        if not os.path.isdir(base):
+            continue
+        for nombre_dir in sorted(os.listdir(base)):
+            if nombre_dir.startswith('_') or nombre_dir in encontrados:
+                continue
+            tpath = os.path.join(base, nombre_dir)
+            tj = os.path.join(tpath, 'tema.json')
+            if not os.path.isfile(tj):
+                continue
+            anime = 'PixelZen'
+            titulo = nombre_dir
+            m1 = 'Escena principal'
+            m2 = 'Continuación de la historia'
+            try:
+                raw = json.loads(open(tj, 'r', encoding='utf-8').read())
+                if raw.get('nombre'):
+                    titulo = str(raw['nombre'])
+                    if ' · ' in titulo:
+                        partes = titulo.split(' · ', 1)
+                        anime, titulo = partes[0].strip(), partes[1].strip()
+                if raw.get('anime'):
+                    anime = str(raw['anime'])
+                m1 = str(raw.get('subtitulo') or raw.get('descripcion') or m1)
+            except Exception:
+                pass
+            sj = os.path.join(tpath, 'secundario', 'tema.json')
+            if os.path.isfile(sj):
+                try:
+                    sraw = json.loads(open(sj, 'r', encoding='utf-8').read())
+                    m2 = str(sraw.get('nombre') or sraw.get('subtitulo') or m2)
+                except Exception:
+                    pass
+            encontrados[nombre_dir] = {
+                'id': nombre_dir,
+                'anime': anime,
+                'titulo': titulo,
+                'm1': m1,
+                'm2': m2,
+            }
+        if encontrados:
+            break
+    if not encontrados:
+        return [{'id': 'fittoa', 'anime': 'Mushoku Tensei', 'titulo': 'Región de Fittoa', 'm1': 'Aldea de Buena', 'm2': 'Reino de Asura'}]
+    return list(encontrados.values())
+
+
+VERSION_ACTUAL = _leer_version()
+TEMAS = _cargar_temas()
 
 FASES = [('dia', 'Día'), ('dorado', 'Atardecer'), ('noche', 'Noche')]
 MODOS = [
@@ -199,10 +240,14 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
         header = Adw.HeaderBar()
         title_widget = Adw.WindowTitle(
-            title='PixelZen Worlds',
+            title=f'PixelZen Worlds · v{VERSION_ACTUAL}',
             subtitle='Elige tu mundo, monitores y estadísticas sin tocar código',
         )
         header.set_title_widget(title_widget)
+
+        self.btn_update = Gtk.Button(label='Buscar actualización')
+        self.btn_update.connect('clicked', self._on_buscar_actualizacion)
+        header.pack_start(self.btn_update)
 
         self.btn_aplicar = Gtk.Button(label='Aplicar cambios')
         self.btn_aplicar.add_css_class('suggested-action')
@@ -553,6 +598,75 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self.lbl_status.set_text(
             f"✅ Aplicado '{meta['titulo']}' · {n_mon} monitor(es) · modo {modo_id}."
         )
+
+    @staticmethod
+    def _parse_ver(txt):
+        nums = []
+        for parte in str(txt).lstrip('vV').split('.'):
+            try:
+                nums.append(int(parte))
+            except ValueError:
+                nums.append(0)
+        return tuple(nums)
+
+    def _on_buscar_actualizacion(self, *_args):
+        self.btn_update.set_sensitive(False)
+        self.lbl_status.set_text('🔄 Buscando actualizaciones en GitHub Releases...')
+
+        def _worker():
+            try:
+                req = urllib.request.Request(RELEASES_API, headers={'User-Agent': 'PixelZenWorlds'})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    rel = json.loads(resp.read().decode('utf-8'))
+                tag = str(rel.get('tag_name', '')).lstrip('vV')
+                if self._parse_ver(tag) <= self._parse_ver(VERSION_ACTUAL):
+                    GLib.idle_add(self._fin_check_update, f'✅ Ya tienes la última versión (v{VERSION_ACTUAL}).', None, None)
+                    return
+                asset_url = next(
+                    (a['browser_download_url'] for a in rel.get('assets', []) if a.get('name') == 'PixelZenWorlds-Linux-Setup.run'),
+                    None,
+                )
+                GLib.idle_add(self._fin_check_update, f'✨ Nueva versión v{tag} disponible.', tag, asset_url or rel.get('html_url', RELEASES_URL))
+            except Exception:
+                GLib.idle_add(self._fin_check_update, '⚠️ No se pudo comprobar automáticamente. Abriendo Releases...', 'web', RELEASES_URL)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _fin_check_update(self, msg, tag, url):
+        self.btn_update.set_sensitive(True)
+        self.lbl_status.set_text(msg)
+        if not tag or not url:
+            return
+        if tag == 'web' or not url.endswith('.run'):
+            Gio.AppInfo.launch_default_for_uri(url, None)
+            return
+        dlg = Adw.MessageDialog(
+            transient_for=self,
+            heading=f'Actualización disponible (v{tag})',
+            body=f'Tu versión actual es v{VERSION_ACTUAL}. ¿Quieres descargar e instalar PixelZen Worlds v{tag}? Tus ajustes de GNOME se conservarán.',
+        )
+        dlg.add_response('cancel', 'Más tarde')
+        dlg.add_response('install', 'Descargar e instalar')
+        dlg.set_response_appearance('install', Adw.ResponseAppearance.SUGGESTED)
+        dlg.connect('response', lambda _d, r: self._ejecutar_update_linux(url) if r == 'install' else None)
+        dlg.present()
+
+    def _ejecutar_update_linux(self, url):
+        self.lbl_status.set_text('⬇️ Descargando actualización...')
+
+        def _dl():
+            try:
+                dst = '/tmp/PixelZenWorlds-Linux-Setup.run'
+                req = urllib.request.Request(url, headers={'User-Agent': 'PixelZenWorlds'})
+                with urllib.request.urlopen(req, timeout=60) as resp, open(dst, 'wb') as f:
+                    shutil.copyfileobj(resp, f)
+                os.chmod(dst, os.stat(dst).st_mode | stat.S_IXUSR)
+                subprocess.Popen([dst], start_new_session=True)
+                GLib.idle_add(self.get_application().quit)
+            except Exception as exc:
+                GLib.idle_add(self.lbl_status.set_text, f'❌ Error al actualizar: {exc}')
+
+        threading.Thread(target=_dl, daemon=True).start()
 
 
 class PixelZenApp(Adw.Application):

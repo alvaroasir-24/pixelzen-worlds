@@ -147,6 +147,7 @@ mkdir -p "$HOME/.local/share/pixelzen" "$HOME/.local/bin" \
          "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/256x256/apps"
 cp "$AQUI/pixelzen_app.py" "$HOME/.local/share/pixelzen/pixelzen_app.py"
 cp "$AQUI/desinstalar.sh" "$HOME/.local/share/pixelzen/desinstalar.sh"
+[ -f "$RAIZ/VERSION" ] && cp "$RAIZ/VERSION" "$HOME/.local/share/pixelzen/VERSION"
 chmod +x "$HOME/.local/share/pixelzen/pixelzen_app.py" "$HOME/.local/share/pixelzen/desinstalar.sh"
 if [ -f "$AQUI/pixelzen-worlds.png" ]; then
   cp "$AQUI/pixelzen-worlds.png" "$HOME/.local/share/icons/hicolor/256x256/apps/pixelzen-worlds.png"
