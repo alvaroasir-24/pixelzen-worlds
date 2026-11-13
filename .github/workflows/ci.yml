@@ -25,3 +25,12 @@ jobs:
 
       - name: Ejecutar suite de verificación
         run: python3 tests/verificar.py
+
+      - name: Validar sintaxis PowerShell
+        shell: pwsh
+        run: |
+          foreach ($ps in @('windows/PixelZenMenu.ps1','windows/PixelZenHud.ps1','windows/PixelZenCiclo.ps1','windows/installer/Desinstalar.ps1','scripts/empaquetar_windows.ps1')) {
+            $errs = $null; $toks = $null
+            $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $ps), [ref]$toks, [ref]$errs)
+            if ($errs.Count -gt 0) { throw "Errores en ${ps}: $($errs | Out-String)" }
+          }

@@ -25,14 +25,17 @@ if (Test-Path (Join-Path $Destino ".git")) {
 }
 
 $WinDir = Join-Path $Destino "windows"
+$MenuVbs = Join-Path $WinDir "PixelZenApp.vbs"
 $LivelyHtml = Join-Path $WinDir "lively\index.html"
 
 Write-Host ""
 Write-Host "Descarga completada en: $Destino" -ForegroundColor Green
-Write-Host "  - Lively Wallpaper: añade '$LivelyHtml' en Lively y elige tema '$Tema' en Personalizar."
-Write-Host "  - Standalone Python: python `"$WinDir\pixelzen_win.py`" --tema $Tema --90m"
+Write-Host "  - App gráfica PixelZen Worlds: doble clic en '$WinDir\AbrirMenu.bat'"
+Write-Host "  - Lively Wallpaper (opcional): añade '$LivelyHtml' en Lively y elige '$Tema' en Personalizar."
 Write-Host ""
 
-if (Test-Path $WinDir) {
+if (Test-Path $MenuVbs) {
+    Start-Process wscript.exe "`"$MenuVbs`""
+} elseif (Test-Path $WinDir) {
     Start-Process explorer.exe $WinDir
 }

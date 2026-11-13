@@ -49,14 +49,14 @@ else
     || git clone "https://github.com/${REPO}.git" "$DEST"
 fi
 
-echo "==> Instalando extensión GNOME (tema='$TEMA')"
+echo "==> Instalando extensión GNOME y app visual (tema='$TEMA')"
 cd "$DEST/linux"
 if [ "$MODO_90M" = 1 ]; then
-  ./instalar.sh --tema="$TEMA" --90m
+  ./instalar.sh --tema="$TEMA" --90m --abrir-app
 else
-  ./instalar.sh --tema="$TEMA"
+  ./instalar.sh --tema="$TEMA" --abrir-app
 fi
 
 echo
-echo "Listo. Puedes cambiar de mundo o ciclo desde:"
-echo "  gnome-extensions prefs pixelzen@mosqui1988.github.io"
+echo "Listo. Busca 'PixelZen Worlds' en tu menú de aplicaciones o ejecuta:"
+echo "  pixelzen-worlds"
