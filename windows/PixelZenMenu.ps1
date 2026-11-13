@@ -472,16 +472,49 @@ $xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="PixelZen Worlds · Tu Escritorio Animado"
-        Width="1080" Height="710"
-        MinWidth="980" MinHeight="650"
+        Width="1230" Height="796"
+        MinWidth="1040" MinHeight="680"
         WindowStartupLocation="CenterScreen"
-        Background="#070A17" Foreground="#F3EAD6"
+        Background="#060913" Foreground="#F3EAD6"
         FontFamily="Segoe UI">
   <Window.Resources>
+    <!-- Scrollbar fino y oscuro -->
+    <Style TargetType="ScrollBar">
+      <Setter Property="Width" Value="7"/>
+      <Setter Property="MinWidth" Value="7"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ScrollBar">
+            <Grid Background="Transparent" Margin="2,2,0,2">
+              <Track x:Name="PART_Track" IsDirectionReversed="True">
+                <Track.Thumb>
+                  <Thumb Cursor="Hand">
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThBd" Background="#253860" CornerRadius="3.5"/>
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThBd" Property="Background" Value="#3D5C96"/>
+                          </Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Navegación lateral con hover -->
     <Style x:Key="NavBtn" TargetType="Button">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#A8B8CF"/>
-      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Foreground" Value="#A3B4CE"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Padding" Value="14,11"/>
       <Setter Property="Margin" Value="0,0,0,6"/>
@@ -491,424 +524,671 @@ $xaml = @"
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
             </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#121F3E"/>
+                <Setter Property="Foreground" Value="#E6EEF9"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
+
+    <!-- Botones secundarios tipo píldora -->
     <Style x:Key="PillBtn" TargetType="Button">
-      <Setter Property="Background" Value="#101832"/>
-      <Setter Property="Foreground" Value="#D6E0EE"/>
-      <Setter Property="BorderBrush" Value="#2A3C64"/>
+      <Setter Property="Background" Value="#0F1832"/>
+      <Setter Property="Foreground" Value="#DCE6F5"/>
+      <Setter Property="BorderBrush" Value="#283C66"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="11,6"/>
+      <Setter Property="Padding" Value="12,6"/>
       <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
               <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#18274E"/>
+                <Setter TargetName="Bd" Property="BorderBrush" Value="#4669A8"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#101B38"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
+
+    <!-- Interruptor moderno (Toggle Switch) para CheckBox -->
     <Style TargetType="CheckBox">
-      <Setter Property="Foreground" Value="#F3EAD6"/>
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="Margin" Value="0,5"/>
-      <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <Style TargetType="RadioButton">
       <Setter Property="Foreground" Value="#F3EAD6"/>
       <Setter Property="FontSize" Value="13"/>
       <Setter Property="Margin" Value="0,4"/>
       <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="CheckBox">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
+              <Border x:Name="Track" Width="36" Height="20" CornerRadius="10" Background="#1A2644" BorderBrush="#2D416E" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Border x:Name="Knob" Width="14" Height="14" CornerRadius="7" Background="#8FA4C6" HorizontalAlignment="Left" Margin="2,0,0,0" VerticalAlignment="Center"/>
+              </Border>
+              <ContentPresenter VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Track" Property="Background" Value="#164E5B"/>
+                <Setter TargetName="Track" Property="BorderBrush" Value="#54DED4"/>
+                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
+                <Setter TargetName="Knob" Property="Margin" Value="0,0,2,0"/>
+                <Setter TargetName="Knob" Property="Background" Value="#7CF6EE"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Track" Property="BorderBrush" Value="#54DED4"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.45"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- RadioButton elegante -->
+    <Style TargetType="RadioButton">
+      <Setter Property="Foreground" Value="#F3EAD6"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Margin" Value="0,3"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RadioButton">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent">
+              <Border x:Name="Ring" Width="18" Height="18" CornerRadius="9" Background="#0D152C" BorderBrush="#354C7C" BorderThickness="1.5" VerticalAlignment="Center" Margin="0,0,10,0">
+                <Border x:Name="Dot" Width="8" Height="8" CornerRadius="4" Background="#54DED4" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </Border>
+              <ContentPresenter VerticalAlignment="Center"/>
+            </StackPanel>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Ring" Property="BorderBrush" Value="#54DED4"/>
+                <Setter TargetName="Ring" Property="Background" Value="#143648"/>
+                <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Ring" Property="BorderBrush" Value="#54DED4"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ComboBox oscuro estilizado -->
+    <Style TargetType="ComboBoxItem">
+      <Setter Property="Foreground" Value="#DCE6F5"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Padding" Value="10,7"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBoxItem">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}" Margin="3,1">
+              <ContentPresenter VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#182D58"/>
+                <Setter Property="Foreground" Value="#7CF6EE"/>
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#153B4E"/>
+                <Setter Property="Foreground" Value="#54DED4"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox">
+      <Setter Property="Foreground" Value="#F3EAD6"/>
+      <Setter Property="Background" Value="#0C1429"/>
+      <Setter Property="BorderBrush" Value="#2A3F6C"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="SnapsToDevicePixels" Value="True"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <ToggleButton x:Name="ToggleBtn" Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" Cursor="Hand">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Bd" Background="#0C1429" BorderBrush="#2A3F6C" BorderThickness="1" CornerRadius="7">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="*"/>
+                          <ColumnDefinition Width="28"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="1" Text="▾" Foreground="#54DED4" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="#54DED4"/>
+                        <Setter TargetName="Bd" Property="Background" Value="#111C38"/>
+                      </Trigger>
+                      <Trigger Property="IsChecked" Value="True">
+                        <Setter TargetName="Bd" Property="BorderBrush" Value="#54DED4"/>
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" Margin="10,4,28,4" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+              <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                <Grid x:Name="DropDown" SnapsToDevicePixels="True" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="260">
+                  <Border x:Name="DropDownBorder" Background="#0A1124" BorderBrush="#355288" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0" Padding="2">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                      <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                    </ScrollViewer>
+                  </Border>
+                </Grid>
+              </Popup>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- Slider limpio estilo estudio -->
+    <Style TargetType="Slider">
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Slider">
+            <Grid VerticalAlignment="Center" Height="22">
+              <Border Height="5" CornerRadius="2.5" Background="#1A2748" BorderBrush="#283C66" BorderThickness="1" VerticalAlignment="Center"/>
+              <Track x:Name="PART_Track">
+                <Track.Thumb>
+                  <Thumb>
+                    <Thumb.Template>
+                      <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="Knob" Width="16" Height="16" CornerRadius="8" Background="#54DED4" BorderBrush="#B4FFF8" BorderThickness="1.5"/>
+                        <ControlTemplate.Triggers>
+                          <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Knob" Property="Background" Value="#7CF6EE"/>
+                          </Trigger>
+                        </ControlTemplate.Triggers>
+                      </ControlTemplate>
+                    </Thumb.Template>
+                  </Thumb>
+                </Track.Thumb>
+              </Track>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
   </Window.Resources>
 
-  <Grid Margin="16">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
+  <Grid>
+    <Grid.Background>
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#060913" Offset="0"/>
+        <GradientStop Color="#090F22" Offset="0.6"/>
+        <GradientStop Color="#060A16" Offset="1"/>
+      </LinearGradientBrush>
+    </Grid.Background>
 
-    <!-- Cabecera amigable -->
-    <Border Grid.Row="0" Background="#0D142B" BorderBrush="#28395E" BorderThickness="1" CornerRadius="10" Padding="16,12" Margin="0,0,0,14">
-      <DockPanel>
-        <StackPanel>
-          <StackPanel Orientation="Horizontal">
-            <TextBlock Text="✦ PIXELZEN WORLDS" Foreground="#54DED4" FontSize="17" FontWeight="Bold"/>
-            <Border Background="#182B3A" BorderBrush="#54DED4" BorderThickness="1" CornerRadius="4" Padding="7,1" Margin="10,2,0,2" VerticalAlignment="Center">
-              <TextBlock Text="APP DE ESCRITORIO" Foreground="#54DED4" FontSize="10" FontWeight="Bold"/>
-            </Border>
-          </StackPanel>
-          <TextBlock x:Name="TxtMonInfo" Text="" Foreground="#A8B8CF" FontSize="12" Margin="0,3,0,0"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
-          <Button x:Name="BtnMiniTray" Content="Minimizar junto al reloj" Style="{StaticResource PillBtn}" Margin="0,0,8,0"/>
-          <Button x:Name="BtnSalirTotal" Content="Cerrar app" Style="{StaticResource PillBtn}" Foreground="#FFA0A8" BorderBrush="#5A2A36"/>
-        </StackPanel>
-      </DockPanel>
-    </Border>
+    <Grid Margin="16">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
 
-    <!-- Cuerpo en 3 columnas: Navegación + Contenido + Vista Previa -->
-    <Grid Grid.Row="1">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="196"/>
-        <ColumnDefinition Width="14"/>
-        <ColumnDefinition Width="420"/>
-        <ColumnDefinition Width="14"/>
-        <ColumnDefinition Width="*"/>
-      </Grid.ColumnDefinitions>
-
-      <!-- Navegación Lateral -->
-      <Border Grid.Column="0" Background="#0B1124" BorderBrush="#233252" BorderThickness="1" CornerRadius="10" Padding="10">
+      <!-- Cabecera Studio -->
+      <Border Grid.Row="0" BorderBrush="#223359" BorderThickness="1" CornerRadius="12" Padding="18,12" Margin="0,0,0,14">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#0D1630" Offset="0"/>
+            <GradientStop Color="#101B3B" Offset="0.5"/>
+            <GradientStop Color="#0C142B" Offset="1"/>
+          </LinearGradientBrush>
+        </Border.Background>
         <DockPanel>
-          <StackPanel DockPanel.Dock="Top">
-            <TextBlock Text="MENÚ FÁCIL" Foreground="#6F82A6" FontSize="11" FontWeight="Bold" Margin="8,4,0,10"/>
-            <Button x:Name="NavMundos" Content="1. Elegir Mundo" Style="{StaticResource NavBtn}"/>
-            <Button x:Name="NavPantallas" Content="2. Pantallas y Luz" Style="{StaticResource NavBtn}"/>
-            <Button x:Name="NavHud" Content="3. Cajitas del Fondo" Style="{StaticResource NavBtn}"/>
-            <Button x:Name="NavSistema" Content="4. Ajustes e Inicio" Style="{StaticResource NavBtn}"/>
-          </StackPanel>
-          <Border DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Background="#101833" BorderBrush="#25365A" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,12,0,0">
-            <StackPanel>
-              <TextBlock Text="RESUMEN ACTUAL" Foreground="#E6B45A" FontSize="10" FontWeight="Bold" Margin="0,0,0,4"/>
-              <TextBlock x:Name="TxtResumen" Text="" Foreground="#B9C6DA" FontSize="11" TextWrapping="Wrap" LineHeight="16"/>
+          <StackPanel>
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="✦ PIXELZEN WORLDS" Foreground="#54DED4" FontSize="17.5" FontWeight="Bold"/>
+              <Border Background="#12303D" BorderBrush="#3C9BA4" BorderThickness="1" CornerRadius="5" Padding="8,2" Margin="10,1,0,1" VerticalAlignment="Center">
+                <TextBlock Text="DESKTOP STUDIO" Foreground="#7CF6EE" FontSize="9.5" FontWeight="Bold"/>
+              </Border>
+              <Border x:Name="BadgeMotor" Background="#102924" BorderBrush="#2E8B6B" BorderThickness="1" CornerRadius="5" Padding="8,2" Margin="6,1,0,1" VerticalAlignment="Center">
+                <TextBlock x:Name="TxtMotorBadge" Text="● MOTOR NATIVO" Foreground="#72E6AE" FontSize="9.5" FontWeight="Bold"/>
+              </Border>
             </StackPanel>
-          </Border>
+            <TextBlock x:Name="TxtMonInfo" Text="" Foreground="#9AB0CE" FontSize="12" Margin="0,4,0,0"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <Button x:Name="BtnMiniTray" Content="▾ Minimizar al reloj" Style="{StaticResource PillBtn}" Margin="0,0,8,0"/>
+            <Button x:Name="BtnSalirTotal" Content="✕ Cerrar app" Style="{StaticResource PillBtn}" Foreground="#FFA8B0" BorderBrush="#5C2B39"/>
+          </StackPanel>
         </DockPanel>
       </Border>
 
-      <!-- Área Principal de Páginas -->
-      <Border Grid.Column="2" Background="#0B1124" BorderBrush="#233252" BorderThickness="1" CornerRadius="10" Padding="14">
-        <Grid>
-          <!-- PÁGINA 1: SERIES -> TEMAS -> IMÁGENES POR PANTALLA -->
-          <ScrollViewer x:Name="PageMundos" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-              <!-- Paso 1: Elegir Serie -->
-              <StackPanel x:Name="PanelSeries">
-                <TextBlock Text="¿Qué serie quieres ver en tu escritorio?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
-                <TextBlock Text="Elige una serie. Si tiene varios escenarios podrás escoger el mundo; si solo tiene uno pasarás directo a elegir las imágenes de tus pantallas." Foreground="#8FA2C2" FontSize="12" Margin="0,3,0,12" TextWrapping="Wrap"/>
-                <StackPanel x:Name="ListaSeries"/>
+      <!-- Cuerpo principal: Navegación | Configurador | Estudio en Vivo -->
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="212"/>
+          <ColumnDefinition Width="14"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="14"/>
+          <ColumnDefinition Width="430"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Navegación Lateral -->
+        <Border Grid.Column="0" Background="#0A1022" BorderBrush="#1F2F52" BorderThickness="1" CornerRadius="12" Padding="12">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top">
+              <TextBlock Text="CONFIGURADOR" Foreground="#64799E" FontSize="10.5" FontWeight="Bold" Margin="8,4,0,10"/>
+              <Button x:Name="NavMundos" Content="1 · Elegir Mundo" Style="{StaticResource NavBtn}"/>
+              <Button x:Name="NavPantallas" Content="2 · Pantallas y Luz" Style="{StaticResource NavBtn}"/>
+              <Button x:Name="NavHud" Content="3 · Cajitas del Fondo" Style="{StaticResource NavBtn}"/>
+              <Button x:Name="NavSistema" Content="4 · Ajustes e Inicio" Style="{StaticResource NavBtn}"/>
+            </StackPanel>
+            <Border DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Background="#0E1730" BorderBrush="#23365E" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,12,0,0">
+              <StackPanel>
+                <TextBlock Text="✦ CONFIGURACIÓN ACTIVA" Foreground="#E6B45A" FontSize="10" FontWeight="Bold" Margin="0,0,0,6"/>
+                <TextBlock x:Name="TxtResumen" Text="" Foreground="#C4D2E6" FontSize="11.5" TextWrapping="Wrap" LineHeight="18"/>
               </StackPanel>
+            </Border>
+          </DockPanel>
+        </Border>
 
-              <!-- Paso 2: Elegir Tema dentro de la Serie (cuando tiene >1 tema) -->
-              <StackPanel x:Name="PanelTemasSerie" Visibility="Collapsed">
-                <DockPanel Margin="0,0,0,10">
-                  <Button x:Name="BtnVolverASeries" Content="← Volver a Series" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
-                  <TextBlock x:Name="TxtSerieTitulo" Text="Mushoku Tensei" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
-                </DockPanel>
-                <TextBlock Text="Esta serie incluye varios escenarios. Selecciona el que quieras configurar:" Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
-                <StackPanel x:Name="ListaTarjetasMundos"/>
+        <!-- Área Principal de Páginas -->
+        <Border Grid.Column="2" Background="#0A1022" BorderBrush="#1F2F52" BorderThickness="1" CornerRadius="12" Padding="18">
+          <Grid>
+            <!-- PÁGINA 1: SERIES -> TEMAS -> IMÁGENES POR PANTALLA -->
+            <ScrollViewer x:Name="PageMundos" VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="0,0,6,0">
+                <!-- Paso 1: Elegir Serie -->
+                <StackPanel x:Name="PanelSeries">
+                  <TextBlock Text="Elige tu Serie o Universo" Foreground="#F3EAD6" FontSize="17" FontWeight="Bold"/>
+                  <TextBlock Text="Selecciona un anime o universo. Si incluye varios escenarios podrás elegir mundo; si solo tiene uno pasarás directo a asignar escenas." Foreground="#8EA3C4" FontSize="12" Margin="0,4,0,14" TextWrapping="Wrap" LineHeight="17"/>
+                  <StackPanel x:Name="ListaSeries"/>
+                </StackPanel>
+
+                <!-- Paso 2: Elegir Tema dentro de la Serie -->
+                <StackPanel x:Name="PanelTemasSerie" Visibility="Collapsed">
+                  <DockPanel Margin="0,0,0,12">
+                    <Button x:Name="BtnVolverASeries" Content="← Series" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="TxtSerieTitulo" Text="Mushoku Tensei" Foreground="#F3EAD6" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                  </DockPanel>
+                  <TextBlock Text="Esta serie cuenta con varios escenarios pixel art. Pulsa el que quieras personalizar:" Foreground="#8EA3C4" FontSize="12" Margin="0,0,0,14" TextWrapping="Wrap"/>
+                  <StackPanel x:Name="ListaTarjetasMundos"/>
+                </StackPanel>
+
+                <!-- Paso 3: Elegir qué imagen va en cada monitor y en Pantalla de Bloqueo -->
+                <StackPanel x:Name="PanelImagenesTema" Visibility="Collapsed">
+                  <DockPanel Margin="0,0,0,10">
+                    <Button x:Name="BtnVolverDeImagenes" Content="← Volver" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="TxtTemaImagenesTitulo" Text="Región de Fittoa" Foreground="#F3EAD6" FontSize="16.5" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  </DockPanel>
+                  <TextBlock Text="Asigna libremente cualquiera de las 3 escenas a cada monitor y a la pantalla de bloqueo:" Foreground="#8EA3C4" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+                  <WrapPanel Margin="0,0,0,12">
+                    <Button x:Name="BtnPresetClasico" Content="✦ Clásica (1·2·3)" Style="{StaticResource PillBtn}" Foreground="#7CF6EE" BorderBrush="#397D88" Margin="0,0,6,6" FontSize="11"/>
+                    <Button x:Name="BtnRepetirPrincipal" Content="✨ Usar Escena 1 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,6" FontSize="11"/>
+                    <Button x:Name="BtnRepetirSecundaria" Content="✨ Usar Escena 2 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,6" FontSize="11"/>
+                    <Button x:Name="BtnRepetirBloqueo" Content="✨ Usar Escena 3 en todas" Style="{StaticResource PillBtn}" Margin="0,0,0,6" FontSize="11"/>
+                  </WrapPanel>
+
+                  <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="🖥️ MONITOR PRINCIPAL" Foreground="#54DED4" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,8"/>
+                      <UniformGrid x:Name="GridPickerM1" Columns="3"/>
+                    </StackPanel>
+                  </Border>
+
+                  <Border x:Name="PanelPickerM2" Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,10">
+                    <StackPanel>
+                      <TextBlock Text="🖥️ MONITOR SECUNDARIO" Foreground="#E6B45A" FontSize="11.5" FontWeight="Bold" Margin="0,0,0,8"/>
+                      <UniformGrid x:Name="GridPickerM2" Columns="3"/>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,12">
+                    <StackPanel>
+                      <DockPanel Margin="0,0,0,8">
+                        <CheckBox x:Name="ChkBloqueoMenu" Content="🔒 PANTALLA DE BLOQUEO DE WINDOWS" FontSize="11.5" FontWeight="Bold" Foreground="#88C8FF" Margin="0"/>
+                      </DockPanel>
+                      <UniformGrid x:Name="GridPickerBloq" Columns="3"/>
+                    </StackPanel>
+                  </Border>
+
+                  <Button x:Name="BtnIrAPantallasLuz" Content="⚙️ Ajustar monitores y ciclo horario de luz →" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Margin="0,2,0,4"/>
+                </StackPanel>
               </StackPanel>
+            </ScrollViewer>
 
-              <!-- Paso 3: Elegir qué imagen va en cada monitor y en Pantalla de Bloqueo -->
-              <StackPanel x:Name="PanelImagenesTema" Visibility="Collapsed">
-                <DockPanel Margin="0,0,0,8">
-                  <Button x:Name="BtnVolverDeImagenes" Content="← Volver" Style="{StaticResource PillBtn}" DockPanel.Dock="Left" Margin="0,0,10,0"/>
-                  <TextBlock x:Name="TxtTemaImagenesTitulo" Text="Región de Fittoa" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <!-- PÁGINA 2: PANTALLAS Y LUZ -->
+            <ScrollViewer x:Name="PagePantallas" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+              <StackPanel Margin="0,0,6,0">
+                <TextBlock Text="Disposición de Pantallas" Foreground="#F3EAD6" FontSize="17" FontWeight="Bold"/>
+                <TextBlock Text="En modo 2 pantallas, tu monitor principal muestra la escena base y el segundo continúa la historia sin repetirse." Foreground="#8EA3C4" FontSize="12" Margin="0,4,0,12" TextWrapping="Wrap"/>
+
+                <Border x:Name="CardMon1" Background="#0E1730" BorderBrush="#263860" BorderThickness="1.5" CornerRadius="10" Padding="14" Margin="0,0,0,8" Cursor="Hand">
+                  <StackPanel>
+                    <RadioButton x:Name="RbMon1" GroupName="Mon" Content="Solo 1 Pantalla (Únicamente monitor principal)" FontWeight="SemiBold"/>
+                    <TextBlock Text="Ideal para portátiles o si prefieres animar un único escritorio." Foreground="#8EA3C4" FontSize="11.5" Margin="28,3,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+
+                <Border x:Name="CardMon2" Background="#0E1730" BorderBrush="#263860" BorderThickness="1.5" CornerRadius="10" Padding="14" Margin="0,0,0,16" Cursor="Hand">
+                  <StackPanel>
+                    <RadioButton x:Name="RbMon2" GroupName="Mon" Content="2 Pantallas (Principal + Continuación extendida)" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="TxtMon2Detalle" Text="Detectando pantallas..." Foreground="#54DED4" FontSize="11.5" Margin="28,3,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+
+                <TextBlock Text="Escena por Pantalla y Bloqueo" Foreground="#F3EAD6" FontSize="16" FontWeight="Bold" Margin="0,2,0,4"/>
+                <TextBlock Text="Cada mundo tiene 3 escenas independientes (Principal, Secundaria y Bloqueo)." Foreground="#8EA3C4" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,16">
+                  <StackPanel>
+                    <TextBlock Text="🖥️ Pantalla Principal" Foreground="#54DED4" FontSize="12" FontWeight="Bold" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CmbFondoPrincipal" FontSize="12" Height="34" Margin="0,0,0,12">
+                      <ComboBoxItem Content="Principal" Tag="principal"/>
+                      <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                      <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                    </ComboBox>
+
+                    <StackPanel x:Name="PanelComboSec">
+                      <TextBlock Text="🖥️ Pantalla Secundaria" Foreground="#E6B45A" FontSize="12" FontWeight="Bold" Margin="0,0,0,5"/>
+                      <ComboBox x:Name="CmbFondoSecundaria" FontSize="12" Height="34" Margin="0,0,0,12">
+                        <ComboBoxItem Content="Principal" Tag="principal"/>
+                        <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                        <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                      </ComboBox>
+                    </StackPanel>
+
+                    <CheckBox x:Name="ChkBloqueo" Content="🔒 Aplicar también fondo a la Pantalla de Bloqueo de Windows" FontWeight="SemiBold" Margin="0,2,0,8"/>
+                    <StackPanel x:Name="PanelComboBloq">
+                      <ComboBox x:Name="CmbFondoBloqueo" FontSize="12" Height="34" Margin="0,0,0,0">
+                        <ComboBoxItem Content="Principal" Tag="principal"/>
+                        <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                        <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                      </ComboBox>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <TextBlock Text="Ciclo de Luz del Cielo" Foreground="#F3EAD6" FontSize="16" FontWeight="Bold" Margin="0,2,0,4"/>
+                <TextBlock Text="Controla cómo evoluciona la escena entre Día, Atardecer Dorado y Noche estrellada." Foreground="#8EA3C4" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+                <ComboBox x:Name="CmbModo" FontSize="12.5" Height="36" Margin="0,0,0,10">
+                  <ComboBoxItem Content="🌗 Ciclo suave — Día y noche cada 90 min (Recomendado)" Tag="90m"/>
+                  <ComboBoxItem Content="🕒 Hora real — Igual que el reloj de tu Windows" Tag="real"/>
+                  <ComboBoxItem Content="⚡ Paseo rápido — Cambia en 90 segundos para probar" Tag="demo"/>
+                  <ComboBoxItem Content="🔒 Momento fijo — Elige tú Día, Atardecer o Noche" Tag="fija"/>
+                </ComboBox>
+
+                <Border x:Name="PanelHora" Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,2,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Elige el momento fijo que prefieras:" Foreground="#E6B45A" FontSize="12" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                      <Button x:Name="BtnFijarDia" Content="☀️ Día (13:00)" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
+                      <Button x:Name="BtnFijarDor" Content="🌅 Atardecer (18:30)" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
+                      <Button x:Name="BtnFijarNoc" Content="🌙 Noche (22:00)" Style="{StaticResource PillBtn}"/>
+                    </StackPanel>
+                    <DockPanel>
+                      <TextBlock x:Name="TxtHoraVal" Text="21:30" Foreground="#54DED4" FontFamily="Consolas" FontSize="14" FontWeight="Bold" DockPanel.Dock="Right" Width="56" TextAlignment="Right" VerticalAlignment="Center"/>
+                      <Slider x:Name="SldHora" Minimum="0" Maximum="23.75" TickFrequency="0.25" IsSnapToTickEnabled="True" Value="21.5"/>
+                    </DockPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- PÁGINA 3: CAJITAS DEL ESCRITORIO (HUD) -->
+            <ScrollViewer x:Name="PageHud" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+              <StackPanel Margin="0,0,6,0">
+                <DockPanel Margin="0,0,0,4">
+                  <TextBlock Text="Tarjetas Flotantes (HUD)" Foreground="#F3EAD6" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <CheckBox x:Name="ChkHudMaster" Content="Activadas" DockPanel.Dock="Right" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#54DED4" Margin="0"/>
                 </DockPanel>
-                <TextBlock Text="Elige qué escena del mundo quieres mostrar en cada monitor y en la pantalla de bloqueo (puedes repetir la misma en todas):" Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                <TextBlock Text="Transparentes al ratón: puedes hacer clic a través de ellas en tu escritorio. Mira su distribución en el estudio a la derecha." Foreground="#8EA3C4" FontSize="12" Margin="0,2,0,12" TextWrapping="Wrap"/>
 
-                <WrapPanel Margin="0,0,0,10">
-                  <Button x:Name="BtnRepetirPrincipal" Content="✨ Usar Escena 1 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,4" FontSize="11"/>
-                  <Button x:Name="BtnRepetirSecundaria" Content="✨ Usar Escena 2 en todas" Style="{StaticResource PillBtn}" Margin="0,0,6,4" FontSize="11"/>
-                  <Button x:Name="BtnRepetirBloqueo" Content="✨ Usar Escena 3 en todas" Style="{StaticResource PillBtn}" Margin="0,0,0,4" FontSize="11"/>
+                <WrapPanel Margin="0,0,0,14">
+                  <Button x:Name="BtnHudTodas" Content="✦ Mostrar todas" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
+                  <Button x:Name="BtnHudMinimo" Content="Modo limpio (Reloj + Frase)" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
+                  <Button x:Name="BtnHudSoloReloj" Content="Solo Reloj" Style="{StaticResource PillBtn}" Margin="0,0,0,6"/>
                 </WrapPanel>
 
-                <Border Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
                   <StackPanel>
-                    <TextBlock Text="🖥️ Monitor Principal" Foreground="#54DED4" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
-                    <UniformGrid x:Name="GridPickerM1" Columns="3"/>
+                    <CheckBox x:Name="ChkTiempo" Content="🕒 Reloj, fecha y nombre del mundo" FontWeight="SemiBold"/>
+                    <TextBlock Text="Muestra la hora grande, la fecha en español y el escenario activo." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkSistema" Content="💻 Rendimiento del PC (CPU, RAM, Disco, Batería)" FontWeight="SemiBold"/>
+                    <TextBlock Text="Barras visuales en tiempo real para controlar la carga del equipo." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkRed" Content="🌐 Conexión e Internet (Wi-Fi / IP / Velocidad)" FontWeight="SemiBold"/>
+                    <TextBlock Text="Muestra tu red activa, IP local y tráfico de subida/bajada." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkDev" Content="🛠️ Información técnica / Programador" FontWeight="SemiBold"/>
+                    <TextBlock Text="Nombre del equipo, rama Git actual y entorno detectado." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkGrimorio" Content="📖 Frase del universo (Grimorio)" FontWeight="SemiBold"/>
+                    <TextBlock Text="Citas icónicas de la serie que rotan automáticamente." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+
+            <!-- PÁGINA 4: AJUSTES E INICIO -->
+            <ScrollViewer x:Name="PageSistema" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
+              <StackPanel Margin="0,0,6,0">
+                <TextBlock Text="Comodidad e Inicio Automático" Foreground="#F3EAD6" FontSize="17" FontWeight="Bold"/>
+                <TextBlock Text="Deja PixelZen listo para iniciarse sin consolas al encender Windows." Foreground="#8EA3C4" FontSize="12" Margin="0,4,0,14" TextWrapping="Wrap"/>
+
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Acceso directo en el Escritorio" Foreground="#E6B45A" FontSize="13.5" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock Text="Crea un icono en tu Escritorio para abrir este estudio con un doble clic." Foreground="#8EA3C4" FontSize="11.5" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                    <Button x:Name="BtnAccesoDirecto" Content="📌 Crear acceso directo en mi Escritorio" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Foreground="#54DED4" BorderBrush="#3C8D96"/>
                   </StackPanel>
                 </Border>
 
-                <Border x:Name="PanelPickerM2" Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                   <StackPanel>
-                    <TextBlock Text="🖥️ Monitor Secundario" Foreground="#E6B45A" FontSize="12" FontWeight="Bold" Margin="0,0,0,6"/>
-                    <UniformGrid x:Name="GridPickerM2" Columns="3"/>
+                    <CheckBox x:Name="ChkAutoInicio" Content="🚀 Aplicar fondos e iniciar en bandeja al encender Windows" FontWeight="SemiBold"/>
+                    <TextBlock Text="Restaura automáticamente tus fondos animados y tarjetas al iniciar sesión." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,10" TextWrapping="Wrap"/>
+                    <CheckBox x:Name="ChkTrayCerrar" Content="📌 Al pulsar cerrar (X), minimizar junto al reloj en vez de salir" FontWeight="SemiBold"/>
+                    <TextBlock Text="Permite cambiar de mundo o activar el HUD en un clic desde la bandeja." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0" TextWrapping="Wrap"/>
                   </StackPanel>
                 </Border>
 
-                <Border Background="#101832" BorderBrush="#263759" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14">
                   <StackPanel>
-                    <DockPanel Margin="0,0,0,6">
-                      <CheckBox x:Name="ChkBloqueoMenu" Content="🔒 Pantalla de Bloqueo de Windows" FontWeight="Bold" Foreground="#88C8FF" Margin="0"/>
-                    </DockPanel>
-                    <UniformGrid x:Name="GridPickerBloq" Columns="3"/>
+                    <TextBlock Text="Estado del sistema y actualizaciones" Foreground="#E6B45A" FontSize="13.5" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="TxtDiag" Text="" Foreground="#C4D2E6" FontSize="12" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,12"/>
+                    <StackPanel Orientation="Horizontal">
+                      <Button x:Name="BtnBuscarUpdate" Content="🔄 Buscar actualización" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#3C8D96" Margin="0,0,8,0"/>
+                      <Button x:Name="BtnRestaurar" Content="Restablecer recomendados" Style="{StaticResource PillBtn}"/>
+                    </StackPanel>
                   </StackPanel>
                 </Border>
-
-                <Button x:Name="BtnIrAPantallasLuz" Content="⚙️ Ajustar n.º de monitores o ciclo de luz →" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Margin="0,2,0,4"/>
               </StackPanel>
-            </StackPanel>
-          </ScrollViewer>
+            </ScrollViewer>
+          </Grid>
+        </Border>
 
-          <!-- PÁGINA 2: PANTALLAS Y LUZ -->
-          <ScrollViewer x:Name="PagePantallas" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-            <StackPanel>
-              <TextBlock Text="¿Cuántas pantallas quieres configurar?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
-              <TextBlock Text="En modo 2 pantallas, tu monitor principal lleva la escena base y el segundo continúa la historia sin repetirse." Foreground="#8FA2C2" FontSize="12" Margin="0,3,0,10" TextWrapping="Wrap"/>
-
-              <Border x:Name="CardMon1" Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8" Cursor="Hand">
-                <StackPanel>
-                  <RadioButton x:Name="RbMon1" GroupName="Mon" Content="Solo 1 Pantalla (Únicamente monitor principal)" FontWeight="SemiBold"/>
-                  <TextBlock Text="Muestra el escenario principal del mundo elegido. Ideal para portátiles o si solo quieres decorar una pantalla." Foreground="#8FA2C2" FontSize="11" Margin="22,2,0,0" TextWrapping="Wrap"/>
+        <!-- Estudio de Vista Previa en Vivo (Columna Derecha) -->
+        <Border Grid.Column="4" Background="#0A1022" BorderBrush="#22345B" BorderThickness="1" CornerRadius="12" Padding="15">
+          <DockPanel>
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+              <TextBlock Text="ESCRITORIO EN VIVO" Foreground="#54DED4" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+              <Border DockPanel.Dock="Right" HorizontalAlignment="Right" Background="#060A16" BorderBrush="#223358" BorderThickness="1" CornerRadius="8" Padding="3">
+                <StackPanel Orientation="Horizontal">
+                  <Button x:Name="BtnPrevDia" Content="☀️ Día" Style="{StaticResource PillBtn}" Padding="7,3" FontSize="10.5" Margin="0,0,2,0"/>
+                  <Button x:Name="BtnPrevDor" Content="🌅 Dorado" Style="{StaticResource PillBtn}" Padding="7,3" FontSize="10.5" Margin="0,0,2,0"/>
+                  <Button x:Name="BtnPrevNoc" Content="🌙 Noche" Style="{StaticResource PillBtn}" Padding="7,3" FontSize="10.5"/>
                 </StackPanel>
               </Border>
-
-              <Border x:Name="CardMon2" Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14" Cursor="Hand">
-                <StackPanel>
-                  <RadioButton x:Name="RbMon2" GroupName="Mon" Content="2 Pantallas (Principal + Historia extendida)" FontWeight="SemiBold"/>
-                  <TextBlock x:Name="TxtMon2Detalle" Text="Detectando pantallas..." Foreground="#54DED4" FontSize="11" Margin="22,2,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-              </Border>
-
-              <TextBlock Text="¿Qué escena del grupo quieres en cada pantalla?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" Margin="0,2,0,2"/>
-              <TextBlock Text="Cada mundo incluye 3 escenas distintas (Principal, Secundaria y Bloqueo). Puedes combinarlas libremente." Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
-
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,16">
-                <StackPanel>
-                  <TextBlock Text="🖥️ Pantalla Principal" Foreground="#54DED4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                  <ComboBox x:Name="CmbFondoPrincipal" FontSize="12" Height="32" Padding="8,4" Margin="0,0,0,10">
-                    <ComboBoxItem Content="Principal" Tag="principal"/>
-                    <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
-                    <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
-                  </ComboBox>
-
-                  <StackPanel x:Name="PanelComboSec">
-                    <TextBlock Text="🖥️ Pantalla Secundaria" Foreground="#E6B45A" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                    <ComboBox x:Name="CmbFondoSecundaria" FontSize="12" Height="32" Padding="8,4" Margin="0,0,0,10">
-                      <ComboBoxItem Content="Principal" Tag="principal"/>
-                      <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
-                      <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
-                    </ComboBox>
-                  </StackPanel>
-
-                  <CheckBox x:Name="ChkBloqueo" Content="🔒 Aplicar también fondo a la Pantalla de Bloqueo de Windows" FontWeight="SemiBold" Margin="0,2,0,6"/>
-                  <StackPanel x:Name="PanelComboBloq">
-                    <ComboBox x:Name="CmbFondoBloqueo" FontSize="12" Height="32" Padding="8,4" Margin="22,0,0,0">
-                      <ComboBoxItem Content="Principal" Tag="principal"/>
-                      <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
-                      <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
-                    </ComboBox>
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-
-              <TextBlock Text="¿Cómo cambia la luz del cielo?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" Margin="0,4,0,2"/>
-              <TextBlock Text="Cada mundo tiene versión de Día, Atardecer Dorado y Noche con estrellas." Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
-
-              <ComboBox x:Name="CmbModo" FontSize="13" Height="34" Padding="8,5" Margin="0,0,0,8">
-                <ComboBoxItem Content="🌗 Ciclo suave — Día y noche cada 90 min (Recomendado)" Tag="90m"/>
-                <ComboBoxItem Content="🕒 Hora real — Igual que el reloj de tu Windows" Tag="real"/>
-                <ComboBoxItem Content="⚡ Paseo rápido — Cambia en 90 segundos para probar" Tag="demo"/>
-                <ComboBoxItem Content="🔒 Momento fijo — Elige tú Día, Atardecer o Noche" Tag="fija"/>
-              </ComboBox>
-
-              <Border x:Name="PanelHora" Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,4,0,0">
-                <StackPanel>
-                  <TextBlock Text="Elige el momento fijo que prefieras:" Foreground="#E6B45A" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                  <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button x:Name="BtnFijarDia" Content="☀️ Día (13:00)" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
-                    <Button x:Name="BtnFijarDor" Content="🌅 Atardecer (18:30)" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
-                    <Button x:Name="BtnFijarNoc" Content="🌙 Noche (22:00)" Style="{StaticResource PillBtn}"/>
-                  </StackPanel>
-                  <DockPanel>
-                    <TextBlock x:Name="TxtHoraVal" Text="21:30" Foreground="#54DED4" FontFamily="Consolas" FontSize="13" FontWeight="Bold" DockPanel.Dock="Right" Width="50" TextAlignment="Right"/>
-                    <Slider x:Name="SldHora" Minimum="0" Maximum="23.75" TickFrequency="0.25" IsSnapToTickEnabled="True" Value="21.5"/>
-                  </DockPanel>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- PÁGINA 3: CAJITAS DEL ESCRITORIO (HUD) -->
-          <ScrollViewer x:Name="PageHud" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-            <StackPanel>
-              <DockPanel Margin="0,0,0,4">
-                <TextBlock Text="Tarjetas flotantes del escritorio" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
-                <CheckBox x:Name="ChkHudMaster" Content="Activadas" DockPanel.Dock="Right" HorizontalAlignment="Right" FontWeight="Bold" Foreground="#54DED4" Margin="0"/>
-              </DockPanel>
-              <TextBlock Text="No bloquean el ratón: puedes hacer clic a través de ellas como si no estuvieran. Mira a la derecha cómo quedan." Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
-
-              <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                <Button x:Name="BtnHudTodas" Content="Mostrar todas" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
-                <Button x:Name="BtnHudMinimo" Content="Modo limpio (Reloj + Frase)" Style="{StaticResource PillBtn}" Margin="0,0,6,0"/>
-                <Button x:Name="BtnHudSoloReloj" Content="Solo Reloj" Style="{StaticResource PillBtn}"/>
-              </StackPanel>
-
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
-                <StackPanel>
-                  <CheckBox x:Name="ChkTiempo" Content="🕒 Reloj, fecha y nombre del mundo" FontWeight="SemiBold"/>
-                  <TextBlock Text="Muestra la hora grande, la fecha en español y el mundo activo." Foreground="#8FA2C2" FontSize="11" Margin="22,0,0,0"/>
-                </StackPanel>
-              </Border>
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
-                <StackPanel>
-                  <CheckBox x:Name="ChkSistema" Content="💻 Rendimiento del PC (CPU, RAM, Disco, Batería)" FontWeight="SemiBold"/>
-                  <TextBlock Text="Barras visuales en vivo para vigilar si tu ordenador va cargado." Foreground="#8FA2C2" FontSize="11" Margin="22,0,0,0"/>
-                </StackPanel>
-              </Border>
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
-                <StackPanel>
-                  <CheckBox x:Name="ChkRed" Content="🌐 Conexión e Internet (Wi-Fi / IP / Velocidad)" FontWeight="SemiBold"/>
-                  <TextBlock Text="Muestra tu red, dirección IP local y tráfico de subida/bajada." Foreground="#8FA2C2" FontSize="11" Margin="22,0,0,0"/>
-                </StackPanel>
-              </Border>
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8">
-                <StackPanel>
-                  <CheckBox x:Name="ChkDev" Content="🛠️ Información técnica / Programador" FontWeight="SemiBold"/>
-                  <TextBlock Text="Nombre del equipo, rama Git actual y versiones instaladas." Foreground="#8FA2C2" FontSize="11" Margin="22,0,0,0"/>
-                </StackPanel>
-              </Border>
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel>
-                  <CheckBox x:Name="ChkGrimorio" Content="📖 Frase del anime (Grimorio)" FontWeight="SemiBold"/>
-                  <TextBlock Text="Citas famosas de los personajes que van rotando automáticamente." Foreground="#8FA2C2" FontSize="11" Margin="22,0,0,0"/>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-
-          <!-- PÁGINA 4: AJUSTES E INICIO -->
-          <ScrollViewer x:Name="PageSistema" VerticalScrollBarVisibility="Auto" Visibility="Collapsed">
-            <StackPanel>
-              <TextBlock Text="Comodidad e inicio automático" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold"/>
-              <TextBlock Text="Deja PixelZen listo para no tener que abrir carpetas ni usar la consola nunca más." Foreground="#8FA2C2" FontSize="12" Margin="0,3,0,12" TextWrapping="Wrap"/>
-
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,10">
-                <StackPanel>
-                  <TextBlock Text="Acceso rápido desde el Escritorio" Foreground="#E6B45A" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                  <TextBlock Text="Crea un icono directo en tu Escritorio para abrir este panel con un doble clic sin ventanas negras." Foreground="#8FA2C2" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"/>
-                  <Button x:Name="BtnAccesoDirecto" Content="📌 Crear acceso directo en mi Escritorio" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Foreground="#54DED4" BorderBrush="#54DED4"/>
-                </StackPanel>
-              </Border>
-
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,10">
-                <StackPanel>
-                  <CheckBox x:Name="ChkAutoInicio" Content="🚀 Aplicar fondo y abrir junto al reloj al encender Windows" FontWeight="SemiBold"/>
-                  <TextBlock Text="Restaura automáticamente tus fondos y tarjetitas cada vez que inicies sesión." Foreground="#8FA2C2" FontSize="11" Margin="22,2,0,6" TextWrapping="Wrap"/>
-                  <CheckBox x:Name="ChkTrayCerrar" Content="📌 Al pulsar la X, minimizar junto al reloj en lugar de salir" FontWeight="SemiBold"/>
-                  <TextBlock Text="Así podrás cambiar de mundo o encender/apagar el HUD en un clic desde la bandeja." Foreground="#8FA2C2" FontSize="11" Margin="22,2,0,0" TextWrapping="Wrap"/>
-                </StackPanel>
-              </Border>
-
-              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel>
-                  <TextBlock Text="Estado y actualizaciones" Foreground="#E6B45A" FontSize="13" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                  <TextBlock x:Name="TxtDiag" Text="" Foreground="#B9C6DA" FontSize="12" TextWrapping="Wrap" LineHeight="19" Margin="0,0,0,10"/>
-                  <StackPanel Orientation="Horizontal">
-                    <Button x:Name="BtnBuscarUpdate" Content="🔄 Buscar actualización" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#54DED4" Margin="0,0,8,0"/>
-                    <Button x:Name="BtnRestaurar" Content="Restablecer ajustes recomendados" Style="{StaticResource PillBtn}"/>
-                  </StackPanel>
-                </StackPanel>
-              </Border>
-            </StackPanel>
-          </ScrollViewer>
-        </Grid>
-      </Border>
-
-      <!-- Vista Previa en Vivo (Columna Derecha Siempre Visible) -->
-      <Border Grid.Column="4" Background="#0B1124" BorderBrush="#28395E" BorderThickness="1" CornerRadius="10" Padding="14">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-          <StackPanel>
-            <DockPanel Margin="0,0,0,10">
-              <TextBlock Text="ASÍ SE VERÁ TU ESCRITORIO" Foreground="#54DED4" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
-              <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                <Button x:Name="BtnPrevDia" Content="☀️ Día" Style="{StaticResource PillBtn}" Padding="8,4" FontSize="11" Margin="0,0,4,0"/>
-                <Button x:Name="BtnPrevDor" Content="🌅 Dorado" Style="{StaticResource PillBtn}" Padding="8,4" FontSize="11" Margin="0,0,4,0"/>
-                <Button x:Name="BtnPrevNoc" Content="🌙 Noche" Style="{StaticResource PillBtn}" Padding="8,4" FontSize="11"/>
-              </StackPanel>
             </DockPanel>
 
-            <TextBlock x:Name="TxtPrev1Title" Text="PANTALLA PRINCIPAL (Monitor 1)" Foreground="#E6B45A" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-            <Border BorderBrush="#54DED4" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="215" Margin="0,0,0,12" ClipToBounds="True">
-              <Grid>
-                <Image x:Name="ImgPrev1" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                <!-- Simulación en tiempo real del HUD superpuesto -->
-                <StackPanel x:Name="MockHudPanel" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="8" Width="108">
-                  <Border x:Name="MockTiempo" Background="#D80B1020" BorderBrush="#7D6540" BorderThickness="1" Padding="5,3" Margin="0,0,0,3">
-                    <StackPanel>
-                      <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-                      <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7.5" TextTrimming="CharacterEllipsis"/>
+            <Border DockPanel.Dock="Bottom" Background="#0E1730" BorderBrush="#263B66" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,8,0,0">
+              <TextBlock x:Name="TxtEstado" Text="Elige una escena a la izquierda y pulsa Aplicar a mi escritorio." Foreground="#72E6AE" FontSize="11.5" TextWrapping="Wrap"/>
+            </Border>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="0,0,2,0">
+                <DockPanel Margin="0,0,0,4">
+                  <TextBlock x:Name="TxtPrev1Title" Text="PANTALLA 1" Foreground="#E6B45A" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                  <Border DockPanel.Dock="Right" HorizontalAlignment="Right" Background="#12303D" CornerRadius="4" Padding="6,1" Margin="6,0,0,0">
+                    <TextBlock Text="PRINCIPAL" Foreground="#54DED4" FontSize="9" FontWeight="Bold"/>
+                  </Border>
+                </DockPanel>
+                <Border BorderBrush="#49C8C0" BorderThickness="1.5" CornerRadius="8" Background="#040711" Height="150" Margin="0,0,0,7" ClipToBounds="True">
+                  <Grid>
+                    <Image x:Name="ImgPrev1" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                    <!-- Simulación de cajitas HUD superpuestas -->
+                    <StackPanel x:Name="MockHudPanel" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6,6,6,0" Width="106">
+                      <Border x:Name="MockTiempo" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,3" Margin="0,0,0,2">
+                        <StackPanel>
+                          <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+                          <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                      </Border>
+                      <Border x:Name="MockSistema" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
+                        <TextBlock Text="CPU 12%  RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="7"/>
+                      </Border>
+                      <Border x:Name="MockRed" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
+                        <TextBlock Text="WI-FI  ↓ 12K/s" Foreground="#54DED4" FontFamily="Consolas" FontSize="7"/>
+                      </Border>
+                      <Border x:Name="MockDev" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
+                        <TextBlock Text="DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="7"/>
+                      </Border>
+                      <Border x:Name="MockGrimorio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5">
+                        <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
+                      </Border>
                     </StackPanel>
+                    <!-- Sutil simulación barra de tareas Windows -->
+                    <Border VerticalAlignment="Bottom" Height="6" Background="#90070B16">
+                      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Border Width="4" Height="2.5" Background="#54DED4" Margin="2,0"/>
+                        <Border Width="4" Height="2.5" Background="#A8B8CF" Margin="2,0"/>
+                        <Border Width="4" Height="2.5" Background="#E6B45A" Margin="2,0"/>
+                      </StackPanel>
+                    </Border>
+                  </Grid>
+                </Border>
+
+                <StackPanel x:Name="PanelPrev2" Margin="0,0,0,7">
+                  <DockPanel Margin="0,0,0,4">
+                    <TextBlock x:Name="TxtPrev2Title" Text="PANTALLA 2 · HISTORIA EXTENDIDA" Foreground="#E6B45A" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <Border DockPanel.Dock="Right" HorizontalAlignment="Right" Background="#2B2112" CornerRadius="4" Padding="6,1" Margin="6,0,0,0">
+                      <TextBlock Text="MONITOR 2" Foreground="#E6B45A" FontSize="9" FontWeight="Bold"/>
+                    </Border>
+                  </DockPanel>
+                  <Border BorderBrush="#8A6E44" BorderThickness="1.5" CornerRadius="8" Background="#040711" Height="114" ClipToBounds="True">
+                    <Image x:Name="ImgPrev2" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                   </Border>
-                  <Border x:Name="MockSistema" Background="#D80B1020" BorderBrush="#7D6540" BorderThickness="1" Padding="5,3" Margin="0,0,0,3">
-                    <StackPanel>
-                      <TextBlock Text="CPU 12%  RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="7.5"/>
-                    </StackPanel>
-                  </Border>
-                  <Border x:Name="MockRed" Background="#D80B1020" BorderBrush="#7D6540" BorderThickness="1" Padding="5,3" Margin="0,0,0,3">
-                    <TextBlock Text="WI-FI  ↓ 12K/s" Foreground="#54DED4" FontFamily="Consolas" FontSize="7.5"/>
-                  </Border>
-                  <Border x:Name="MockDev" Background="#D80B1020" BorderBrush="#7D6540" BorderThickness="1" Padding="5,3" Margin="0,0,0,3">
-                    <TextBlock Text="DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="7.5"/>
-                  </Border>
-                  <Border x:Name="MockGrimorio" Background="#D80B1020" BorderBrush="#7D6540" BorderThickness="1" Padding="5,3">
-                    <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7.5" TextTrimming="CharacterEllipsis"/>
-                  </Border>
+                  <TextBlock x:Name="TxtM2Sub" Visibility="Collapsed" Text=""/>
                 </StackPanel>
-              </Grid>
-            </Border>
 
-            <StackPanel x:Name="PanelPrev2">
-              <TextBlock x:Name="TxtPrev2Title" Text="PANTALLA 2 · CONTINUACIÓN DE LA HISTORIA" Foreground="#E6B45A" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-              <Border BorderBrush="#7D6540" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="175" ClipToBounds="True">
-                <Image x:Name="ImgPrev2" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-              </Border>
-              <TextBlock x:Name="TxtM2Sub" Text="" Foreground="#A8B8CF" FontSize="11" Margin="0,4,0,8" TextWrapping="Wrap"/>
-            </StackPanel>
+                <StackPanel x:Name="PanelPrevBloqueo">
+                  <DockPanel Margin="0,0,0,4">
+                    <TextBlock x:Name="TxtPrevBloqTitle" Text="🔒 PANTALLA DE BLOQUEO" Foreground="#88C8FF" FontSize="11" FontWeight="Bold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <Border DockPanel.Dock="Right" HorizontalAlignment="Right" Background="#132440" CornerRadius="4" Padding="6,1" Margin="6,0,0,0">
+                      <TextBlock Text="WINDOWS LOCK" Foreground="#88C8FF" FontSize="9" FontWeight="Bold"/>
+                    </Border>
+                  </DockPanel>
+                  <Border BorderBrush="#4C6FA8" BorderThickness="1.5" CornerRadius="8" Background="#040711" Height="92" ClipToBounds="True">
+                    <Grid>
+                      <Image x:Name="ImgPrevBloqueo" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                      <Border Background="#38040814"/>
+                      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,8,0,0">
+                        <TextBlock Text="21:34" Foreground="#F6F4EA" FontSize="19" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Pantalla de bloqueo de Windows" Foreground="#D4E2F6" FontSize="9" HorizontalAlignment="Center"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                  <TextBlock x:Name="TxtBloqSub" Visibility="Collapsed" Text=""/>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+      </Grid>
 
-            <StackPanel x:Name="PanelPrevBloqueo">
-              <TextBlock x:Name="TxtPrevBloqTitle" Text="🔒 PANTALLA DE BLOQUEO" Foreground="#88C8FF" FontSize="11" FontWeight="Bold" Margin="0,2,0,4"/>
-              <Border BorderBrush="#4C6FA8" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="115" ClipToBounds="True">
-                <Grid>
-                  <Image x:Name="ImgPrevBloqueo" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                  <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0">
-                    <TextBlock Text="21:34" Foreground="#F6F4EA" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Windows Lock Screen" Foreground="#C8D6EA" FontSize="9" HorizontalAlignment="Center"/>
-                  </StackPanel>
-                </Grid>
-              </Border>
-              <TextBlock x:Name="TxtBloqSub" Text="" Foreground="#A8B8CF" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
-            </StackPanel>
-
-            <Border Background="#101833" BorderBrush="#263A60" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,12,0,0">
-              <TextBlock x:Name="TxtEstado" Text="Elige lo que quieras a la izquierda y pulsa Aplicar a mi escritorio." Foreground="#72C48C" FontSize="12" TextWrapping="Wrap"/>
-            </Border>
+      <!-- Barra inferior de acciones -->
+      <Border Grid.Row="2" Background="#0B1227" BorderBrush="#223359" BorderThickness="1" CornerRadius="12" Padding="14,11" Margin="0,14,0,0">
+        <DockPanel>
+          <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+            <Button x:Name="BtnWeb" Content="🎬 Visor animado en navegador" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#397D88" Margin="0,0,8,0"/>
+            <Button x:Name="BtnToggleHudNow" Content="👁️ Ocultar cajitas ahora" Style="{StaticResource PillBtn}"/>
           </StackPanel>
-        </ScrollViewer>
+          <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+            <Button x:Name="BtnSoloGuardar" Content="💾 Guardar sin aplicar" Style="{StaticResource PillBtn}" Margin="0,0,10,0"/>
+            <Button x:Name="BtnAplicar" Content="✦ APLICAR A MI ESCRITORIO" Padding="24,10" FontSize="13.5" FontWeight="Bold" Foreground="#061217" BorderBrush="#7CF6EE" BorderThickness="1" Cursor="Hand">
+              <Button.Template>
+                <ControlTemplate TargetType="Button">
+                  <Border x:Name="CtaBd" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
+                    <Border.Background>
+                      <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#4CE0D6" Offset="0"/>
+                        <GradientStop Color="#6EF7EE" Offset="1"/>
+                      </LinearGradientBrush>
+                    </Border.Background>
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                      <Setter TargetName="CtaBd" Property="Background">
+                        <Setter.Value>
+                          <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="#6CF2E8" Offset="0"/>
+                            <GradientStop Color="#9EFFF8" Offset="1"/>
+                          </LinearGradientBrush>
+                        </Setter.Value>
+                      </Setter>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                      <Setter TargetName="CtaBd" Property="Opacity" Value="0.88"/>
+                    </Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Button.Template>
+            </Button>
+          </StackPanel>
+        </DockPanel>
       </Border>
     </Grid>
-
-    <!-- Barra inferior de acciones -->
-    <Border Grid.Row="2" Background="#0D142B" BorderBrush="#28395E" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,14,0,0">
-      <DockPanel>
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-          <Button x:Name="BtnWeb" Content="🎬 Abrir versión animada en navegador" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#397D88" Margin="0,0,8,0"/>
-          <Button x:Name="BtnToggleHudNow" Content="👁️ Ocultar cajitas ahora" Style="{StaticResource PillBtn}"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-          <Button x:Name="BtnSoloGuardar" Content="💾 Solo guardar" Style="{StaticResource PillBtn}" Margin="0,0,8,0"/>
-          <Button x:Name="BtnAplicar" Content="✦ APLICAR A MI ESCRITORIO" Padding="20,9" FontSize="13" FontWeight="Bold" Background="#17444E" Foreground="#7CF6EE" BorderBrush="#54DED4" BorderThickness="1.5" Cursor="Hand">
-            <Button.Template>
-              <ControlTemplate TargetType="Button">
-                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
-                  <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-              </ControlTemplate>
-            </Button.Template>
-          </Button>
-        </StackPanel>
-      </DockPanel>
-    </Border>
   </Grid>
 </Window>
 "@
@@ -919,8 +1199,34 @@ if (Test-Path $IconPath) {
     try { $win.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create((New-Object Uri($IconPath))) } catch {}
 }
 
+# Barra de título oscura nativa en Windows 11/10
+$dwmCode = @'
+using System;
+using System.Runtime.InteropServices;
+public static class PzWinTheme {
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+    public static void ApplyDarkTitlebar(IntPtr hwnd) {
+        if (hwnd == IntPtr.Zero) return;
+        int dark = 1;
+        DwmSetWindowAttribute(hwnd, 20, ref dark, 4);
+        int captionColor = 0x00130906; // BGR de #060913
+        DwmSetWindowAttribute(hwnd, 35, ref captionColor, 4);
+        int textColor = 0x00D6EAF3; // BGR de #F3EAD6
+        DwmSetWindowAttribute(hwnd, 36, ref textColor, 4);
+    }
+}
+'@
+Add-Type -TypeDefinition $dwmCode -ErrorAction SilentlyContinue
+$win.Add_SourceInitialized({
+    try {
+        $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
+        [PzWinTheme]::ApplyDarkTitlebar($hwnd)
+    } catch {}
+})
+
 $el = @{}
-foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BadgeMotor','TxtMotorBadge','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnPresetClasico','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -989,6 +1295,20 @@ function New-CardThumb([string]$thumbPath, [int]$width = 108, [int]$height = 68)
     return $imgWrap
 }
 
+function Attach-CardHover($bd) {
+    $bd.Add_MouseEnter({
+        param($s, $e)
+        if (-not $s.IsHitTestVisible) { return }
+        $bc = [System.Windows.Media.BrushConverter]::new()
+        $s.Opacity = 1.0
+        $s.BorderBrush = $bc.ConvertFromString('#7CF6EE')
+    })
+    $bd.Add_MouseLeave({
+        param($s, $e)
+        Actualiza-Vista
+    })
+}
+
 # Paso 1: Construir tarjetas visuales por Serie
 foreach ($sName in $seriesList) {
     $sTemas = $seriesByName[$sName]
@@ -996,31 +1316,32 @@ foreach ($sName in $seriesList) {
     if (-not $repTema) { $repTema = $sTemas[0] }
 
     $bdS = New-Object System.Windows.Controls.Border
-    $bdS.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#101832')
+    $bdS.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#0E1730')
     $bdS.BorderThickness = [System.Windows.Thickness]::new(1.5)
-    $bdS.CornerRadius = [System.Windows.CornerRadius]::new(8)
-    $bdS.Padding = [System.Windows.Thickness]::new(9)
-    $bdS.Margin = [System.Windows.Thickness]::new(0, 0, 0, 9)
+    $bdS.CornerRadius = [System.Windows.CornerRadius]::new(10)
+    $bdS.Padding = [System.Windows.Thickness]::new(11)
+    $bdS.Margin = [System.Windows.Thickness]::new(0, 0, 0, 10)
     $bdS.Cursor = [System.Windows.Input.Cursors]::Hand
 
     $gS = New-Object System.Windows.Controls.Grid
-    $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = [System.Windows.GridLength]::new(108)
-    $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = [System.Windows.GridLength]::new(10)
+    $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = [System.Windows.GridLength]::new(142)
+    $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = [System.Windows.GridLength]::new(12)
     $c3 = New-Object System.Windows.Controls.ColumnDefinition; $c3.Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
     $null = $gS.ColumnDefinitions.Add($c1); $null = $gS.ColumnDefinitions.Add($c2); $null = $gS.ColumnDefinitions.Add($c3)
 
     $thumbPath = Resolver-Preview $repTema.id 'dorado' 'principal'
     if (-not $thumbPath) { $thumbPath = Resolver-Preview $repTema.id 'noche' 'principal' }
-    $imgWrap = New-CardThumb $thumbPath 108 68
+    $imgWrap = New-CardThumb $thumbPath 142 88
     [System.Windows.Controls.Grid]::SetColumn($imgWrap, 0)
     $null = $gS.Children.Add($imgWrap)
 
     $info = New-Object System.Windows.Controls.StackPanel
+    $info.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
     $topRow = New-Object System.Windows.Controls.DockPanel
     $lblTitle = New-Object System.Windows.Controls.TextBlock
     $lblTitle.Text = $sName
     $lblTitle.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F3EAD6')
-    $lblTitle.FontSize = 14
+    $lblTitle.FontSize = 15
     $lblTitle.FontWeight = [System.Windows.FontWeights]::Bold
     $null = $topRow.Children.Add($lblTitle)
 
@@ -1030,19 +1351,20 @@ foreach ($sName in $seriesList) {
     $lblSub = New-Object System.Windows.Controls.TextBlock
     if ($sTemas.Count -gt 1) {
         $titulos = ($sTemas | ForEach-Object { $_.titulo }) -join ' · '
-        $lblSub.Text = "$($sTemas.Count) temas disponibles: $titulos"
+        $lblSub.Text = "$($sTemas.Count) escenarios: $titulos"
     } else {
-        $lblSub.Text = "1 tema: $($sTemas[0].titulo)"
+        $lblSub.Text = "Escenario único: $($sTemas[0].titulo)"
     }
-    $lblSub.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#9EB0CC')
-    $lblSub.FontSize = 11.5
-    $lblSub.Margin = [System.Windows.Thickness]::new(0, 4, 0, 2)
+    $lblSub.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#A6B9D6')
+    $lblSub.FontSize = 12
+    $lblSub.Margin = [System.Windows.Thickness]::new(0, 5, 0, 4)
     $lblSub.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $lblHint = New-Object System.Windows.Controls.TextBlock
-    $lblHint.Text = if ($sTemas.Count -gt 1) { 'Pulsa para elegir escenario dentro de la serie →' } else { 'Pulsa para elegir imágenes de pantallas y bloqueo →' }
+    $lblHint.Text = if ($sTemas.Count -gt 1) { 'Explorar los mundos de esta serie →' } else { 'Elegir escenas de pantallas y bloqueo →' }
     $lblHint.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E6B45A')
-    $lblHint.FontSize = 10.5
+    $lblHint.FontSize = 11
+    $lblHint.FontWeight = [System.Windows.FontWeights]::SemiBold
 
     $null = $info.Children.Add($topRow)
     $null = $info.Children.Add($lblSub)
@@ -1068,6 +1390,7 @@ foreach ($sName in $seriesList) {
         }
         Actualiza-Vista
     })
+    Attach-CardHover $bdS
     $script:seriesCards[$sName] = $bdS
     $script:seriesBadges[$sName] = $badgeS
     $null = $el.ListaSeries.Children.Add($bdS)
@@ -1077,31 +1400,32 @@ foreach ($sName in $seriesList) {
 foreach ($t in $temas) {
     $tid = $t.id
     $bd = New-Object System.Windows.Controls.Border
-    $bd.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#101832')
+    $bd.Background = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#0E1730')
     $bd.BorderThickness = [System.Windows.Thickness]::new(1.5)
-    $bd.CornerRadius = [System.Windows.CornerRadius]::new(8)
-    $bd.Padding = [System.Windows.Thickness]::new(9)
-    $bd.Margin = [System.Windows.Thickness]::new(0, 0, 0, 9)
+    $bd.CornerRadius = [System.Windows.CornerRadius]::new(10)
+    $bd.Padding = [System.Windows.Thickness]::new(11)
+    $bd.Margin = [System.Windows.Thickness]::new(0, 0, 0, 10)
     $bd.Cursor = [System.Windows.Input.Cursors]::Hand
 
     $g = New-Object System.Windows.Controls.Grid
-    $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = [System.Windows.GridLength]::new(108)
-    $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = [System.Windows.GridLength]::new(10)
+    $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = [System.Windows.GridLength]::new(142)
+    $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = [System.Windows.GridLength]::new(12)
     $c3 = New-Object System.Windows.Controls.ColumnDefinition; $c3.Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
     $null = $g.ColumnDefinitions.Add($c1); $null = $g.ColumnDefinitions.Add($c2); $null = $g.ColumnDefinitions.Add($c3)
 
     $thumbPath = Resolver-Preview $tid 'dorado' 'principal'
     if (-not $thumbPath) { $thumbPath = Resolver-Preview $tid 'noche' 'principal' }
-    $imgWrap = New-CardThumb $thumbPath 108 68
+    $imgWrap = New-CardThumb $thumbPath 142 88
     [System.Windows.Controls.Grid]::SetColumn($imgWrap, 0)
     $null = $g.Children.Add($imgWrap)
 
     $info = New-Object System.Windows.Controls.StackPanel
+    $info.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
     $topRow = New-Object System.Windows.Controls.DockPanel
     $lblTitle = New-Object System.Windows.Controls.TextBlock
     $lblTitle.Text = $t.titulo
     $lblTitle.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F3EAD6')
-    $lblTitle.FontSize = 13.5
+    $lblTitle.FontSize = 14.5
     $lblTitle.FontWeight = [System.Windows.FontWeights]::Bold
     $null = $topRow.Children.Add($lblTitle)
 
@@ -1109,22 +1433,23 @@ foreach ($t in $temas) {
     $null = $topRow.Children.Add($badge)
 
     $lblM1 = New-Object System.Windows.Controls.TextBlock
-    $lblM1.Text = "Escena 1: $($t.m1)"
-    $lblM1.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#9EB0CC')
-    $lblM1.FontSize = 11
-    $lblM1.Margin = [System.Windows.Thickness]::new(0, 3, 0, 1)
+    $lblM1.Text = "1 · $($t.m1)"
+    $lblM1.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#A6B9D6')
+    $lblM1.FontSize = 11.5
+    $lblM1.Margin = [System.Windows.Thickness]::new(0, 4, 0, 2)
     $lblM1.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $lblM2 = New-Object System.Windows.Controls.TextBlock
-    $lblM2.Text = "Escena 2: $($t.m2)"
+    $lblM2.Text = "2 · $($t.m2)"
     $lblM2.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#E6B45A')
-    $lblM2.FontSize = 11
+    $lblM2.FontSize = 11.5
+    $lblM2.Margin = [System.Windows.Thickness]::new(0, 0, 0, 2)
     $lblM2.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $lblM3 = New-Object System.Windows.Controls.TextBlock
-    $lblM3.Text = "Escena 3 (Bloqueo): $($t.m3)"
+    $lblM3.Text = "3 · Bloqueo: $($t.m3)"
     $lblM3.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#88C8FF')
-    $lblM3.FontSize = 10.5
+    $lblM3.FontSize = 11
     $lblM3.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
     $null = $info.Children.Add($topRow)
@@ -1144,6 +1469,7 @@ foreach ($t in $temas) {
         Cambia-VistaMundo 'imagenes'
         Actualiza-Vista
     })
+    Attach-CardHover $bd
     $script:worldCards[$tid] = $bd
     $script:worldBadges[$tid] = $badge
     $script:worldSeries[$tid] = $t.serie
@@ -1155,30 +1481,53 @@ function Build-PickerRow($grid, [string]$rol) {
     $bc = [System.Windows.Media.BrushConverter]::new()
     foreach ($esc in @('principal', 'secundaria', 'bloqueo')) {
         $card = New-Object System.Windows.Controls.Border
-        $card.Background = $bc.ConvertFromString('#0B1228')
-        $card.BorderBrush = $bc.ConvertFromString('#263759')
+        $card.Background = $bc.ConvertFromString('#091024')
+        $card.BorderBrush = $bc.ConvertFromString('#24365C')
         $card.BorderThickness = [System.Windows.Thickness]::new(1.5)
-        $card.CornerRadius = [System.Windows.CornerRadius]::new(6)
+        $card.CornerRadius = [System.Windows.CornerRadius]::new(8)
         $card.Padding = [System.Windows.Thickness]::new(5)
-        $card.Margin = [System.Windows.Thickness]::new(3)
+        $card.Margin = [System.Windows.Thickness]::new(4)
         $card.Cursor = [System.Windows.Input.Cursors]::Hand
 
         $sp = New-Object System.Windows.Controls.StackPanel
         $imgWrap = New-Object System.Windows.Controls.Border
-        $imgWrap.CornerRadius = [System.Windows.CornerRadius]::new(4)
-        $imgWrap.Height = 56
+        $imgWrap.CornerRadius = [System.Windows.CornerRadius]::new(5)
+        $imgWrap.Height = 68
         $imgWrap.ClipToBounds = $true
-        $imgWrap.Background = $bc.ConvertFromString('#060916')
+        $imgWrap.Background = $bc.ConvertFromString('#050814')
+
+        $imgGrid = New-Object System.Windows.Controls.Grid
         $img = New-Object System.Windows.Controls.Image
         $img.Stretch = [System.Windows.Media.Stretch]::UniformToFill
         [System.Windows.Media.RenderOptions]::SetBitmapScalingMode($img, [System.Windows.Media.BitmapScalingMode]::NearestNeighbor)
-        $imgWrap.Child = $img
+        $null = $imgGrid.Children.Add($img)
+
+        $checkBadge = New-Object System.Windows.Controls.Border
+        $checkBadge.Background = $bc.ConvertFromString('#54DED4')
+        $checkBadge.CornerRadius = [System.Windows.CornerRadius]::new(9)
+        $checkBadge.Width = 18
+        $checkBadge.Height = 18
+        $checkBadge.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Right
+        $checkBadge.VerticalAlignment = [System.Windows.VerticalAlignment]::Top
+        $checkBadge.Margin = [System.Windows.Thickness]::new(0, 4, 4, 0)
+        $checkBadge.Visibility = 'Collapsed'
+        $chkTxt = New-Object System.Windows.Controls.TextBlock
+        $chkTxt.Text = '✓'
+        $chkTxt.Foreground = $bc.ConvertFromString('#061217')
+        $chkTxt.FontSize = 10
+        $chkTxt.FontWeight = [System.Windows.FontWeights]::Bold
+        $chkTxt.HorizontalAlignment = [System.Windows.HorizontalAlignment]::Center
+        $chkTxt.VerticalAlignment = [System.Windows.VerticalAlignment]::Center
+        $checkBadge.Child = $chkTxt
+        $null = $imgGrid.Children.Add($checkBadge)
+
+        $imgWrap.Child = $imgGrid
 
         $lbl = New-Object System.Windows.Controls.TextBlock
-        $lbl.Foreground = $bc.ConvertFromString('#D6E0EE')
-        $lbl.FontSize = 10.5
+        $lbl.Foreground = $bc.ConvertFromString('#DCE6F5')
+        $lbl.FontSize = 11
         $lbl.FontWeight = [System.Windows.FontWeights]::SemiBold
-        $lbl.Margin = [System.Windows.Thickness]::new(1, 4, 1, 0)
+        $lbl.Margin = [System.Windows.Thickness]::new(2, 5, 2, 1)
         $lbl.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
         $lbl.TextAlignment = [System.Windows.TextAlignment]::Center
 
@@ -1198,8 +1547,9 @@ function Build-PickerRow($grid, [string]$rol) {
             Set-ComboByTag $cmbMap[$info.rol] $info.escena 0
             Actualiza-Vista
         })
+        Attach-CardHover $card
         $null = $grid.Children.Add($card)
-        $script:pickerItems += @{ rol = $rol; escena = $esc; card = $card; img = $img; lbl = $lbl }
+        $script:pickerItems += @{ rol = $rol; escena = $esc; card = $card; img = $img; lbl = $lbl; chk = $checkBadge }
     }
 }
 
@@ -1380,19 +1730,24 @@ function Actualiza-Vista {
     $el.PanelComboBloq.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
     $el.GridPickerBloq.Opacity = if ($usarBloq) { 1.0 } else { 0.45 }
 
+    function Cortar-SeriePrefijo([string]$txt) {
+        if (-not $txt) { return '' }
+        if ($txt -match '^[^·]+·\s*(.+)$') { return $Matches[1].Trim() }
+        return $txt.Trim()
+    }
     function Nombre-EscenaVariante([string]$tag) {
         switch ($tag) {
-            'secundaria' { return $tmeta.m2 }
-            'bloqueo'    { return $tmeta.m3 }
-            default      { return $tmeta.m1 }
+            'secundaria' { return (Cortar-SeriePrefijo $tmeta.m2) }
+            'bloqueo'    { return (Cortar-SeriePrefijo $tmeta.m3) }
+            default      { return (Cortar-SeriePrefijo $tmeta.m1) }
         }
     }
 
     # Actualizar encabezados e imágenes del Paso 3 (Selector visual por pantalla)
     $el.TxtTemaImagenesTitulo.Text = "$($tmeta.serie) · $($tmeta.titulo)"
-    $el.BtnRepetirPrincipal.Content  = "✨ Repetir: $($tmeta.m1)"
-    $el.BtnRepetirSecundaria.Content = "✨ Repetir: $($tmeta.m2)"
-    $el.BtnRepetirBloqueo.Content    = "✨ Repetir: $($tmeta.m3)"
+    $el.BtnRepetirPrincipal.Content  = "✨ Todas: $(Nombre-EscenaVariante 'principal')"
+    $el.BtnRepetirSecundaria.Content = "✨ Todas: $(Nombre-EscenaVariante 'secundaria')"
+    $el.BtnRepetirBloqueo.Content    = "✨ Todas: $(Nombre-EscenaVariante 'bloqueo')"
 
     $prevCache = @{
         'principal'  = Cargar-Bitmap (Resolver-Preview $tid $script:previewFase 'principal')
@@ -1406,12 +1761,14 @@ function Actualiza-Vista {
         $esSel = ($selMap[$pi.rol] -eq $pi.escena) -and ($pi.rol -ne 'bloqueo' -or $usarBloq)
         if ($esSel) {
             $pi.card.BorderBrush = $bc.ConvertFromString('#54DED4')
-            $pi.card.Background  = $bc.ConvertFromString('#152346')
-            $pi.lbl.Foreground   = $bc.ConvertFromString('#54DED4')
+            $pi.card.Background  = $bc.ConvertFromString('#15284F')
+            $pi.lbl.Foreground   = $bc.ConvertFromString('#7CF6EE')
+            $pi.chk.Visibility   = 'Visible'
         } else {
-            $pi.card.BorderBrush = $bc.ConvertFromString('#263759')
-            $pi.card.Background  = $bc.ConvertFromString('#0B1228')
-            $pi.lbl.Foreground   = $bc.ConvertFromString('#D6E0EE')
+            $pi.card.BorderBrush = $bc.ConvertFromString('#24365C')
+            $pi.card.Background  = $bc.ConvertFromString('#091024')
+            $pi.lbl.Foreground   = $bc.ConvertFromString('#DCE6F5')
+            $pi.chk.Visibility   = 'Collapsed'
         }
     }
 
@@ -1420,8 +1777,10 @@ function Actualiza-Vista {
     $el.ImgPrev2.Source = $prevCache[$fsTag]
     $el.ImgPrevBloqueo.Source = $prevCache[$fbTag]
     $el.TxtPrev1Title.Text = "PANTALLA 1 · $(Nombre-EscenaVariante $fpTag)"
+    $el.TxtPrev2Title.Text = "PANTALLA 2 · $(Nombre-EscenaVariante $fsTag)"
     $el.PanelPrev2.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
     $el.TxtM2Sub.Text = "En tu 2.º monitor: $(Nombre-EscenaVariante $fsTag)"
+    $el.TxtPrevBloqTitle.Text = "🔒 BLOQUEO · $(Nombre-EscenaVariante $fbTag)"
     $el.PanelPrevBloqueo.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
     $el.TxtBloqSub.Text = "Bloqueo de Windows: $(Nombre-EscenaVariante $fbTag)"
 
@@ -1450,18 +1809,33 @@ function Actualiza-Vista {
     # Botón toggle HUD actual
     $el.BtnToggleHudNow.Content = if (Hay-HudActivo) { '👁️ Ocultar cajitas ahora' } else { '👁️ Mostrar cajitas ahora' }
 
-    # Botones de vista previa fase
-    foreach ($pair in @(@($el.BtnPrevDia,'dia'), @($el.BtnPrevDor,'dorado'), @($el.BtnPrevNoc,'noche'))) {
-        $pair[0].BorderBrush = $bc.ConvertFromString($(if ($script:previewFase -eq $pair[1]) { '#54DED4' } else { '#2A3C64' }))
-        $pair[0].Foreground = $bc.ConvertFromString($(if ($script:previewFase -eq $pair[1]) { '#54DED4' } else { '#D6E0EE' }))
+    # Estado motor nativo en cabecera
+    if (Motor-NativoActivo) {
+        $el.BadgeMotor.Background = $bc.ConvertFromString('#102924')
+        $el.BadgeMotor.BorderBrush = $bc.ConvertFromString('#2E8B6B')
+        $el.TxtMotorBadge.Text = '● MOTOR NATIVO ACTIVO'
+        $el.TxtMotorBadge.Foreground = $bc.ConvertFromString('#72E6AE')
+    } else {
+        $el.BadgeMotor.Background = $bc.ConvertFromString('#261E12')
+        $el.BadgeMotor.BorderBrush = $bc.ConvertFromString('#7D6230')
+        $el.TxtMotorBadge.Text = '● EN ESPERA'
+        $el.TxtMotorBadge.Foreground = $bc.ConvertFromString('#E6B45A')
     }
 
-    # Resumen lateral
+    # Botones de vista previa fase (segmentados)
+    foreach ($pair in @(@($el.BtnPrevDia,'dia'), @($el.BtnPrevDor,'dorado'), @($el.BtnPrevNoc,'noche'))) {
+        $activoF = ($script:previewFase -eq $pair[1])
+        $pair[0].Background  = $bc.ConvertFromString($(if ($activoF) { '#163549' } else { 'Transparent' }))
+        $pair[0].BorderBrush = $bc.ConvertFromString($(if ($activoF) { '#54DED4' } else { 'Transparent' }))
+        $pair[0].Foreground  = $bc.ConvertFromString($(if ($activoF) { '#7CF6EE' } else { '#9AB0CE' }))
+    }
+
+    # Resumen lateral estructurado
     $modoTxt = switch ($modo) { 'real' { 'Hora real' } 'demo' { 'Pase rápido 90s' } 'fija' { "Fija $($el.TxtHoraVal.Text)" } default { 'Suave 90m' } }
     $nStats = @($el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio | Where-Object { $_.IsChecked }).Count
-    $hudTxt = if ($hudOn) { "$nStats cajitas activas" } else { 'HUD desactivado' }
-    $bloqTxt = if ($usarBloq) { Nombre-EscenaVariante $fbTag } else { 'Sin cambio' }
-    $el.TxtResumen.Text = "Serie: $($tmeta.serie)`nTema: $($tmeta.titulo)`nPantallas: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nInfo: $hudTxt"
+    $hudTxt = if ($hudOn) { "$nStats activas" } else { 'Desactivado' }
+    $bloqTxt = if ($usarBloq) { Nombre-EscenaVariante $fbTag } else { 'Desactivado' }
+    $el.TxtResumen.Text = "Serie: $($tmeta.serie)`nMundo: $($tmeta.titulo)`nMonitores: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nCajitas HUD: $hudTxt"
 }
 
 # Eventos de navegación y controles
@@ -1470,6 +1844,16 @@ $el.BtnVolverASeries.Add_Click({ Cambia-VistaMundo 'series' })
 $el.BtnVolverDeImagenes.Add_Click({
     $listaS = $seriesByName[$script:selectedSerie]
     if ($listaS -and $listaS.Count -gt 1) { Cambia-VistaMundo 'temas' } else { Cambia-VistaMundo 'series' }
+})
+$el.BtnPresetClasico.Add_Click({
+    $script:syncingCombos = $true
+    $el.ChkBloqueo.IsChecked = $true
+    $el.ChkBloqueoMenu.IsChecked = $true
+    Set-ComboByTag $el.CmbFondoPrincipal 'principal' 0
+    Set-ComboByTag $el.CmbFondoSecundaria 'secundaria' 1
+    Set-ComboByTag $el.CmbFondoBloqueo 'bloqueo' 2
+    $script:syncingCombos = $false
+    Actualiza-Vista
 })
 $el.BtnRepetirPrincipal.Add_Click({ Aplicar-EscenaTodas 'principal' })
 $el.BtnRepetirSecundaria.Add_Click({ Aplicar-EscenaTodas 'secundaria' })
