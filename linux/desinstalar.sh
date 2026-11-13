@@ -6,8 +6,12 @@ EXT="$HOME/.local/share/gnome-shell/extensions/$UUID"
 CFG="$HOME/.config/pixelzen"
 
 systemctl --user disable --now pixelzen-ciclo90.service >/dev/null 2>&1 || true
-rm -f "$HOME/.config/systemd/user/pixelzen-ciclo90.service" "$HOME/.local/share/pixelzen/ciclo90.py"
+rm -rf "$HOME/.config/systemd/user/pixelzen-ciclo90.service" "$HOME/.local/share/pixelzen"
+rm -f "$HOME/.local/bin/pixelzen-worlds" \
+      "$HOME/.local/share/applications/pixelzen-worlds.desktop" \
+      "$HOME/.local/share/icons/hicolor/256x256/apps/pixelzen-worlds.png"
 systemctl --user daemon-reload >/dev/null 2>&1 || true
+update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 
 gnome-extensions disable "$UUID" 2>/dev/null
 python3 -I - <<EOF

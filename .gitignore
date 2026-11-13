@@ -7,3 +7,5 @@ Thumbs.db
 *.log
 gschemas.compiled
 escenas/*/pack/
+windows/config.json
+dist/

@@ -1,20 +1,33 @@
 (() => {
   const canvas = document.getElementById('lienzo');
+  const canvasSec = document.getElementById('lienzo-sec');
+  const wrapEl = document.getElementById('canvas-wrap');
   const loadingEl = document.getElementById('canvas-loading');
   const sliderEl = document.getElementById('hora-slider');
   const horaLabelEl = document.getElementById('hora-label');
+  const badgeSecEl = document.getElementById('badge-sec');
+
+  let numMonitores = 2;
 
   const renderer = window.PixelZenCanvas.createRenderer(canvas, {
     initialState: {
       tema: 'fittoa',
+      pantalla: 'principal',
       modoHora: 3, // 0=real, 1=90m, 2=demo90s, 3=fija
       horaFija: 18.75,
       fps: 10,
       mostrarHud: true,
+      hudStats: {
+        tiempo: true,
+        sistema: true,
+        red: true,
+        dev: true,
+        grimorio: true,
+      },
       inicioHora: 18.75,
     },
     onTemaLoaded(tema) {
-      document.getElementById('canvas-wrap').style.background = tema.cielo_fondo || '#060814';
+      wrapEl.style.background = tema.cielo_fondo || '#060814';
       loadingEl.classList.add('is-hidden');
       renderer.render();
     },
@@ -28,11 +41,54 @@
     },
   });
 
+  const rendererSec = canvasSec ? window.PixelZenCanvas.createRenderer(canvasSec, {
+    initialState: {
+      tema: 'fittoa',
+      pantalla: 'secundaria',
+      modoHora: 3,
+      horaFija: 18.75,
+      fps: 10,
+      mostrarHud: false,
+      inicioHora: 18.75,
+    },
+    onTemaLoaded(tema) {
+      if (badgeSecEl && tema && tema.nombre) {
+        badgeSecEl.textContent = `MONITOR 2 · ${tema.nombre.toUpperCase()}`;
+      }
+      rendererSec.render();
+    },
+  }) : null;
+
   const { state } = renderer;
+
+  function sincronizaSecundario() {
+    if (!rendererSec) return;
+    const s2 = rendererSec.state;
+    s2.modoHora = state.modoHora;
+    s2.horaFija = state.horaFija;
+    s2.inicioMs = state.inicioMs;
+    s2.inicioHora = state.inicioHora;
+    s2.tick = state.tick;
+  }
+
+  function renderTodo() {
+    renderer.render();
+    if (rendererSec && numMonitores >= 2) {
+      sincronizaSecundario();
+      rendererSec.render();
+    }
+  }
 
   function seleccionaYCarga(id) {
     loadingEl.classList.remove('is-hidden');
-    renderer.cargarTema(id);
+    const jobs = [renderer.cargarTema(id, { pantalla: 'principal' })];
+    if (rendererSec && numMonitores >= 2) {
+      jobs.push(rendererSec.cargarTema(id, { pantalla: 'secundaria' }));
+    }
+    Promise.all(jobs).then(() => {
+      loadingEl.classList.add('is-hidden');
+      renderTodo();
+    });
   }
 
   function seleccionarTema(id) {
@@ -51,6 +107,27 @@
     btn.addEventListener('click', () => seleccionarTema(btn.dataset.tema));
   });
 
+  document.querySelectorAll('.btn-opt[data-monitores]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      numMonitores = parseInt(btn.dataset.monitores, 10) || 1;
+      document.querySelectorAll('.btn-opt[data-monitores]').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      wrapEl.classList.toggle('is-dual', numMonitores >= 2);
+      if (numMonitores >= 2 && rendererSec) {
+        rendererSec.cargarTema(state.tema, { pantalla: 'secundaria' }).then(renderTodo);
+      } else {
+        renderTodo();
+      }
+    });
+  });
+
+  document.querySelectorAll('input[data-stat]').forEach(chk => {
+    chk.addEventListener('change', () => {
+      state.hudStats[chk.dataset.stat] = chk.checked;
+      renderTodo();
+    });
+  });
+
   document.querySelectorAll('.btn-mode').forEach(btn => {
     btn.addEventListener('click', () => {
       limpiarModos();
@@ -65,7 +142,7 @@
       } else {
         state.modoHora = 0;
       }
-      renderer.render();
+      renderTodo();
     });
   });
 
@@ -76,7 +153,7 @@
       state.modoHora = 3;
       state.horaFija = parseFloat(btn.dataset.hora);
       sliderEl.value = state.horaFija;
-      renderer.render();
+      renderTodo();
     });
   });
 
@@ -84,35 +161,53 @@
     limpiarModos();
     state.modoHora = 3;
     state.horaFija = parseFloat(sliderEl.value);
-    renderer.render();
+    renderTodo();
   });
 
   const btnHud = document.getElementById('btn-hud');
   btnHud.addEventListener('click', () => {
     state.mostrarHud = !state.mostrarHud;
     btnHud.textContent = `HUD: ${state.mostrarHud ? 'ON' : 'OFF'}`;
-    renderer.render();
+    renderTodo();
   });
 
   document.getElementById('btn-fullscreen').addEventListener('click', () => {
-    const wrap = document.getElementById('canvas-wrap');
     if (document.fullscreenElement) {
       document.exitFullscreen();
-    } else if (wrap.requestFullscreen) {
-      wrap.requestFullscreen();
+    } else if (wrapEl.requestFullscreen) {
+      wrapEl.requestFullscreen();
     }
   });
 
   document.querySelectorAll('.world-card').forEach(card => {
     const id = card.dataset.world;
     const img = card.querySelector('.world-media img');
-    card.querySelectorAll('.phase-switch button').forEach(btn => {
+    let faseAct = 'dorado';
+    let panAct = 'm1';
+
+    function actualizaCardImg() {
+      const pref = panAct === 'm2' ? 'm2-' : '';
+      img.src = `previews/${id}/${pref}${faseAct}.png`;
+    }
+
+    card.querySelectorAll('.phase-switch button[data-fase]').forEach(btn => {
       btn.addEventListener('click', () => {
-        card.querySelectorAll('.phase-switch button').forEach(b => b.classList.remove('is-active'));
+        card.querySelectorAll('.phase-switch button[data-fase]').forEach(b => b.classList.remove('is-active'));
         btn.classList.add('is-active');
-        img.src = `previews/${id}/${btn.dataset.fase}.png`;
+        faseAct = btn.dataset.fase;
+        actualizaCardImg();
       });
     });
+
+    card.querySelectorAll('.phase-switch button[data-pan]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        card.querySelectorAll('.phase-switch button[data-pan]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        panAct = btn.dataset.pan;
+        actualizaCardImg();
+      });
+    });
+
     const tryBtn = card.querySelector('.btn-try');
     if (tryBtn) {
       tryBtn.addEventListener('click', () => {
@@ -144,6 +239,6 @@
     });
   });
 
-  setInterval(() => { state.tick++; renderer.render(); }, 100);
+  setInterval(() => { state.tick++; renderTodo(); }, 100);
   seleccionaYCarga(state.tema);
 })();

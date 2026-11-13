@@ -13,13 +13,14 @@ RAIZ="$(dirname "$AQUI")"
 EXT="$HOME/.local/share/gnome-shell/extensions/$UUID"
 CFG="$HOME/.config/pixelzen"
 TEMA="fittoa"
-CASA=""; FONDO=1; CICLO90=0
+CASA=""; FONDO=1; CICLO90=0; ABRIR_APP=0
 
 for a in "$@"; do case "$a" in
   --tema=*) TEMA="${a#--tema=}";;
   --casa=*) CASA="${a#--casa=}";;
   --sin-fondo) FONDO=0;;
   --90m) CICLO90=1;;
+  --abrir-app) ABRIR_APP=1;;
   -h|--help) sed -n 2,7p "$0"; exit 0;;
   *) echo "opcion desconocida: $a" >&2; exit 2;;
 esac; done
@@ -30,28 +31,48 @@ done
 ver="$(gnome-shell --version | grep -oE '[0-9]+' | head -1)"
 [ "${ver:-0}" -ge 46 ] || { echo "GNOME Shell $ver no soportado (minimo 46)." >&2; exit 1; }
 
-if [ ! -d "$RAIZ/escenas/$TEMA/pack/images" ]; then
+if [ ! -d "$RAIZ/temas/$TEMA/images" ] && [ ! -d "$RAIZ/escenas/$TEMA/pack/images" ]; then
   echo "==> Compilando tema '$TEMA'..."
   python3 "$RAIZ/src/construir.py" "$TEMA"
 fi
 
 echo "==> Copiando la extension a $EXT"
-rm -rf "$EXT"; mkdir -p "$EXT/code"
+rm -rf "$EXT"; mkdir -p "$EXT/code" "$EXT/temas"
 cp -a "$AQUI/$UUID/." "$EXT/"
 cp "$RAIZ/src/ubicacion.py" "$EXT/code/"
 cp "$RAIZ/src/datos.py" "$EXT/code/"
 cp "$RAIZ/LICENSE" "$EXT/"
-cp -a "$RAIZ/escenas/$TEMA/pack/." "$EXT/"
-if [ -d "$RAIZ/windows/lively/temas" ]; then
-  rm -rf "$EXT/temas"
-  cp -a "$RAIZ/windows/lively/temas" "$EXT/temas"
+
+if [ -d "$RAIZ/temas" ]; then
+  cp -a "$RAIZ/temas/." "$EXT/temas/"
+elif [ -d "$RAIZ/windows/lively/temas" ]; then
+  cp -a "$RAIZ/windows/lively/temas/." "$EXT/temas/"
 fi
+
 for d in "$RAIZ/escenas"/*/pack; do
   [ -d "$d/images" ] || continue
   id="$(basename "$(dirname "$d")")"
   mkdir -p "$EXT/temas/$id"
   cp -a "$d/." "$EXT/temas/$id/"
+  if [ -d "$RAIZ/escenas/$id/preview" ]; then
+    rm -rf "$EXT/temas/$id/preview"
+    cp -a "$RAIZ/escenas/$id/preview" "$EXT/temas/$id/preview"
+  fi
+  if [ -d "$RAIZ/escenas/$id/secundario/preview" ]; then
+    mkdir -p "$EXT/temas/$id/secundario"
+    rm -rf "$EXT/temas/$id/secundario/preview"
+    cp -a "$RAIZ/escenas/$id/secundario/preview" "$EXT/temas/$id/secundario/preview"
+  fi
 done
+
+if [ -d "$EXT/temas/$TEMA/images" ]; then
+  cp -a "$EXT/temas/$TEMA/images" "$EXT/images"
+  for fn in datos.json tema.json fondo.png; do
+    [ -f "$EXT/temas/$TEMA/$fn" ] && cp "$EXT/temas/$TEMA/$fn" "$EXT/$fn"
+  done
+elif [ -d "$RAIZ/escenas/$TEMA/pack" ]; then
+  cp -a "$RAIZ/escenas/$TEMA/pack/." "$EXT/"
+fi
 glib-compile-schemas "$EXT/schemas"
 gsettings --schemadir "$EXT/schemas" set org.gnome.shell.extensions.pixelzen tema "$TEMA"
 
@@ -121,7 +142,41 @@ if [ "$CICLO90" = 1 ]; then
   "$AQUI/hora.sh" 90m
 fi
 
+echo "==> Instalando aplicación gráfica PixelZen Worlds en el menú de aplicaciones"
+mkdir -p "$HOME/.local/share/pixelzen" "$HOME/.local/bin" \
+         "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/256x256/apps"
+cp "$AQUI/pixelzen_app.py" "$HOME/.local/share/pixelzen/pixelzen_app.py"
+cp "$AQUI/desinstalar.sh" "$HOME/.local/share/pixelzen/desinstalar.sh"
+chmod +x "$HOME/.local/share/pixelzen/pixelzen_app.py" "$HOME/.local/share/pixelzen/desinstalar.sh"
+if [ -f "$AQUI/pixelzen-worlds.png" ]; then
+  cp "$AQUI/pixelzen-worlds.png" "$HOME/.local/share/icons/hicolor/256x256/apps/pixelzen-worlds.png"
+fi
+
+cat > "$HOME/.local/bin/pixelzen-worlds" <<'EOF'
+#!/usr/bin/env bash
+exec python3 "$HOME/.local/share/pixelzen/pixelzen_app.py" "$@"
+EOF
+chmod +x "$HOME/.local/bin/pixelzen-worlds"
+
+cat > "$HOME/.local/share/applications/pixelzen-worlds.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=PixelZen Worlds
+Comment=Fondos pixel art animados, multimonitor y panel HUD
+Exec=$HOME/.local/bin/pixelzen-worlds
+Icon=pixelzen-worlds
+Terminal=false
+Categories=Utility;DesktopSettings;GTK;
+StartupNotify=true
+EOF
+update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+gtk-update-icon-cache -f "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+
 echo
 echo "Listo (tema='$TEMA')."
-echo "  Cambiar tema: $AQUI/tema.sh fittoa | continente-demoniaco"
-echo "  Cambiar hora: $AQUI/hora.sh 90m | real | demo | 21:30"
+echo "  Abrir app visual:  pixelzen-worlds  (o busca 'PixelZen Worlds' en tus aplicaciones)"
+echo "  Desinstalar:       $HOME/.local/share/pixelzen/desinstalar.sh"
+
+if [ "$ABRIR_APP" = 1 ] && { [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; }; then
+  nohup "$HOME/.local/bin/pixelzen-worlds" >/dev/null 2>&1 &
+fi

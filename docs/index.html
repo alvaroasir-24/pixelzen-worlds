@@ -56,23 +56,75 @@
             </div>
           </div>
 
-          <div class="canvas-wrap" id="canvas-wrap">
-            <canvas id="lienzo" width="640" height="400"></canvas>
-            <div class="canvas-loading" id="canvas-loading">Cargando capas del mundo...</div>
+          <div class="options-bar" aria-label="Menú de opciones">
+            <div class="opt-group">
+              <span class="opt-label">MONITORES:</span>
+              <button class="btn-opt" data-monitores="1">1 Monitor</button>
+              <button class="btn-opt is-active" data-monitores="2">2 Monitores (Principal + Continuación)</button>
+            </div>
+            <div class="opt-group">
+              <span class="opt-label">ESTADÍSTICAS HUD:</span>
+              <label class="stat-chk"><input type="checkbox" data-stat="tiempo" checked /> Tiempo</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="sistema" checked /> Sistema</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="red" checked /> Red</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="dev" checked /> Dev</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="grimorio" checked /> Grimorio</label>
+            </div>
+          </div>
 
-            <aside class="hud" id="hud">
-              <div class="hud-card">
-                <div class="hud-head"><span>✦ TIEMPO</span><span id="hud-modo">FIJA</span></div>
-                <div class="hud-clock"><span id="hud-hm">18:45</span><small id="hud-s">00</small></div>
-                <div class="hud-date" id="hud-fecha"></div>
-                <div class="hud-sub" id="hud-tema">Región de Fittoa</div>
-              </div>
-              <div class="hud-card">
-                <div class="hud-head"><span>✧ GRIMORIO</span><span id="hud-au">Rudeus</span></div>
-                <div class="hud-sub" id="hud-qsub">K407 · Aldea de Buena</div>
-                <div class="hud-quote" id="hud-qtxt"></div>
-              </div>
-            </aside>
+          <div class="canvas-wrap is-dual" id="canvas-wrap">
+            <div class="monitor-pane" id="pane-prim">
+              <span class="monitor-badge">MONITOR 1 · PRINCIPAL</span>
+              <canvas id="lienzo" width="640" height="400"></canvas>
+              <aside class="hud" id="hud">
+                <div class="hud-card" id="card-tiempo">
+                  <div class="hud-head"><span>✦ TIEMPO</span><span id="hud-modo">FIJA</span></div>
+                  <div class="hud-clock"><span id="hud-hm">18:45</span><small id="hud-s">00</small></div>
+                  <div class="hud-date" id="hud-fecha"></div>
+                  <div class="hud-sub" id="hud-tema">Región de Fittoa</div>
+                </div>
+                <div class="hud-card" id="card-sistema">
+                  <div class="hud-head"><span>❖ SISTEMA</span><span id="hud-sys-meta">EN LÍNEA</span></div>
+                  <div class="hud-stat-row">
+                    <span>CPU</span>
+                    <div class="hud-bar"><div class="hud-bar-fill" id="hud-cpu-bar"></div></div>
+                    <strong id="hud-cpu">18%</strong>
+                  </div>
+                  <div class="hud-stat-row">
+                    <span>RAM</span>
+                    <div class="hud-bar"><div class="hud-bar-fill" id="hud-ram-bar" style="width:42%"></div></div>
+                    <strong id="hud-ram">6.4/16G</strong>
+                  </div>
+                  <div class="hud-stat-row">
+                    <span>DISCO <strong id="hud-disco">58%</strong></span>
+                    <span>BAT <strong id="hud-bat" style="color:#72c48c">AC</strong></span>
+                  </div>
+                </div>
+                <div class="hud-card" id="card-red">
+                  <div class="hud-head"><span>◈ RED</span><span id="hud-net-iface">WIFI</span></div>
+                  <div class="hud-stat-row"><span>IP</span><strong id="hud-ip">127.0.0.1</strong></div>
+                  <div class="hud-stat-row">
+                    <span style="color:#66dce0">↓ <strong id="hud-rx">1.4 MB/s</strong></span>
+                    <span style="color:#54ded4">↑ <strong id="hud-tx">240 KB/s</strong></span>
+                  </div>
+                </div>
+                <div class="hud-card" id="card-dev">
+                  <div class="hud-head"><span>⚔ DEV</span><span id="hud-dev-host">workspace</span></div>
+                  <div class="hud-sub" id="hud-repo" style="margin-top:0">pixelzen-worlds · main</div>
+                  <div class="hud-date" id="hud-tc">PY 3.12 · JS ES6</div>
+                </div>
+                <div class="hud-card" id="card-grimorio">
+                  <div class="hud-head"><span>✧ GRIMORIO</span><span id="hud-au">Rudeus</span></div>
+                  <div class="hud-sub" id="hud-qsub">K407 · Aldea de Buena</div>
+                  <div class="hud-quote" id="hud-qtxt"></div>
+                </div>
+              </aside>
+            </div>
+            <div class="monitor-pane" id="pane-sec">
+              <span class="monitor-badge monitor-badge-sec" id="badge-sec">MONITOR 2 · CONTINUACIÓN</span>
+              <canvas id="lienzo-sec" width="640" height="400"></canvas>
+            </div>
+            <div class="canvas-loading" id="canvas-loading">Cargando capas del mundo...</div>
           </div>
 
           <div class="time-controls">
@@ -111,6 +163,8 @@
                 <button data-fase="dia">Día</button>
                 <button class="is-active" data-fase="dorado">Dorado</button>
                 <button data-fase="noche">Noche</button>
+                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
+                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
               </div>
             </div>
             <div class="world-body">
@@ -135,6 +189,8 @@
                 <button data-fase="dia">Día</button>
                 <button class="is-active" data-fase="dorado">Dorado</button>
                 <button data-fase="noche">Noche</button>
+                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
+                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
               </div>
             </div>
             <div class="world-body">
@@ -159,6 +215,8 @@
                 <button class="is-active" data-fase="dia">Día</button>
                 <button data-fase="dorado">Dorado</button>
                 <button data-fase="noche">Noche</button>
+                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
+                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
               </div>
             </div>
             <div class="world-body">
@@ -183,6 +241,8 @@
                 <button data-fase="dia">Día</button>
                 <button class="is-active" data-fase="dorado">Dorado</button>
                 <button data-fase="noche">Noche</button>
+                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
+                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
               </div>
             </div>
             <div class="world-body">
@@ -207,6 +267,8 @@
                 <button data-fase="dia">Día</button>
                 <button data-fase="dorado">Dorado</button>
                 <button class="is-active" data-fase="noche">Noche</button>
+                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
+                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
               </div>
             </div>
             <div class="world-body">

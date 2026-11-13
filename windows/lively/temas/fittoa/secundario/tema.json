@@ -1,0 +1,32 @@
+{
+  "id": "fittoa",
+  "pantalla": "secundaria",
+  "nombre": "Reino de Asura · Base de Perugius",
+  "subtitulo": "Chaos Breaker · Fortaleza Flotante sobre la Capital de Ars",
+  "descripcion": "Sobre las verdes llanuras del Reino de Asura y los mármoles blancos de la Capital Real de Ars, flota entre las nubes Chaos Breaker — la legendaria fortaleza celeste del Rey Dragón Blindado Perugius Dola.",
+  "cielo_fondo": "#0a0c24",
+  "modo_pajaros": "grullas",
+  "color_pajaros": "#120c26",
+  "modo_particulas": "hojas_mana",
+  "colores_hojas": ["#a4d86c", "#6ec05a", "#ffd468", "#5cf2e4"],
+  "color_mana_halo": "#5cf2e4",
+  "color_mana_centro": "#c8fff8",
+  "color_fuegos_halo": ["#ffd468", "#40e4dc"],
+  "color_fuegos_centro": ["#fff4b8", "#c2fff8"],
+  "color_ventanas": "#f4bc68",
+  "color_faroles_halo": "#f4bc68",
+  "color_faroles_centro": "#fff0c0",
+  "color_runas_halo": "#4bece2",
+  "color_runas_centro": "#b8fff8",
+  "color_humo_dia": "#e6ecf2",
+  "color_humo_noche": "#9aaec4",
+  "color_olas": ["#9cd4d8", "#5882b0"],
+  "color_reflejo_sol": "#ffe6a0",
+  "color_reflejo_luna": "#f4ead2",
+  "color_destello": "#fff6e2",
+  "citas": [
+    {"sub": "Chaos Breaker · Base de Perugius", "es": "«La fortaleza en el cielo solo responde ante quienes comprenden el peso de los siglos.»", "au": "Perugius Dola"},
+    {"sub": "Reino de Asura · Capital de Ars", "es": "«Quien mira hacia el cielo de Asura ve siempre la sombra eterna de Chaos Breaker.»", "au": "Ariel Anemoi Asura"},
+    {"sub": "Llanuras de Fittoa", "es": "«Desde la aldea hasta los salones blancos de Ars, cada paso nos acerca al cielo.»", "au": "Rudeus"}
+  ]
+}

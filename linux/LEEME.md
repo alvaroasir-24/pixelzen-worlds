@@ -1,38 +1,25 @@
-# PixelZen para Linux (GNOME Shell 46–50+)
+# PixelZen Worlds para Linux (GNOME Shell 46–50+)
 
-Extensión de GNOME Shell con fondo pixel art animado que sigue la posición solar real (o simulada) y panel HUD opcional.
+Extensión de GNOME Shell + aplicación visual GTK4 (**PixelZen Worlds**) que dibuja el paisaje animado según el sol (o ciclo de 90 min), soporte multimonitor con continuación de historia y panel HUD.
 
-## Instalación
+## Descarga e instalación para usuarios finales (1 solo archivo)
+
+Descarga **`PixelZenWorlds-Linux-Setup.run`** desde [GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest) y ejecútalo:
+
+```bash
+chmod +x PixelZenWorlds-Linux-Setup.run
+./PixelZenWorlds-Linux-Setup.run
+```
+
+Después abre **PixelZen Worlds** desde tu menú de aplicaciones de GNOME (o ejecutando `pixelzen-worlds`) para elegir mundo con vista previa, 1 o 2 monitores, modo de hora y cajitas HUD.
+
+## Desde el repositorio de desarrollo
 
 ```bash
 cd linux
-./instalar.sh                             # tema por defecto (fittoa)
-./instalar.sh --tema=continente-demoniaco # instalar directamente el Continente Demoníaco
-./instalar.sh --90m                       # activar ciclo de 24 h en 90 min
-```
-
-## Cambiar de fondo (escalable)
-
-```bash
+./instalar.sh --90m                         # instala app visual + extensión con Fittoa y ciclo 90m
 ./tema.sh --listar
-./tema.sh fittoa
 ./tema.sh continente-demoniaco
-./tema.sh hunter-x-hunter
-./tema.sh black-clover
-./tema.sh spiderman-miles-morales
-```
-
-## Control de hora y ciclo
-
-```bash
-./hora.sh 90m     # ciclo completo de 24 horas en 90 minutos
-./hora.sh real    # hora real del reloj
-./hora.sh demo    # ciclo rápido de 24 horas en 90 segundos
-./hora.sh 21:30   # congela el paisaje a una hora fija
-```
-
-## Desinstalar
-
-```bash
-./desinstalar.sh
+./hora.sh 90m | real | demo | 21:30
+~/.local/share/pixelzen/desinstalar.sh      # desinstala extensión, fuentes y app visual
 ```

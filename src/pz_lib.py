@@ -297,7 +297,7 @@ def render_nubes(lz, nubes_def, nubes_out, anim):
                     lz.over(x0 + xx, cy + yy, (r_, g_, b_), a_ / 255.0)
 
 
-def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, reflejo_cols=('#f4e8ce', '#8ac6cc')):
+def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, reflejo_cols=('#f4e8ce', '#8ac6cc'), reflejo_astro=True):
     """Refleja el paisaje superior sobre el agua y añade oleaje y destellos."""
     copia = [list(r) for r in lz.px[:hor + 1]]
     for y in range(hor + 1, lz.h):
@@ -322,20 +322,21 @@ def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, re
             for k in range(l):
                 if k < 2 or dith(x + k, y, 0.78 - (k / l) * 0.35):
                     lz.over(x + k, y, c, max(0.18, 0.50 - d * 0.0022))
-    for d in (range(8, 120, 3) if not anim else ()):
-        ww = int(46 - d * 0.30)
-        if ww < 3:
-            break
-        for x in range(mx - ww // 2, mx + ww // 2):
-            if rr.random() < 0.55 - d * 0.003:
-                lz.put(x, hor + d, reflejo_cols[0] if d < 50 else reflejo_cols[1])
-    for _ in range(220):
-        x, y = rr.randrange(300, 410), hor + rr.randrange(6, 100)
-        if anim:
-            destellos_out.append([x, y])
-            continue
-        lz.put(x, y, '#fff6e0')
-        lz.over(x + 1, y, '#fff6e0', 0.6)
+    if reflejo_astro:
+        for d in (range(8, 120, 3) if not anim else ()):
+            ww = int(46 - d * 0.30)
+            if ww < 3:
+                break
+            for x in range(mx - ww // 2, mx + ww // 2):
+                if rr.random() < 0.55 - d * 0.003:
+                    lz.put(x, hor + d, reflejo_cols[0] if d < 50 else reflejo_cols[1])
+        for _ in range(220):
+            x, y = rr.randrange(300, 410), hor + rr.randrange(6, 100)
+            if anim:
+                destellos_out.append([x, y])
+                continue
+            lz.put(x, y, '#fff6e0')
+            lz.over(x + 1, y, '#fff6e0', 0.6)
 
 
 def aplica_vineta(lz, vig):

@@ -45,8 +45,11 @@ export default class PixelZenExtension extends Extension {
                 this._hud?.recargaTema();
                 this._grupo.set_child_above_sibling(this._raiz, null);
                 if (this._hud) this._raiz.set_child_above_sibling(this._hud.actor, null);
-            } else if (clave === 'hud' || clave === 'hud-monitor' || clave === 'todos-monitores') {
+            } else if (clave === 'hud' || clave === 'hud-monitor' || clave === 'todos-monitores' || clave === 'num-monitores') {
                 this._construye();
+            } else if (clave.startsWith('hud-')) {
+                this._colocaHud();
+                this._hud?.actor?.queue_repaint();
             } else {
                 this._escena?.ajustesCambiados();
             }
@@ -56,7 +59,12 @@ export default class PixelZenExtension extends Extension {
 
     _monitores() {
         const lm = Main.layoutManager;
-        return this._settings.get_boolean('todos-monitores') ? lm.monitors : [lm.primaryMonitor];
+        const primary = lm.primaryMonitor;
+        const numMon = this._settings.get_int('num-monitores');
+        const todos = this._settings.get_boolean('todos-monitores');
+        if (!todos || numMon <= 1) return [primary];
+        const otros = lm.monitors.filter(m => m && m !== primary);
+        return [primary, ...otros].slice(0, Math.max(1, numMon));
     }
 
     _construye() {

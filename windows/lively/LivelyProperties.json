@@ -11,6 +11,15 @@
       "spiderman-miles-morales"
     ]
   },
+  "pantalla": {
+    "type": "dropdown",
+    "value": 0,
+    "text": "Pantalla / Historia",
+    "items": [
+      "Monitor principal (escena base)",
+      "Segundo monitor (continuación de la historia)"
+    ]
+  },
   "modoHora": {
     "type": "dropdown",
     "value": 1,
@@ -41,6 +50,31 @@
   "mostrarHud": {
     "type": "checkbox",
     "value": true,
-    "text": "Mostrar tarjeta de hora y grimorio"
+    "text": "Mostrar panel HUD"
+  },
+  "hudTiempo": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Tiempo y reloj"
+  },
+  "hudSistema": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Sistema (CPU, RAM, Disco, Batería)"
+  },
+  "hudRed": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Red (Interfaz, IP, Tráfico)"
+  },
+  "hudDev": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Entorno Dev (Git y herramientas)"
+  },
+  "hudGrimorio": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Grimorio (citas del mundo)"
   }
 }

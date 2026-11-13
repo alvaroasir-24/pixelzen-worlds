@@ -25,55 +25,108 @@
     }
     #hud {
       position: fixed;
-      top: 24px;
-      right: 24px;
-      width: min(320px, 24vw);
-      min-width: 240px;
+      top: 20px;
+      right: 20px;
+      width: min(330px, 25vw);
+      min-width: 245px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       pointer-events: none;
       color: #f3ead6;
     }
     .card {
-      background: rgba(11, 16, 32, 0.82);
+      background: rgba(11, 16, 32, 0.84);
       border: 1px solid #7d6540;
-      padding: 12px;
+      padding: 10px 12px;
       box-shadow: inset 3px 3px 0 #d6a34a;
     }
     .card-head {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
+      font-size: 10px;
       color: #a8b8cf;
       border-bottom: 1px dashed #2f4266;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
       letter-spacing: 1px;
     }
     .card-head span:first-child { color: #54ded4; }
     .clock {
-      font-size: 38px;
+      font-size: 34px;
       font-weight: bold;
       line-height: 1;
       letter-spacing: 1px;
     }
-    .clock small { font-size: 16px; color: #54ded4; margin-left: 6px; }
-    .sub { font-size: 12px; color: #e6c06e; margin-top: 6px; }
-    .date { font-size: 12px; color: #a8b8cf; margin-top: 4px; }
-    .quote { font-size: 12px; color: #a8b8cf; line-height: 1.4; margin-top: 4px; }
+    .clock small { font-size: 15px; color: #54ded4; margin-left: 5px; }
+    .sub { font-size: 11px; color: #e6c06e; margin-top: 5px; }
+    .date { font-size: 11px; color: #a8b8cf; margin-top: 4px; }
+    .quote { font-size: 11px; color: #a8b8cf; line-height: 1.38; margin-top: 4px; }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      margin-top: 4px;
+      gap: 8px;
+    }
+    .stat-k { color: #a8b8cf; }
+    .stat-v { color: #f3ead6; text-align: right; }
+    .bar-bg {
+      flex: 1;
+      height: 7px;
+      background: #1c2844;
+      border: 1px solid #2f4266;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 24%;
+      background: linear-gradient(90deg, #72c48c, #e6b45a);
+      transition: width 0.4s;
+    }
   </style>
 </head>
 <body>
   <canvas id="lienzo" width="640" height="400"></canvas>
   <aside id="hud">
-    <div class="card">
+    <div class="card" id="card-tiempo">
       <div class="card-head"><span>✦ TIEMPO</span><span id="hud-modo">CICLO 90M</span></div>
       <div class="clock"><span id="hud-hm">--:--</span><small id="hud-s">--</small></div>
       <div class="date" id="hud-fecha"></div>
       <div class="sub" id="hud-tema"></div>
     </div>
-    <div class="card">
+    <div class="card" id="card-sistema">
+      <div class="card-head"><span>❖ SISTEMA</span><span id="hud-sys-meta">WIN</span></div>
+      <div class="stat-row">
+        <span class="stat-k">CPU</span>
+        <div class="bar-bg"><div class="bar-fill" id="hud-cpu-bar"></div></div>
+        <span class="stat-v" id="hud-cpu">--%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-k">RAM</span>
+        <div class="bar-bg"><div class="bar-fill" id="hud-ram-bar"></div></div>
+        <span class="stat-v" id="hud-ram">--</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-k">DISCO <strong id="hud-disco" style="color:#f3ead6">--</strong></span>
+        <span class="stat-k">BAT <strong id="hud-bat" style="color:#72c48c">--</strong></span>
+      </div>
+    </div>
+    <div class="card" id="card-red">
+      <div class="card-head"><span>◈ RED</span><span id="hud-net-iface">--</span></div>
+      <div class="stat-row"><span class="stat-k">IP</span><span class="stat-v" id="hud-ip">--</span></div>
+      <div class="stat-row">
+        <span class="stat-k" style="color:#66dce0">↓ <span id="hud-rx">--</span></span>
+        <span class="stat-k" style="color:#54ded4">↑ <span id="hud-tx">--</span></span>
+      </div>
+    </div>
+    <div class="card" id="card-dev">
+      <div class="card-head"><span>⚔ DEV</span><span id="hud-dev-host">workspace</span></div>
+      <div class="sub" id="hud-repo" style="margin-top:0">--</div>
+      <div class="date" id="hud-tc">--</div>
+    </div>
+    <div class="card" id="card-grimorio">
       <div class="card-head"><span>✧ GRIMORIO</span><span id="hud-au"></span></div>
       <div class="sub" id="hud-qsub"></div>
       <div class="quote" id="hud-qtxt"></div>

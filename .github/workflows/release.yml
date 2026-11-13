@@ -1,0 +1,103 @@
+name: Publicar instaladores finales (Windows y Linux)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Etiqueta de la release (ej. v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias de verificación
+        run: |
+          python -m pip install --upgrade pip pillow
+          sudo apt-get update && sudo apt-get install -y gjs
+
+      - name: Ejecutar suite de verificación
+        run: python3 tests/verificar.py
+
+  build-windows:
+    needs: verificar
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Construir PixelZenWorlds-Setup.exe
+        shell: pwsh
+        run: .\scripts\empaquetar_windows.ps1 -OutDir "${{ runner.temp }}\dist"
+
+      - name: Subir artefacto Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-windows
+          path: ${{ runner.temp }}/dist/PixelZenWorlds-Setup.exe
+
+  build-linux:
+    needs: verificar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Construir PixelZenWorlds-Linux-Setup.run
+        run: |
+          chmod +x scripts/empaquetar_linux.sh
+          ./scripts/empaquetar_linux.sh "${{ runner.temp }}/dist"
+
+      - name: Subir artefacto Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-linux
+          path: ${{ runner.temp }}/dist/PixelZenWorlds-Linux-Setup.run
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar instaladores
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Determinar tag
+        id: tag
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${{ github.event.inputs.tag || 'v1.0.0' }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publicar en GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: PixelZen Worlds ${{ steps.tag.outputs.name }}
+          generate_release_notes: true
+          body: |
+            ### Descarga directa (un solo archivo para el usuario final)
+
+            - **Windows 10 / 11**: descarga **`PixelZenWorlds-Setup.exe`** y haz doble clic. No requiere Python ni carpetas visibles.
+            - **Linux (Ubuntu 24.04+ / GNOME 46+)**: descarga **`PixelZenWorlds-Linux-Setup.run`** y ejecútalo (`chmod +x PixelZenWorlds-Linux-Setup.run && ./PixelZenWorlds-Linux-Setup.run`) para instalar la extensión y la app visual en tu menú de aplicaciones.
+          files: |
+            artifacts/installer-windows/PixelZenWorlds-Setup.exe
+            artifacts/installer-linux/PixelZenWorlds-Linux-Setup.run

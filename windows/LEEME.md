@@ -1,6 +1,14 @@
 # PixelZen Worlds para Windows 10/11
 
-Tienes **dos formas** de usar estos fondos dinámicos en Windows, ambas usando los mismos temas de `escenas/` (`fittoa`, `continente-demoniaco`, `hunter-x-hunter`, `black-clover` y `spiderman-miles-morales`):
+## Opción recomendada para usuarios: Instalador único (`PixelZenWorlds-Setup.exe`)
+
+Descarga **`PixelZenWorlds-Setup.exe`** desde [GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest) y ejecútalo. Instala todo silenciosamente en `%LOCALAPPDATA%\PixelZenWorlds` sin requerir Python y crea tu acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio.
+
+*(Para compilar ese instalador desde este repositorio, ejecuta `powershell -ExecutionPolicy Bypass -File scripts\empaquetar_windows.ps1`.)*
+
+---
+
+## Opciones desde el repositorio de desarrollo
 
 ## Opción 1 (Recomendada · Animación completa + HUD): Lively Wallpaper
 
@@ -13,19 +21,14 @@ Tienes **dos formas** de usar estos fondos dinámicos en Windows, ambas usando l
 
 > También puedes abrir `windows\lively\index.html` directamente en cualquier navegador (con `?tema=continente-demoniaco&modo=90m` si quieres) para probarlo al instante.
 
-## Opción 2 (Sin apps externas): Script Python standalone
+## Opción 2 (App completa de escritorio + HUD, sin apps externas)
 
-Requiere Python 3 (y opcionalmente `pip install pillow` para mezcla suave continua entre horas):
+Ejecuta con doble clic `windows\AbrirMenu.bat` (o `windows\PixelZenApp.vbs`) para abrir el panel visual donde podrás elegir mundo, 1 o 2 pantallas (con continuación de historia en el 2.º monitor), modo día/noche y qué tarjetitas mostrar en el escritorio.
 
-```bat
-cd windows
-ejecutar.bat
-```
-
-O por línea de comandos:
+También puedes lanzarlo por línea de comandos:
 
 ```bat
-python pixelzen_win.py --tema fittoa --90m
-python pixelzen_win.py --tema continente-demoniaco --90m
-python pixelzen_win.py --tema continente-demoniaco --real
+python pixelzen_win.py --tema fittoa --monitores 2 --90m
+python pixelzen_win.py --tema continente-demoniaco --monitores 2 --90m
+python pixelzen_win.py --tema continente-demoniaco --monitores 2 --real
 ```

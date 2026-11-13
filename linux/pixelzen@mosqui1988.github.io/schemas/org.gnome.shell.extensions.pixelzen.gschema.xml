@@ -47,5 +47,30 @@
       <summary>Fondo animado en todos los monitores</summary>
       <description>Si es falso, solo en el monitor principal (gasta menos).</description>
     </key>
+    <key name="num-monitores" type="i">
+      <range min="1" max="2"/>
+      <default>2</default>
+      <summary>Número de monitores activos (1 = principal, 2 = principal + continuación)</summary>
+    </key>
+    <key name="hud-tiempo" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de reloj y fase lunar en el HUD</summary>
+    </key>
+    <key name="hud-sistema" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de sistema (CPU, RAM, temp, disco) en el HUD</summary>
+    </key>
+    <key name="hud-red" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de red y tráfico en el HUD</summary>
+    </key>
+    <key name="hud-dev" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de desarrollo (Git, runtimes, servicios) en el HUD</summary>
+    </key>
+    <key name="hud-grimorio" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de citas del grimorio en el HUD</summary>
+    </key>
   </schema>
 </schemalist>

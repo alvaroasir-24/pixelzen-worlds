@@ -1,0 +1,32 @@
+{
+  "id": "hunter-x-hunter",
+  "pantalla": "secundaria",
+  "nombre": "Hunter × Hunter · Greed Island",
+  "subtitulo": "Isla de la Avaricia · Libro, Anillo y Cartas de Hechizo",
+  "descripcion": "Dentro del juego creado con Nen por Ging Freecss: las costas y montañas de Greed Island, la ciudad de Masadora y el Castillo de Limeiro bajo el gran anillo «G.I.», cartas de hechizo flotantes y Gon y Killua invocando «Book!».",
+  "cielo_fondo": "#061020",
+  "modo_pajaros": "grullas",
+  "color_pajaros": "#13222e",
+  "modo_particulas": "hojas_mana",
+  "colores_hojas": ["#6ee07a", "#f0d460", "#48e8d8", "#54b8ff"],
+  "color_mana_halo": "#48f09c",
+  "color_mana_centro": "#d4ffe8",
+  "color_fuegos_halo": ["#54f09c", "#ffd460"],
+  "color_fuegos_centro": ["#d8ffe8", "#fff6cc"],
+  "color_ventanas": "#ffd074",
+  "color_faroles_halo": "#ffb84c",
+  "color_faroles_centro": "#fff4cc",
+  "color_runas_halo": "#48f09c",
+  "color_runas_centro": "#d8fff0",
+  "color_humo_dia": "#eef5f8",
+  "color_humo_noche": "#9eb8c8",
+  "color_olas": ["#8ce8e0", "#3a8da8"],
+  "color_reflejo_sol": "#ffeaa8",
+  "color_reflejo_luna": "#dff8f4",
+  "color_destello": "#f0fff8",
+  "citas": [
+    {"sub": "Greed Island · Book!", "es": "«Disfrutad el desvío tanto como la meta; los verdaderos tesoros están en lo que encuentras por el camino.»", "au": "Ging Freecss"},
+    {"sub": "Entrenamiento de Nen · Masadora", "es": "«La diferencia entre ganar o perder aquí no es la carta más rara, sino cómo dominas tu aura.»", "au": "Biscuit Krueger"},
+    {"sub": "Ruler's Blessing N.º 000", "es": "«¡Gain! Con esta carta reunimos las 99 casillas y completamos Greed Island.»", "au": "Gon & Killua"}
+  ]
+}

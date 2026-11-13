@@ -186,19 +186,48 @@ export default class PixelZenPreferences extends ExtensionPreferences {
         });
         page.add(grupoHud);
 
+        const listaMon = new Gtk.StringList();
+        listaMon.append('1 monitor (solo monitor principal)');
+        listaMon.append('2 monitores (principal + continuación de la historia)');
+        const comboMon = new Adw.ComboRow({
+            title: 'Número de monitores',
+            subtitle: 'El monitor principal del sistema muestra la escena base y el 2.º la continuación',
+            model: listaMon,
+        });
+        const actualMon = settings.get_boolean('todos-monitores') ? settings.get_int('num-monitores') : 1;
+        comboMon.set_selected(actualMon >= 2 ? 1 : 0);
+        comboMon.connect('notify::selected', () => {
+            const dos = comboMon.get_selected() === 1;
+            settings.set_int('num-monitores', dos ? 2 : 1);
+            settings.set_boolean('todos-monitores', dos);
+        });
+        grupoHud.add(comboMon);
+
         const rowHud = new Adw.SwitchRow({
             title: 'Mostrar panel de datos (HUD)',
-            subtitle: 'Reloj, métricas del sistema y grimorio del mundo activo',
+            subtitle: 'Activa o desactiva la superposición del HUD en el monitor principal',
         });
         settings.bind('hud', rowHud, 'active', Gio.SettingsBindFlags.DEFAULT);
         grupoHud.add(rowHud);
 
-        const rowMonitores = new Adw.SwitchRow({
-            title: 'Animar en todos los monitores',
-            subtitle: 'Desactívalo para ahorrar batería o GPU en configuraciones multimonitor',
+        // Grupo 3b: Tarjetas de estadísticas del HUD
+        const grupoStats = new Adw.PreferencesGroup({
+            title: 'Estadísticas visibles en el HUD',
+            description: 'Elige de forma independiente qué tarjetas de información mostrar.',
         });
-        settings.bind('todos-monitores', rowMonitores, 'active', Gio.SettingsBindFlags.DEFAULT);
-        grupoHud.add(rowMonitores);
+        page.add(grupoStats);
+
+        for (const [clave, titulo, subtitulo] of [
+            ['hud-tiempo', 'Tiempo y fase lunar', 'Reloj en vivo, fecha, nombre del mundo y luna'],
+            ['hud-sistema', 'Sistema (CPU, RAM, Temp, Disco)', 'Barras de rendimiento, historial CPU y batería'],
+            ['hud-red', 'Red y tráfico', 'SSID/interfaz, IP, puerta de enlace, VPN y caudal ↓↑'],
+            ['hud-dev', 'Entorno Dev y servicios', 'Repositorios Git, versiones (Python/Node/Go/Rust) y servicios'],
+            ['hud-grimorio', 'Grimorio (citas del mundo)', 'Citas rotatorias de los personajes del paisaje activo'],
+        ]) {
+            const row = new Adw.SwitchRow({title: titulo, subtitle: subtitulo});
+            settings.bind(clave, row, 'active', Gio.SettingsBindFlags.DEFAULT);
+            grupoStats.add(row);
+        }
 
         // Grupo 4: Créditos
         const grupoCreditos = new Adw.PreferencesGroup({

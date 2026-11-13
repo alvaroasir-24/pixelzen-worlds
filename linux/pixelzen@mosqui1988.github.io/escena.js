@@ -263,27 +263,51 @@ export class Escena {
         return this._dir;
     }
 
-    _cargaDatosYTexturas() {
-        const dir = this._rutaTema();
-        this.D = JSON.parse(new TextDecoder().decode(
+    _cargaPack(dir) {
+        const D = JSON.parse(new TextDecoder().decode(
             GLib.file_get_contents(`${dir}/datos.json`)[1]));
-        this.brillantes = this.D.estrellas.filter(e => e[3] === 1);
+        const brillantes = D.estrellas.filter(e => e[3] === 1);
+        let T;
         try {
             const raw = JSON.parse(new TextDecoder().decode(
                 GLib.file_get_contents(`${dir}/tema.json`)[1]));
-            this.T = {...TEMA_DEFECTO, ...raw};
+            T = {...TEMA_DEFECTO, ...raw};
         } catch (e) {
-            this.T = {...TEMA_DEFECTO};
+            T = {...TEMA_DEFECTO};
         }
 
         const img = f => GdkPixbuf.Pixbuf.new_from_file(`${dir}/images/${f}.png`);
-        this.tex = {};
+        const tex = {};
         for (const f of ['cielo-noche', 'cielo-dorado', 'cielo-dia', 'escena-noche', 'escena-dorado', 'escena-dia', 'sol', 'luna'])
-            this.tex[f] = contenido(img(f));
-        this.texNubes = {};
+            tex[f] = contenido(img(f));
+        const texNubes = {};
         for (const fase of ['noche', 'dorado', 'dia']) {
             const hoja = img(`nubes-${fase}`);
-            this.texNubes[fase] = this.D.nubes.map(nb => contenido(hoja.new_subpixbuf(0, nb[4], nb[2], nb[3]).copy()));
+            texNubes[fase] = D.nubes.map(nb => contenido(hoja.new_subpixbuf(0, nb[4], nb[2], nb[3]).copy()));
+        }
+        return {D, T, brillantes, tex, texNubes};
+    }
+
+    _cargaDatosYTexturas() {
+        const dir = this._rutaTema();
+        const prim = this._cargaPack(dir);
+        this.D = prim.D;
+        this.T = prim.T;
+        this.brillantes = prim.brillantes;
+        this.tex = prim.tex;
+        this.texNubes = prim.texNubes;
+        this._packPrim = prim;
+
+        const secDir = `${dir}/secundario`;
+        if (GLib.file_test(`${secDir}/datos.json`, GLib.FileTest.EXISTS)) {
+            try {
+                this._packSec = this._cargaPack(secDir);
+            } catch (e) {
+                logError(e, 'PixelZen carga secundario');
+                this._packSec = null;
+            }
+        } else {
+            this._packSec = null;
         }
     }
 
@@ -373,15 +397,16 @@ export class Escena {
     construye(monitores) {
         this.destruyeMonitores();
         if (!monitores.length) return;
-        this._lienzo = this._creaLienzo();
+        this._lienzo = this._creaLienzo(this._packPrim);
+        this._lienzo2 = (monitores.length > 1 && this._packSec) ? this._creaLienzo(this._packSec) : null;
         monitores.forEach((mon, i) => this._monitores.push(this._creaMonitor(mon, i === 0)));
         this.pinta();
         this._programa();
     }
 
-    _creaLienzo() {
-        const D = this.D, T = this.tex;
-        const l = {};
+    _creaLienzo(pack) {
+        const D = pack.D, T = pack.tex, TN = pack.texNubes;
+        const l = {pack};
         const raiz = new Clutter.Actor({width: W, height: H});
         l.raiz = raiz;
         const area = fn => {
@@ -405,16 +430,16 @@ export class Escena {
         };
 
         l.cielo = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`cielo-${f}`], W, H));
-        l.atras = area(cr => this._pintaAtras(cr));
+        l.atras = area(cr => this._pintaAtras(cr, pack));
         l.sol = imagen(raiz, T.sol, 208, 208);
         l.luna = imagen(raiz, T.luna, 208, 208);
         l.nubes = D.nubes.map((nb, i) => ['noche', 'dorado', 'dia'].map(f => {
-            const a = imagen(raiz, this.texNubes[f][i], nb[2], nb[3]);
+            const a = imagen(raiz, TN[f][i], nb[2], nb[3]);
             a.y = nb[1];
             return a;
         }));
         l.escena = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`escena-${f}`], W, H));
-        l.delante = area(cr => this._pintaDelante(cr));
+        l.delante = area(cr => this._pintaDelante(cr, pack));
         return l;
     }
 
@@ -428,7 +453,13 @@ export class Escena {
         arte.set_scale(u, u);
         arte.set_position(Math.round((mon.width - W * u) / 2), Math.round((mon.height - H * u) / 2));
         raiz.add_child(arte);
-        arte.add_child(principal ? this._lienzo.raiz : new Clutter.Clone({source: this._lienzo.raiz, width: W, height: H}));
+        if (principal) {
+            arte.add_child(this._lienzo.raiz);
+        } else if (this._lienzo2) {
+            arte.add_child(this._lienzo2.raiz);
+        } else {
+            arte.add_child(new Clutter.Clone({source: this._lienzo.raiz, width: W, height: H}));
+        }
 
         const r = Math.max(480, mon.width * 0.26);
         const velo = new St.DrawingArea({width: r, height: r});
@@ -452,6 +483,7 @@ export class Escena {
         for (const m of this._monitores.slice().reverse()) m.raiz.destroy();
         this._monitores = [];
         this._lienzo = null;
+        this._lienzo2 = null;
     }
 
     _programa() {
@@ -470,8 +502,7 @@ export class Escena {
         });
     }
 
-    pinta() {
-        const l = this._lienzo;
+    _pintaLienzo(l) {
         if (!l) return;
         const t = this.tick;
         const noche = this.elev < 0;
@@ -480,12 +511,13 @@ export class Escena {
         fija(l.cielo[1], this.wA); fija(l.cielo[2], this.wB);
         fija(l.escena[1], this.wA); fija(l.escena[2], this.wB);
 
+        const conAstro = l === this._lienzo;
         l.sol.set_position(Math.round(this.solX - 104), Math.round(this.solY - 104));
-        fija(l.sol, this.solOp);
+        fija(l.sol, conAstro ? this.solOp : 0);
         l.luna.set_position(Math.round(this.lunaX - 104), Math.round(this.lunaY - 104));
-        fija(l.luna, this.lunaOp);
+        fija(l.luna, conAstro ? this.lunaOp : 0);
 
-        this.D.nubes.forEach((nb, i) => {
+        l.pack.D.nubes.forEach((nb, i) => {
             const v = 0.035 + (i % 4) * 0.012;
             const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2]);
             for (let k = 0; k < 3; k++) {
@@ -498,15 +530,20 @@ export class Escena {
         l.delante.queue_repaint();
     }
 
-    _pintaAtras(cr) {
-        const t = this.tick, D = this.D, T = this.T, ef = this.estrellaF;
+    pinta() {
+        this._pintaLienzo(this._lienzo);
+        this._pintaLienzo(this._lienzo2);
+    }
+
+    _pintaAtras(cr, pack = this._packPrim) {
+        const t = this.tick, D = pack.D, T = pack.T, brillantes = pack.brillantes, ef = this.estrellaF;
         cr.setOperator(Cairo.Operator.CLEAR); cr.paint(); cr.setOperator(Cairo.Operator.OVER);
         if (ef > 0.01) {
             D.estrellas.forEach((e, i) => {
                 const o = i % 3 === 0 ? 0.3 + 0.7 * this.osc(0.10 + (i % 7) * 0.02, i * 1.3) : 1;
                 px(cr, e[2], ef * o, e[0], e[1]);
             });
-            this.brillantes.forEach((e, i) => {
+            brillantes.forEach((e, i) => {
                 const o = ef * 0.8 * Math.max(0, this.osc(0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
                 if (o <= 0.004) return;
                 px(cr, '#c7ccff', o, e[0] - 1, e[1]); px(cr, '#c7ccff', o, e[0] + 1, e[1]);
@@ -532,8 +569,8 @@ export class Escena {
         }
     }
 
-    _pintaDelante(cr) {
-        const t = this.tick, D = this.D, T = this.T, nf = this.nocheF;
+    _pintaDelante(cr, pack = this._packPrim) {
+        const t = this.tick, D = pack.D, T = pack.T, nf = this.nocheF;
         cr.setOperator(Cairo.Operator.CLEAR); cr.paint(); cr.setOperator(Cairo.Operator.OVER);
 
         if (T.modo_heroe === 'miles_morales') {
@@ -582,8 +619,9 @@ export class Escena {
                 (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * this.wB),
                 o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
         }
+        const conAstro = !this._packSec || pack !== this._packSec;
         const co = this.cuerpoOp;
-        if (co > 0.02) {
+        if (conAstro && co > 0.02) {
             const col = this.elev > -1 ? T.color_reflejo_sol : T.color_reflejo_luna;
             for (let i = 0; i < 38; i++) {
                 const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);

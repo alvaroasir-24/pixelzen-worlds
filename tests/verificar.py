@@ -31,7 +31,7 @@ def check_python():
     for base in ('src', 'windows', 'linux', 'escenas', 'tests'):
         ruta_base = os.path.join(ROOT, base)
         for dirpath, _, filenames in os.walk(ruta_base):
-            if '__pycache__' in dirpath or '/pack' in dirpath:
+            if '__pycache__' in dirpath or '/pack' in dirpath or (os.sep + 'pack') in dirpath:
                 continue
             for fn in filenames:
                 if fn.endswith('.py'):
@@ -50,6 +50,13 @@ def check_shell():
         for fn in sorted(os.listdir(d)):
             if fn.endswith('.sh'):
                 sh_files.append(os.path.join(d, fn))
+    try:
+        probe = subprocess.run(['bash', '-c', 'true'], capture_output=True)
+    except FileNotFoundError:
+        probe = None
+    if probe is None or probe.returncode != 0:
+        print(f'[SKIP] bash no usable ({len(sh_files)} scripts shell)')
+        return
     for path in sh_files:
         subprocess.run(['bash', '-n', path], check=True)
     print(f'[OK] bash -n ({len(sh_files)} scripts shell)')
@@ -96,18 +103,19 @@ def check_js_sync():
 def check_temas_y_packs():
     campos_req = ('id', 'nombre', 'citas', 'modo_pajaros', 'modo_particulas')
     for tema in TEMAS:
-        tjson = os.path.join(ROOT, 'escenas', tema, 'tema.json')
-        with open(tjson, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        for campo in campos_req:
-            assert campo in data and data[campo], f'Falta "{campo}" en {tjson}'
+        for sub in ((), ('secundario',)):
+            tjson = os.path.join(ROOT, 'escenas', tema, *sub, 'tema.json')
+            with open(tjson, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for campo in campos_req:
+                assert campo in data and data[campo], f'Falta "{campo}" en {tjson}'
 
-        for base_rel in (os.path.join('windows', 'lively', 'temas', tema), os.path.join('docs', 'temas', tema)):
-            bdir = os.path.join(ROOT, base_rel)
-            for req in ('datos.json', 'tema.json', 'fondo.png'):
-                assert os.path.isfile(os.path.join(bdir, req)), f'Falta {base_rel}/{req}'
-            for img in IMAGENES_REQUERIDAS:
-                assert os.path.isfile(os.path.join(bdir, 'images', img)), f'Falta {base_rel}/images/{img}'
+            for base_rel in (os.path.join('windows', 'lively', 'temas', tema, *sub), os.path.join('docs', 'temas', tema, *sub)):
+                bdir = os.path.join(ROOT, base_rel)
+                for req in ('datos.json', 'tema.json', 'fondo.png'):
+                    assert os.path.isfile(os.path.join(bdir, req)), f'Falta {base_rel}/{req}'
+                for img in IMAGENES_REQUERIDAS:
+                    assert os.path.isfile(os.path.join(bdir, 'images', img)), f'Falta {base_rel}/images/{img}'
 
         for fase in ('dia', 'dorado', 'noche'):
             p1 = os.path.join(ROOT, 'escenas', tema, 'preview', fase, 'v3.png')
@@ -115,7 +123,13 @@ def check_temas_y_packs():
             assert os.path.isfile(p1), f'Falta {p1}'
             assert os.path.isfile(p2), f'Falta {p2}'
             assert filecmp.cmp(p1, p2, shallow=False), f'Preview desincronizada: {p2}'
-    print(f'[OK] Esquema y paridad de {len(TEMAS)} temas')
+
+            s1 = os.path.join(ROOT, 'escenas', tema, 'secundario', 'preview', fase, 'v3.png')
+            s2 = os.path.join(ROOT, 'docs', 'previews', tema, f'm2-{fase}.png')
+            assert os.path.isfile(s1), f'Falta {s1}'
+            assert os.path.isfile(s2), f'Falta {s2}'
+            assert filecmp.cmp(s1, s2, shallow=False), f'Preview M2 desincronizada: {s2}'
+    print(f'[OK] Esquema y paridad de {len(TEMAS)} temas (principal y secundario)')
 
 
 def check_windows_renderer():

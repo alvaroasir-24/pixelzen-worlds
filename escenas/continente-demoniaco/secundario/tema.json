@@ -1,0 +1,32 @@
+{
+  "id": "continente-demoniaco",
+  "pantalla": "secundaria",
+  "nombre": "Continente Demoníaco · Castillo de Atofe",
+  "subtitulo": "Fortaleza del Rey Demonio Inmortal · Atoferatofe Raibaku",
+  "descripcion": "En los confines volcánicos del Continente Demoníaco se alza el inexpugnable Castillo de Atofe con sus torreones con cuernos, puente fortificado y la imponente Rey Demonio Inmortal Atoferatofe Raibaku desplegando sus alas negras y su espadón.",
+  "cielo_fondo": "#12041a",
+  "modo_pajaros": "wyverns",
+  "color_pajaros": "#16071e",
+  "modo_particulas": "brasas_mana",
+  "colores_hojas": ["#ff5078", "#c848ff", "#ff9050", "#ffd070"],
+  "color_mana_halo": "#e83878",
+  "color_mana_centro": "#ffd4e6",
+  "color_fuegos_halo": ["#e83878", "#a848ff"],
+  "color_fuegos_centro": ["#ffd6e8", "#ead4ff"],
+  "color_ventanas": "#ff7848",
+  "color_faroles_halo": "#c848ff",
+  "color_faroles_centro": "#f8d4ff",
+  "color_runas_halo": "#e83878",
+  "color_runas_centro": "#ffc4da",
+  "color_humo_dia": "#8e7288",
+  "color_humo_noche": "#5e3c68",
+  "color_olas": ["#d05e98", "#782e6c"],
+  "color_reflejo_sol": "#ff9e66",
+  "color_reflejo_luna": "#f0a8c8",
+  "color_destello": "#ffd8e8",
+  "citas": [
+    {"sub": "Fortaleza del Rey Demonio", "es": "«¡Soy la Rey Demonio Inmortal Atoferatofe! ¡Vence a mis caballeros si te atreves a cruzar mi puente!»", "au": "Atoferatofe Raibaku"},
+    {"sub": "Castillo de Atofe", "es": "«Si entras en esa fortaleza con tus propias piernas, prepárate para luchar hasta el amanecer.»", "au": "Rudeus"},
+    {"sub": "Guardia Real Negra", "es": "«Un verdadero guerrero no tiembla ni ante un Rey Demonio que vuelve a alzarse una y otra vez.»", "au": "Ruijerd"}
+  ]
+}

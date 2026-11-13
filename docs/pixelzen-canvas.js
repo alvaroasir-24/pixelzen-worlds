@@ -98,10 +98,18 @@
 
     const state = {
       tema: 'fittoa',
+      pantalla: 'principal',
       modoHora: 1,
       horaFija: 21.5,
       fps: 8,
       mostrarHud: true,
+      hudStats: {
+        tiempo: true,
+        sistema: true,
+        red: true,
+        dev: true,
+        grimorio: true,
+      },
       lat: 40.4,
       lon: -3.7,
       tick: 0,
@@ -231,21 +239,42 @@
       }
     }
 
-    async function cargarTema(id) {
+    async function cargarTema(id, { pantalla } = {}) {
       state.tema = id;
-      const base = `temas/${id}`;
+      if (pantalla) state.pantalla = pantalla;
+      const esSec = state.pantalla === 'secundaria';
+      const basePrim = `temas/${id}`;
+      let base = esSec ? `${basePrim}/secundario` : basePrim;
       const names = [
         'cielo-noche', 'cielo-dorado', 'cielo-dia',
         'escena-noche', 'escena-dorado', 'escena-dia',
         'nubes-noche', 'nubes-dorado', 'nubes-dia',
         'sol', 'luna',
       ];
-      const [datos, tema, ...imgs] = await Promise.all([
-        fetch(`${base}/datos.json`).then(r => r.json()),
-        fetch(`${base}/tema.json`).then(r => r.json()),
-        ...names.map(f => loadImage(`${base}/images/${f}.png`)),
-      ]);
+      async function intentaCarga(dir) {
+        const [datosRes, temaRes] = await Promise.all([
+          fetch(`${dir}/datos.json`),
+          fetch(`${dir}/tema.json`),
+        ]);
+        if (!datosRes.ok || !temaRes.ok) throw new Error(`HTTP ${datosRes.status}/${temaRes.status}`);
+        const [datos, tema, ...imgs] = await Promise.all([
+          datosRes.json(),
+          temaRes.json(),
+          ...names.map(f => loadImage(`${dir}/images/${f}.png`)),
+        ]);
+        return { datos, tema, imgs };
+      }
+
+      let cargado;
+      try {
+        cargado = await intentaCarga(base);
+      } catch (_err) {
+        if (!esSec) throw _err;
+        base = basePrim;
+        cargado = await intentaCarga(basePrim);
+      }
       if (state.tema !== id) return null;
+      const { datos, tema, imgs } = cargado;
       const map = {};
       names.forEach((k, i) => { map[k] = imgs[i]; });
       state.D = datos;
@@ -276,6 +305,7 @@
       const lunaOp = f >= 0 ? clamp01((-s.e - 1) / 5) : 0;
       const cuerpoX = s.e > -1 ? solX : lunaX;
       const cuerpoOp = s.e > -1 ? clamp01((s.e + 2) / 6) : lunaOp;
+      const conAstro = state.pantalla !== 'secundaria';
 
       ctx.globalAlpha = 1;
       ctx.drawImage(I['cielo-noche'], 0, 0);
@@ -305,8 +335,8 @@
         px(T.color_pajaros, 1, cx, cy + 1);
       }
 
-      if (solOp > 0.01) { ctx.globalAlpha = solOp; ctx.drawImage(I.sol, Math.round(solX - 104), Math.round(solY - 104)); }
-      if (lunaOp > 0.01) { ctx.globalAlpha = lunaOp; ctx.drawImage(I.luna, Math.round(lunaX - 104), Math.round(lunaY - 104)); }
+      if (conAstro && solOp > 0.01) { ctx.globalAlpha = solOp; ctx.drawImage(I.sol, Math.round(solX - 104), Math.round(solY - 104)); }
+      if (conAstro && lunaOp > 0.01) { ctx.globalAlpha = lunaOp; ctx.drawImage(I.luna, Math.round(lunaX - 104), Math.round(lunaY - 104)); }
 
       const noche = s.e < 0;
       const opNub = [noche ? 1 - wA : 0, noche ? wA : 1 - wB, wB];
@@ -364,7 +394,7 @@
           (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * wB),
           o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
       }
-      if (cuerpoOp > 0.02) {
+      if (conAstro && cuerpoOp > 0.02) {
         const col = s.e > -1 ? T.color_reflejo_sol : T.color_reflejo_luna;
         for (let i = 0; i < 38; i++) {
           const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);
@@ -410,25 +440,79 @@
       if (opts.onRender) opts.onRender(fecha, T);
     }
 
-    function actualizaHud(fecha, T, { quoteIntervalMs = 90000 } = {}) {
+    function actualizaHud(fecha, T, { quoteIntervalMs = 90000, stats = null, hudStats = null } = {}) {
       const hudEl = document.getElementById('hud');
       if (!hudEl) return;
-      hudEl.style.display = state.mostrarHud ? 'flex' : 'none';
-      if (!state.mostrarHud) return;
+      const hs = hudStats || state.hudStats || {};
+      const activo = state.mostrarHud && (
+        hs.tiempo !== false || !!hs.sistema || !!hs.red || !!hs.dev || hs.grimorio !== false
+      );
+      hudEl.style.display = activo ? 'flex' : 'none';
+      if (!activo) return;
+
+      const toggleCard = (id, visible) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = visible ? '' : 'none';
+      };
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+
+      toggleCard('card-tiempo', hs.tiempo !== false);
+      toggleCard('card-sistema', !!hs.sistema);
+      toggleCard('card-red', !!hs.red);
+      toggleCard('card-dev', !!hs.dev);
+      toggleCard('card-grimorio', hs.grimorio !== false);
+
       const p2 = v => String(v).padStart(2, '0');
-      document.getElementById('hud-hm').textContent = `${p2(fecha.getHours())}:${p2(fecha.getMinutes())}`;
-      document.getElementById('hud-s').textContent = p2(fecha.getSeconds());
-      document.getElementById('hud-modo').textContent = ['REAL', 'CICLO 90M', 'DEMO 90S', 'FIJA'][state.modoHora];
-      document.getElementById('hud-fecha').textContent = fecha.toLocaleDateString('es-ES', {
+      setTxt('hud-hm', `${p2(fecha.getHours())}:${p2(fecha.getMinutes())}`);
+      setTxt('hud-s', p2(fecha.getSeconds()));
+      setTxt('hud-modo', ['REAL', 'CICLO 90M', 'DEMO 90S', 'FIJA'][state.modoHora]);
+      setTxt('hud-fecha', fecha.toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'short',
-      });
-      document.getElementById('hud-tema').textContent = T.nombre || state.tema;
-      const citas = T.citas || [];
-      if (citas.length) {
+      }));
+      setTxt('hud-tema', (T && T.nombre) || state.tema);
+
+      if (hs.sistema) {
+        const sis = (stats && stats.sistema) || {};
+        const cpu = sis.cpu ?? Math.round(14 + 9 * Math.abs(Math.sin(state.tick * 0.08)));
+        const ramTxt = sis.ram ?? `${(6.2 + 0.4 * Math.sin(state.tick * 0.03)).toFixed(1)}/16G`;
+        const disco = sis.disco ?? '58%';
+        const bat = sis.bat ?? 'AC';
+        setTxt('hud-sys-meta', sis.up || 'EN LÍNEA');
+        setTxt('hud-cpu', `${cpu}%`);
+        setTxt('hud-ram', ramTxt);
+        setTxt('hud-disco', disco);
+        setTxt('hud-bat', bat);
+        const cpuBar = document.getElementById('hud-cpu-bar');
+        if (cpuBar) cpuBar.style.width = `${Math.max(4, Math.min(100, parseFloat(cpu) || 0))}%`;
+        const ramBar = document.getElementById('hud-ram-bar');
+        if (ramBar && sis.ramPct !== undefined) ramBar.style.width = `${Math.max(4, Math.min(100, sis.ramPct))}%`;
+      }
+
+      if (hs.red) {
+        const red = (stats && stats.red) || {};
+        const conn = typeof navigator !== 'undefined' && navigator.connection ? navigator.connection : null;
+        setTxt('hud-net-iface', red.iface || (conn && conn.effectiveType ? `WEB ${conn.effectiveType.toUpperCase()}` : 'ETHERNET / WIFI'));
+        setTxt('hud-ip', red.ip || (typeof location !== 'undefined' && location.hostname ? location.hostname : '127.0.0.1'));
+        setTxt('hud-rx', red.rx || (conn && conn.downlink ? `${conn.downlink} Mbps` : '1.4 MB/s'));
+        setTxt('hud-tx', red.tx || '240 KB/s');
+      }
+
+      if (hs.dev) {
+        const dev = (stats && stats.dev) || {};
+        setTxt('hud-dev-host', dev.host || 'pixelzen-worlds');
+        setTxt('hud-repo', dev.repo || 'pixelzen-worlds · main');
+        setTxt('hud-tc', dev.tc || 'PY 3.12 · JS ES6 · CANVAS 640×400');
+      }
+
+      const citas = (T && T.citas) || [];
+      if (citas.length && hs.grimorio !== false) {
         const hk = citas[Math.floor(Date.now() / quoteIntervalMs) % citas.length];
-        document.getElementById('hud-au').textContent = hk.au || '';
-        document.getElementById('hud-qsub').textContent = hk.sub || '';
-        document.getElementById('hud-qtxt').textContent = hk.es || '';
+        setTxt('hud-au', hk.au || '');
+        setTxt('hud-qsub', hk.sub || '');
+        setTxt('hud-qtxt', hk.es || '');
       }
     }
 

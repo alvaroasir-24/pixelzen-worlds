@@ -1,8 +1,22 @@
 # PixelZen Worlds (Linux GNOME & Windows)
 
-Motor modular de fondos pixel art animados en **640×400** que siguen el ciclo solar y lunar (en tiempo real o en un ciclo completo de **24 horas en 90 minutos**), con soporte para **Linux (GNOME Shell 46–50+)**, **Windows (Lively Wallpaper y app standalone Python)** y **demo interactiva web** en [`docs/`](docs/).
+Motor modular de fondos pixel art animados en **640×400** que siguen el ciclo solar y lunar (en tiempo real o en un ciclo completo de **24 horas en 90 minutos**), con soporte para **Windows 10/11**, **Linux (GNOME Shell 46–50+)** y **demo interactiva web** en [`docs/`](docs/).
 
-> **Basado en [mosqui1988/pixelzen](https://github.com/mosqui1988/pixelzen)** (port GNOME Shell / KDE Plasma de **PixelZen** bajo licencia `GPL-3.0-or-later`). Este repositorio amplía la base original con un motor procedural en Python puro (`src/`), 5 mundos completos, soporte para Windows/Lively y visor web.
+> **Basado en [mosqui1988/pixelzen](https://github.com/mosqui1988/pixelzen)** (port GNOME Shell / KDE Plasma de **PixelZen** bajo licencia `GPL-3.0-or-later`).
+
+## Descarga directa (para usuarios · 1 solo archivo)
+
+Si solo quieres usar la aplicación sin descargar carpetas de código ni tocar scripts, descarga el instalador de tu sistema desde **[GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)**:
+
+- **Windows 10 / 11**: descarga **`PixelZenWorlds-Setup.exe`**, haz doble clic y pulsa **Instalar y abrir**. No necesita Python ni muestra carpetas técnicas: deja únicamente tu icono **PixelZen Worlds** en el Escritorio y el Menú Inicio (y se desinstala desde *Configuración -> Aplicaciones*).
+- **Linux (GNOME 46+, Ubuntu 24.04+)**: descarga **`PixelZenWorlds-Linux-Setup.run`** y ejecútalo:
+  ```bash
+  chmod +x PixelZenWorlds-Linux-Setup.run
+  ./PixelZenWorlds-Linux-Setup.run
+  ```
+  Instala la extensión de GNOME y añade la app visual **PixelZen Worlds** directamente a tu menú de aplicaciones.
+
+---
 
 ## Mundos incluidos
 
@@ -73,7 +87,7 @@ Consulta [linux/LEEME.md](linux/LEEME.md) para más detalles.
 ## Uso en Windows
 
 - **Opción 1 (Lively Wallpaper, animado completo + HUD)**: abre `windows/lively/index.html` en [Lively Wallpaper](https://www.rocksdanister.com/lively/) y elige tema y modo (`Hora real` o `Ciclo 24h en 90 minutos`) desde *Personalizar*.
-- **Opción 2 (Python standalone)**: ejecuta `windows/ejecutar.bat` o `python windows/pixelzen_win.py --tema spiderman-miles-morales --90m`.
+- **Opción 2 (App gráfica de escritorio + HUD)**: abre `windows/AbrirMenu.bat` (o `windows/PixelZenApp.vbs`) para elegir mundo, 1 o 2 monitores, estadísticas del HUD e inicio con Windows, o por línea de comandos `python windows/pixelzen_win.py --tema fittoa --monitores 2 --90m`.
 
 Consulta [windows/LEEME.md](windows/LEEME.md) para más detalles.
 
