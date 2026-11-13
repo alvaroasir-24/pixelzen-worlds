@@ -1,5 +1,5 @@
 (() => {
-  const TEMAS_DISPONIBLES = ['fittoa', 'continente-demoniaco', 'hunter-x-hunter', 'black-clover', 'spiderman-miles-morales'];
+  const TEMAS_DISPONIBLES = ['fittoa', 'continente-demoniaco', 'hunter-x-hunter', 'black-clover', 'spiderman-miles-morales', 'solo-leveling', 'demon-slayer', 'stranger-things', 'harry-potter'];
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('lienzo');
   const d = new Date();

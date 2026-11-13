@@ -394,6 +394,10 @@ function Cargar-Temas {
         'black-clover'            = @{ serie = 'Black Clover'; titulo = 'Aldea de Hage' }
         'hunter-x-hunter'         = @{ serie = 'Hunter × Hunter'; titulo = 'Isla Ballena' }
         'spiderman-miles-morales' = @{ serie = 'Spider-Man: Miles Morales'; titulo = 'Brooklyn y Manhattan' }
+        'solo-leveling'           = @{ serie = 'Solo Leveling'; titulo = 'Castillo del Monarca' }
+        'demon-slayer'            = @{ serie = 'Demon Slayer'; titulo = 'Tren Infinito' }
+        'stranger-things'         = @{ serie = 'Stranger Things'; titulo = 'Hawkins y el Revés' }
+        'harry-potter'            = @{ serie = 'Harry Potter'; titulo = 'Castillo de Hogwarts' }
     }
     $lista = @()
     if (Test-Path $TemasDir) {

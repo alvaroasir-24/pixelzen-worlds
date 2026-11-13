@@ -1,0 +1,33 @@
+{
+  "id": "stranger-things",
+  "serie": "Stranger Things",
+  "pantalla": "bloqueo",
+  "nombre": "Stranger Things · Reloj de Creel",
+  "subtitulo": "Maldición de Vecna · Grieta Escarlata",
+  "descripcion": "El antiguo reloj de pie de la casa Creel atrapado entre grietas rojas del Mundo del Revés y esporas flotantes.",
+  "sin_lago": true,
+  "cielo_fondo": "#08030c",
+  "modo_pajaros": "wyverns",
+  "color_pajaros": "#120612",
+  "modo_particulas": "brasas_mana",
+  "colores_hojas": ["#ff324e", "#dce8f4", "#c82848", "#88a8d0"],
+  "color_mana_halo": "#e82848",
+  "color_mana_centro": "#ffd4dc",
+  "color_fuegos_halo": ["#e82848", "#ff7c48"],
+  "color_fuegos_centro": ["#ffd2dc", "#ffe4c4"],
+  "color_ventanas": "#ff3858",
+  "color_faroles_halo": "#ff324e",
+  "color_faroles_centro": "#ffd8e0",
+  "color_runas_halo": "#e82848",
+  "color_runas_centro": "#ffb4c4",
+  "color_humo_dia": "#d4d8e4",
+  "color_humo_noche": "#5c4c64",
+  "color_olas": ["#e85878", "#422444"],
+  "color_reflejo_sol": "#ff9e78",
+  "color_reflejo_luna": "#f0c8d8",
+  "color_destello": "#ffe4ec",
+  "citas": [
+    {"sub": "Casa Creel · Cuatro Campanadas", "es": "«Tu tiempo casi se ha agotado...»", "au": "Vecna"},
+    {"sub": "Running Up That Hill", "es": "«Mientras suene tu canción, siempre habrá un camino de regreso.»", "au": "Max Mayfield"}
+  ]
+}

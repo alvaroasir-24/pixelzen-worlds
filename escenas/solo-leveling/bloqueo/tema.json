@@ -1,0 +1,33 @@
+{
+  "id": "solo-leveling",
+  "serie": "Solo Leveling",
+  "pantalla": "bloqueo",
+  "nombre": "Solo Leveling · Portal del Monarca",
+  "subtitulo": "Portón Dimensional Rango S · Dagas Sombra",
+  "descripcion": "Portal dimensional azul-violeta flanqueado por obeliscos rúnicos y las dagas gemelas de Sung Jin-Woo clavadas ante el sello de invocación del Monarca de las Sombras.",
+  "sin_lago": true,
+  "cielo_fondo": "#050410",
+  "modo_pajaros": "wyverns",
+  "color_pajaros": "#0a0718",
+  "modo_particulas": "brasas_mana",
+  "colores_hojas": ["#54e0ff", "#8a42ff", "#c46eff", "#68b8ff"],
+  "color_mana_halo": "#6e48ff",
+  "color_mana_centro": "#b8f4ff",
+  "color_fuegos_halo": ["#54d8ff", "#8a42ff"],
+  "color_fuegos_centro": ["#dffaff", "#e6d8ff"],
+  "color_ventanas": "#54e0ff",
+  "color_faroles_halo": "#54d8ff",
+  "color_faroles_centro": "#e2fbff",
+  "color_runas_halo": "#8a42ff",
+  "color_runas_centro": "#68f0ff",
+  "color_humo_dia": "#94a2b8",
+  "color_humo_noche": "#4c4674",
+  "color_olas": ["#68b8ff", "#382870"],
+  "color_reflejo_sol": "#a8d8ff",
+  "color_reflejo_luna": "#b8e4ff",
+  "color_destello": "#e4f8ff",
+  "citas": [
+    {"sub": "El Sistema · Portal Rango S", "es": "«[¡Surge!] El corazón del Monarca late en la oscuridad más profunda.»", "au": "El Sistema"},
+    {"sub": "Ira de Kamish · Colmillo de Kasaka", "es": "«Cada puerta abierta es un nuevo peldaño hacia lo absoluto.»", "au": "Sung Jin-Woo"}
+  ]
+}

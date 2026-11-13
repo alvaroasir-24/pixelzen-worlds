@@ -1,0 +1,33 @@
+{
+  "id": "harry-potter",
+  "serie": "Harry Potter",
+  "pantalla": "bloqueo",
+  "nombre": "Harry Potter · Andén 9¾ y Reliquias",
+  "subtitulo": "King's Cross · Andén 9¾ y Varita de Saúco",
+  "descripcion": "El arco victoriano del Andén 9¾ iluminado con faroles dorados, el baúl de Hogwarts con Hedwig y el resplandor de las Reliquias de la Muerte.",
+  "sin_lago": true,
+  "cielo_fondo": "#080614",
+  "modo_pajaros": "grullas",
+  "color_pajaros": "#121020",
+  "modo_particulas": "brasas_mana",
+  "colores_hojas": ["#ffd458", "#8ae8ff", "#ffe8a0", "#ff9e42"],
+  "color_mana_halo": "#ffd252",
+  "color_mana_centro": "#fff8d4",
+  "color_fuegos_halo": ["#ffaa42", "#ffd85c"],
+  "color_fuegos_centro": ["#fff4c4", "#fff9dc"],
+  "color_ventanas": "#ffc458",
+  "color_faroles_halo": "#ffaa42",
+  "color_faroles_centro": "#fff4c6",
+  "color_runas_halo": "#ffd858",
+  "color_runas_centro": "#fff9dc",
+  "color_humo_dia": "#eef2f8",
+  "color_humo_noche": "#8c92aa",
+  "color_olas": ["#ffe08c", "#4c5480"],
+  "color_reflejo_sol": "#ffe09c",
+  "color_reflejo_luna": "#f4f2dc",
+  "color_destello": "#fff8dc",
+  "citas": [
+    {"sub": "Cuento de los Tres Hermanos", "es": "«La Varita de Saúco, la Piedra de la Resurrección y la Capa de Invisibilidad.»", "au": "Reliquias de la Muerte"},
+    {"sub": "Estación King's Cross · Andén 9¾", "es": "«Solo atraviesa la barrera con decisión.»", "au": "Molly Weasley"}
+  ]
+}
