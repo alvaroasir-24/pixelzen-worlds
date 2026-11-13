@@ -567,6 +567,7 @@ public class PzmRenderer {
 public class PzmWallForm : Form {
     public Bitmap FrameRef;
     public Rectangle ScreenBounds { get; set; }
+    public int PaintCount = 0;
 
     [DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
@@ -587,8 +588,8 @@ public class PzmWallForm : Form {
     protected override CreateParams CreateParams {
         get {
             var cp = base.CreateParams;
-            // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_LAYERED (requerido bajo Progman con WS_EX_NOREDIRECTIONBITMAP en Win11 24H2/26H2)
-            cp.ExStyle |= 0x08000000 | 0x00000080 | 0x00080000;
+            // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT
+            cp.ExStyle |= 0x08000000 | 0x00000080 | 0x00080000 | 0x00000020;
             return cp;
         }
     }
@@ -605,6 +606,7 @@ public class PzmWallForm : Form {
     }
 
     protected override void OnPaint(PaintEventArgs e) {
+        PaintCount++;
         var f = FrameRef;
         if (f == null) return;
         int w = ClientSize.Width, h = ClientSize.Height;
@@ -633,18 +635,23 @@ public static class PzmDesktopHost {
     [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeoutW(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam, uint flags, uint timeout, out IntPtr result);
     [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
     [DllImport("user32.dll")] public static extern IntPtr GetParent(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassNameW(IntPtr hWnd, System.Text.StringBuilder sb, int maxCount);
     [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT r);
-    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    [DllImport("user32.dll")] public static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+    [DllImport("user32.dll", SetLastError=true)] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
     [DllImport("user32.dll")] public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern bool RedrawWindow(IntPtr hWnd, IntPtr lprcUpdate, IntPtr hrgnUpdate, uint flags);
     [DllImport("user32.dll")] public static extern IntPtr SetProcessDpiAwarenessContext(IntPtr value);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct RECT { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
 
     public static void InitDpi() {
         try { SetProcessDpiAwarenessContext(new IntPtr(-4)); } catch {}
@@ -662,7 +669,6 @@ public static class PzmDesktopHost {
         if (progman == IntPtr.Zero) return false;
 
         IntPtr res;
-        // 0x052C con wParam=0xD,lParam=0x1 prepara WorkerW en Win10 y Win11 Raised Desktop; fallback classic 0,0
         SendMessageTimeoutW(progman, 0x052C, new IntPtr(0xD), new IntPtr(0x1), 0x0002, 1000, out res);
 
         IntPtr defOwner = IntPtr.Zero;
@@ -686,10 +692,6 @@ public static class PzmDesktopHost {
             }
         }
 
-        // Win11 24H2/26H2 Raised desktop with layered ShellView:
-        // SHELLDLL_DefView vive dentro de Progman junto a un WorkerW hijo (fondo estatico).
-        // Debemos colgar los formularios WS_EX_LAYERED directamente de Progman justo debajo de SHELLDLL_DefView
-        // y empujar ese WorkerW hijo debajo de nuestros formularios.
         IntPtr workerChild = FindWindowExW(progman, IntPtr.Zero, "WorkerW", null);
         targetParent = progman;
         insertAfter = shellView;
@@ -702,31 +704,51 @@ public static class PzmDesktopHost {
         if (form == null || targetParent == IntPtr.Zero || !IsWindow(targetParent)) return false;
         if (!form.Visible) form.Show();
         int style = GetWindowLong(form.Handle, -16);
-        style = (style & ~unchecked((int)0x80000000)) | 0x40000000 | 0x10000000; // WS_CHILD | WS_VISIBLE
+        style = (style & ~unchecked((int)0x80000000)) | 0x40000000 | 0x10000000 | 0x04000000; // WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
         SetWindowLong(form.Handle, -16, style);
 
         int exStyle = GetWindowLong(form.Handle, -20);
-        exStyle = (exStyle & ~0x00040000) | 0x08000000 | 0x00000080 | 0x00080000; // -WS_EX_APPWINDOW + NOACTIVATE|TOOLWINDOW|LAYERED
+        exStyle = (exStyle & ~0x00040000) | 0x08000000 | 0x00000080 | 0x00080000 | 0x00000020; // -APPWINDOW + NOACTIVATE|TOOLWINDOW|LAYERED|TRANSPARENT
         SetWindowLong(form.Handle, -20, exStyle);
 
         SetParent(form.Handle, targetParent);
         SetLayeredWindowAttributes(form.Handle, 0, 255, 0x02);
 
-        RECT pr; GetWindowRect(targetParent, out pr);
         Rectangle sb = form.ScreenBounds;
-        int lx = sb.Left - pr.Left;
-        int ly = sb.Top - pr.Top;
-        SetWindowPos(form.Handle, insertAfter, lx, ly, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
-        ShowWindow(form.Handle, 8); // SW_SHOWNA
-        return true;
+        POINT pt = new POINT { X = sb.Left, Y = sb.Top };
+        ScreenToClient(targetParent, ref pt);
+        bool okPos = SetWindowPos(form.Handle, insertAfter, pt.X, pt.Y, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
+        ShowWindow(form.Handle, 8);
+        RedrawWindow(form.Handle, IntPtr.Zero, IntPtr.Zero, 0x0001 | 0x0080 | 0x0100);
+        return okPos;
     }
 
-    public static void PushWorkerBelow(IntPtr progman, IntPtr workerChild, IntPtr insertAfterForm) {
-        if (progman == IntPtr.Zero || workerChild == IntPtr.Zero || insertAfterForm == IntPtr.Zero) return;
-        if (!IsWindow(workerChild) || !IsWindow(insertAfterForm)) return;
-        RECT pr; GetWindowRect(progman, out pr);
-        Rectangle vs = SystemInformation.VirtualScreen;
-        SetWindowPos(workerChild, insertAfterForm, vs.Left - pr.Left, vs.Top - pr.Top, vs.Width, vs.Height, 0x0010 | 0x0040 | 0x0001);
+    public static void PushWorkersBelow(IntPtr progman, IntPtr insertAfterForm) {
+        if (progman == IntPtr.Zero || insertAfterForm == IntPtr.Zero || !IsWindow(insertAfterForm)) return;
+        IntPtr cur = IntPtr.Zero;
+        for (int guard = 0; guard < 16; guard++) {
+            cur = FindWindowExW(progman, cur, "WorkerW", null);
+            if (cur == IntPtr.Zero) break;
+            SetWindowPos(cur, insertAfterForm, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x4000);
+        }
+    }
+
+    public static string DescribeChildren(IntPtr parent) {
+        var sb = new System.Text.StringBuilder();
+        IntPtr cur = GetWindow(parent, 5); // GW_CHILD
+        var cls = new System.Text.StringBuilder(64);
+        int idx = 0;
+        while (cur != IntPtr.Zero && idx < 16) {
+            cls.Clear();
+            GetClassNameW(cur, cls, 64);
+            RECT r; GetWindowRect(cur, out r);
+            int ex = GetWindowLong(cur, -20);
+            sb.AppendFormat("#{0}:{1}({2}) vis={3} ex={4:X} [{5},{6},{7}x{8}] | ",
+                idx, cur, cls.ToString(), IsWindowVisible(cur), ex, r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top);
+            cur = GetWindow(cur, 2); // GW_HWNDNEXT
+            idx++;
+        }
+        return sb.ToString();
     }
 }
 '@
@@ -919,10 +941,11 @@ foreach ($scr in [System.Windows.Forms.Screen]::AllScreens) {
     }
 }
 if ($script:desktopWorkerBelow -ne [IntPtr]::Zero -and $script:forms.Count -gt 0) {
-    [PzmDesktopHost]::PushWorkerBelow($script:desktopParent, $script:desktopWorkerBelow, $script:forms[-1].Form.Handle)
+    [PzmDesktopHost]::PushWorkersBelow($script:desktopParent, $script:forms[-1].Form.Handle)
 }
 
 Recargar-Escenas
+Write-MotorLog ("Tree t0: " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
 
 $script:tick = 0
 $script:ahoraIni = Get-Date
@@ -998,9 +1021,10 @@ $timer.Add_Tick({
         } catch {}
     }
 
-    if (($t % 40) -eq 0 -and $script:forms.Count -gt 0) {
+    if ((($t -eq 12) -or (($t % 24) -eq 0)) -and $script:forms.Count -gt 0) {
         $f0 = $script:forms[0].Form
-        if ((-not [PzmDesktopHost]::IsWindow($script:desktopParent)) -or ([PzmDesktopHost]::GetParent($f0.Handle) -ne $script:desktopParent)) {
+        $zMal = ($script:desktopAfter -ne [IntPtr]::Zero) -and ([PzmDesktopHost]::GetWindow($script:desktopAfter, 2) -ne $f0.Handle)
+        if ((-not [PzmDesktopHost]::IsWindow($script:desktopParent)) -or ([PzmDesktopHost]::GetParent($f0.Handle) -ne $script:desktopParent) -or $zMal) {
             if ([PzmDesktopHost]::ResolveParent([ref]$script:desktopParent, [ref]$script:desktopAfter, [ref]$script:desktopWorkerBelow, [ref]$script:desktopMode)) {
                 $curA = $script:desktopAfter
                 foreach ($fItem in $script:forms) {
@@ -1012,7 +1036,11 @@ $timer.Add_Tick({
             }
         }
         if ($script:desktopWorkerBelow -ne [IntPtr]::Zero) {
-            [PzmDesktopHost]::PushWorkerBelow($script:desktopParent, $script:desktopWorkerBelow, $script:forms[-1].Form.Handle)
+            [PzmDesktopHost]::PushWorkersBelow($script:desktopParent, $script:forms[-1].Form.Handle)
+        }
+        if ($t -eq 12) {
+            $pc = ($script:forms | ForEach-Object { $_.Form.PaintCount }) -join ','
+            Write-MotorLog ("Tree t12: paints=[$pc] " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
         }
     }
 

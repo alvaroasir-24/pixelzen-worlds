@@ -32,14 +32,18 @@ function Resolver-Preview([string]$temaId, [string]$fase, [string]$variante = 'p
         'bloqueo'    { 'bloqueo' }
         default      { '' }
     }
+    $temaDirLocal = Join-Path $TemasDir $temaId
+    $temaDirEsc = Join-Path $Raiz "escenas\$temaId"
+    $baseLocal = if ($sub) { Join-Path $temaDirLocal $sub } else { $temaDirLocal }
+    $baseEsc = if ($sub) { Join-Path $temaDirEsc $sub } else { $temaDirEsc }
     $cands = @(
-        (Join-Path $TemasDir "$temaId\$sub\preview\$fase\v3.png"),
-        (Join-Path $Raiz "escenas\$temaId\$sub\preview\$fase\v3.png"),
-        (Join-Path $TemasDir "$temaId\$sub\fondo.png"),
-        (Join-Path $TemasDir "$temaId\fondo.png")
+        (Join-Path $baseLocal "preview\$fase\v3.png"),
+        (Join-Path $baseEsc "preview\$fase\v3.png"),
+        (Join-Path $baseLocal 'fondo.png'),
+        (Join-Path $temaDirLocal 'fondo.png')
     )
     foreach ($p in $cands) {
-        if ($p -and (Test-Path $p)) { return $p }
+        if ($p -and (Test-Path $p)) { return ([System.IO.Path]::GetFullPath($p)) }
     }
     return $null
 }
@@ -158,7 +162,11 @@ public class PzWallApp {
 }
 '@
     Add-Type -TypeDefinition $code -ErrorAction SilentlyContinue
-    [PzWallApp]::Apply($p1, $p2, [int]$numMonitores)
+    try {
+        [PzWallApp]::Apply($p1, $p2, [int]$numMonitores)
+    } catch {
+        [PzWallApp]::SystemParametersInfoW(20, 0, $p1, 3) | Out-Null
+    }
 }
 
 function Limpiar-RestosLively {
