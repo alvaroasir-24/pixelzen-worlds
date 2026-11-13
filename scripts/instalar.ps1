@@ -12,7 +12,7 @@ $Repo = 'davidlpizano/pixelzen-worlds'
 $AppDir = Join-Path $Destino 'app'
 
 function Stop-PixelZenProcesos {
-    foreach ($pf in @('pixelzen_app.pid', 'pixelzen_hud.pid', 'pixelzen_win.pid', 'pixelzen_srv.pid')) {
+    foreach ($pf in @('pixelzen_app.pid', 'pixelzen_motor.pid', 'pixelzen_hud.pid', 'pixelzen_win.pid', 'pixelzen_srv.pid')) {
         $p = Join-Path $env:TEMP $pf
         if (Test-Path $p) {
             $idTxt = (Get-Content $p -ErrorAction SilentlyContinue | Select-Object -First 1)
@@ -32,7 +32,7 @@ function Copy-RuntimeDesdeRepo([string]$Raiz, [string]$DestApp) {
     New-Item -Path $DestApp -ItemType Directory -Force | Out-Null
     Set-Content -Path (Join-Path $DestApp 'VERSION') -Value $VerStr -Encoding ASCII
 
-    foreach ($fn in @('PixelZenMenu.ps1', 'PixelZenHud.ps1', 'PixelZenCiclo.ps1', 'PixelZenApp.vbs', 'pixelzen_win.py', 'datos_win.py', 'pixelzen.ico')) {
+    foreach ($fn in @('PixelZenMenu.ps1', 'PixelZenMotor.ps1', 'PixelZenHud.ps1', 'PixelZenCiclo.ps1', 'PixelZenApp.vbs', 'pixelzen_win.py', 'datos_win.py', 'pixelzen.ico')) {
         Copy-Item -Path (Join-Path $Raiz "windows\$fn") -Destination (Join-Path $DestApp $fn) -Force
     }
     Copy-Item -Path (Join-Path $Raiz 'windows\installer\Desinstalar.ps1') -Destination (Join-Path $DestApp 'Desinstalar.ps1') -Force

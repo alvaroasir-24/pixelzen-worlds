@@ -3,8 +3,14 @@
 $ErrorActionPreference = 'SilentlyContinue'
 $Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Raiz = Split-Path -Parent $Aqui
-$EsInstalada = Test-Path (Join-Path $Aqui 'temas')
-$TemasDir = if ($EsInstalada) { Join-Path $Aqui 'temas' } else { Join-Path $Raiz 'windows\lively\temas' }
+$EsInstalada = (Test-Path (Join-Path $Aqui 'lively\temas')) -or (Test-Path (Join-Path $Aqui 'temas'))
+$TemasDir = if (Test-Path (Join-Path $Aqui 'lively\temas')) {
+    Join-Path $Aqui 'lively\temas'
+} elseif (Test-Path (Join-Path $Aqui 'temas')) {
+    Join-Path $Aqui 'temas'
+} else {
+    Join-Path $Raiz 'windows\lively\temas'
+}
 $DataDir = if ($EsInstalada) { Join-Path $env:LOCALAPPDATA 'PixelZenWorlds' } else { $Aqui }
 $ConfigPath = Join-Path $DataDir 'config.json'
 

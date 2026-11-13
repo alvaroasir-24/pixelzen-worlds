@@ -8,7 +8,7 @@ $res = [System.Windows.MessageBox]::Show(
 )
 if ($res -ne [System.Windows.MessageBoxResult]::Yes) { exit 0 }
 
-foreach ($pf in @('pixelzen_app.pid', 'pixelzen_hud.pid', 'pixelzen_win.pid', 'pixelzen_srv.pid')) {
+foreach ($pf in @('pixelzen_app.pid', 'pixelzen_motor.pid', 'pixelzen_hud.pid', 'pixelzen_win.pid', 'pixelzen_srv.pid')) {
     $p = Join-Path $env:TEMP $pf
     if (Test-Path $p) {
         $id = Get-Content $p -ErrorAction SilentlyContinue
