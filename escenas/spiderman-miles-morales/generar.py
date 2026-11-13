@@ -264,13 +264,26 @@ edificio(248, 20, 54, MID, 0.40, style='grid')
 edificio(344, 22, 58, MID, 0.45, neon=PAL['neon_c'], style='vertical')
 edificio(398, 22, 52, MID, 0.40, style='grid')
 
-# Bruma atmosférica sutil en la base del skyline lejano
+# Bruma atmosférica sutil y malecón/muelle sólido en la base del skyline de Manhattan y sector derecho
 sky_bot = PAL['sky'][-1]
-for yy in range(HOR - 16, HOR + 1):
-    dens = (1.0 - (HOR - yy) / 17.0) * 0.24
+for yy in range(HOR - 14, HOR - 5):
+    dens = (1.0 - (HOR - 5 - yy) / 10.0) * 0.22
     for xx in range(180, 424):
         if dith(xx, yy, dens):
-            over(xx, yy, sky_bot, 0.32)
+            over(xx, yy, sky_bot, 0.28)
+CN_M0, CN_M1, CN_M2 = PAL['concrete']
+for sx0, sx1 in ((176, 426), (488, W)):
+    for yy in range(HOR - 6, HOR + 1):
+        for xx in range(sx0, sx1):
+            c = CN_M1 if yy == HOR - 6 else (CN_M2 if (xx // 8 + yy) % 2 == 0 else CN_M0)
+            put(xx, yy, c)
+    for xx in range(sx0 + 4, sx1 - 2, 16):
+        put(xx, HOR - 7, CN_M2)
+        put(xx, HOR - 8, PAL['steel'][0])
+        if FASE != 'dia':
+            put(xx, HOR - 9, PAL['neon_y'])
+            if not ANIM:
+                glow(xx, HOR - 9, 2, PAL['neon_y'], 0.35)
 
 # 3b. ESTATUA DE LA LIBERTAD en Liberty Island (bahía abierta x ~ 456, 100% libre del HUD x >= 478)
 LX = 456
@@ -639,39 +652,42 @@ if not ANIM:
 # 6. Vista previa estática / fondo.png: Miles Morales en pleno balanceo con telaraña (en ANIM lo dibuja el motor en movimiento)
 if not ANIM:
     MILES_SWING = [
-        "......................HR..",
-        ".....................RRK..",
-        "....................SSK...",
-        "..........KSSK.....SSK....",
-        ".........KSRWWWR..SSK.....",
-        ".........KSKWWWWR.SSK.....",
-        ".........KSKKWWWKSSK......",
-        "..........KKKKKKSSK.......",
-        "........SSKRRRRRKSS.......",
-        ".......SSKKRRRRRKK........",
-        "......SS..KKRRRKK.........",
-        ".....SS...KKKKKK..KKKK....",
-        "....HR....KKKKKKKKKKSSKK..",
-        "....E....KKKKKK..KKK..KKK.",
-        "........KKSSKK........SSK.",
-        ".......KK..KK.........RRR.",
-        "......KK..............RR..",
-        ".....SS...................",
-        "....RR....................",
-        "....R.....................",
+        "..........................RRK.",
+        ".........................RRKK.",
+        "........................KKK...",
+        ".......................KKK....",
+        "...........KKKKKK.....KKK.....",
+        "..........KKKKKKKK...KKK......",
+        ".........KKWWKKWWKK.KKK.......",
+        ".........KKWWKKWWKKSSK........",
+        "..........KKKKKKKKSSK.........",
+        ".........KKKKKKKKKSK..........",
+        "........KKRRKKKRRKK...........",
+        ".......SSKRRRRRRKK............",
+        "......SSKKRKKRRKKK..KKKK......",
+        ".....SS.KKRRRRKKKKKKKSSKK.....",
+        "....RR..KKKKRKKKKKKK...KKK....",
+        "....RE...KKSSKK.........SSK...",
+        "........KKK..KKK........RRR...",
+        ".......KKK....KK........WWW...",
+        "......KKK.....................",
+        "......KKK.....................",
+        ".....RRR......................",
+        ".....WWW......................",
     ]
+    w_m = max(len(r) for r in MILES_SWING)
+    MILES_SWING = [r.ljust(w_m, '.') for r in MILES_SWING]
     su_b, su_r = PAL['suit']
     col_map = {
         'K': su_b,
-        'S': '#2e3358',
+        'S': '#282d4c',
         'R': su_r,
-        'H': '#ff5470',
-        'W': '#ffffff',
+        'W': '#f4f8ff',
         'E': PAL['neon_c'],
     }
-    mx_s, my_s = 166, 94
-    hx, hy = mx_s + (22 - 13), my_s + (0 - 10)
-    ax_top, ay_top = mx_s + 54, 0
+    mx_s, my_s = 166, 92
+    hx, hy = mx_s + (27 - 15), my_s + (0 - 11)
+    ax_top, ay_top = mx_s + 60, 0
     steps = max(abs(ax_top - hx), abs(ay_top - hy))
     for i in range(steps + 1):
         wx = int(round(hx + (ax_top - hx) * i / steps))
@@ -680,9 +696,9 @@ if not ANIM:
     for r_idx, row in enumerate(MILES_SWING):
         for c_idx, ch in enumerate(row):
             if ch != '.':
-                put(mx_s + c_idx - 13, my_s + r_idx - 10, col_map[ch])
-    glow(mx_s - 9, my_s + 3, 4, PAL['neon_c'], 0.45)
-    put(mx_s - 10, my_s + 4, PAL['neon_y'])
+                put(mx_s + c_idx - 15, my_s + r_idx - 11, col_map[ch])
+    glow(mx_s - 11, my_s + 4, 4, PAL['neon_c'], 0.45)
+    put(mx_s - 12, my_s + 5, PAL['neon_y'])
 
 # Barandilla urbana en primer plano (esquinas inferiores)
 for cx_s in range(0, 74):

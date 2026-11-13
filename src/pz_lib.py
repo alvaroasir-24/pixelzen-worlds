@@ -404,3 +404,18 @@ def exporta_salida(lz, out, fase, anim, nubes_out, datos):
         return
 
     guarda_png_escalado(os.path.join(out, 'v3.png'), lz.px, lz.w, lz.h, SCALE)
+
+
+def pinta_sprite(lz, cx, by, spr, cmap, off_x=0):
+    """Pinta una matriz pixel-art centrada en cx+off_x apoyando la fila inferior exactamente en y=by."""
+    sw = len(spr[0])
+    assert all(len(r) == sw for r in spr), f"Sprite filas desiguales: {[len(r) for r in spr]}"
+    x0 = cx - sw // 2 + off_x
+    y0 = by - len(spr) + 1
+    for ry, row in enumerate(spr):
+        for rx, ch in enumerate(row):
+            col = cmap.get(ch)
+            if col is not None:
+                lz.put(x0 + rx, y0 + ry, col)
+    return x0, y0
+

@@ -188,20 +188,34 @@ for dy in range(-35, 48):
             c = sk_dk
         put(sx_c + dx, sy_c + dy, c)
 
-# Estatua del Primer Rey Mago en lo alto del cráneo (con capa y corona)
-stx, sty = sx_c, sy_c - 36
-for dy in range(-18, 1):
-    w_st = 5 if dy > -7 else (3 if dy > -14 else 2)
+# Estatua del Primer Rey Mago (Lumiere Silvamillion Clover) sobre el cráneo del demonio
+stx, sty = sx_c, sy_c - 34
+# Pedestal esculpido apoyado en la bóveda craneal
+for dx in range(-7, 8):
+    put(stx + dx, sty, sk_mid if dx < 0 else sk_lo)
+    put(stx + dx, sty - 1, sk_hi)
+# Silueta heroica del Primer Rey Mago con capa ondeante a la derecha y corona real
+for dy in range(-17, -1):
+    w_st = 3 if dy > -7 else (4 if dy > -12 else 2)
     for dx in range(-w_st, w_st + 1):
-        c_st = PAL['gold'][1] if dy < -14 else (sk_hi if dx <= 0 else sk_mid)
+        c_st = sk_hi if dx < 0 else sk_mid
+        if -17 <= dy <= -15 and abs(dx) <= 2:
+            c_st = PAL['gold'][1] if dx % 2 == 0 else sk_hi
         put(stx + dx, sty + dy, c_st)
-for yy in range(sty - 15, sty - 5):
-    put(stx + 4, yy, sk_lo)  # manto flotante
+for dy in range(-12, -2):
+    span = (-dy - 2) // 2 + 2
+    for dx in range(3, span + 4):
+        if dx + dy > -8:
+            put(stx + dx, sty + dy, sk_lo if dx > 5 else sk_mid)
+# Gran Espada de Luz apuntando al cielo en su mano izquierda
+for k in range(1, 14):
+    put(stx - 5, sty - 9 - k, PAL['gold'][0] if k > 3 else sk_hi)
+put(stx - 6, sty - 12, PAL['gold'][1]); put(stx - 4, sty - 12, PAL['gold'][1])
 if ANIM:
-    RUNAS.append([stx, sty - 20])
+    RUNAS.append([stx - 4, sty - 25])
 else:
-    put(stx, sty - 20, PAL['gold'][0])
-    glow(stx, sty - 20, 6, PAL['gold'][0], 0.55)
+    put(stx - 4, sty - 25, PAL['gold'][0])
+    glow(stx - 4, sty - 25, 7, PAL['gold'][0], 0.6)
 
 # 4. Colinas de Hage + silueta del Castillo del Trébol al fondo derecho
 def rampa(x):
@@ -232,20 +246,25 @@ for base, amp, seed, fr, col, mist in CAPAS:
             if dith(x, top + k, (1 - k / 16) * 0.38):
                 over(x, top + k, mist, 0.5)
 
-# Muralla y agujas del Castillo Real del Trébol en el horizonte derecho (y ~ 228..280, bajo el HUD)
-for yy in range(HOR - 22, HOR + 1):
+# Cerro rocoso base y silueta del Castillo Real del Trébol al fondo derecho (x ~ 490..580, bajo el HUD)
+for x in range(488, 582):
+    t_h = 1.0 - abs(x - 535) / 47.0
+    ridge_k = HOR - int(22 * min(1.0, t_h * 1.45))
+    for yy in range(ridge_k, HOR + 1):
+        put(x, yy, PAL['mont'][3] if yy < ridge_k + 4 else PAL['mont'][4])
+for yy in range(HOR - 36, HOR - 18):
     for xx in range(506, 562):
-        put(xx, yy, PAL['mont'][3])
-for cx_k, h_k, w_k in ((512, 34, 9), (526, 48, 11), (542, 38, 9), (556, 28, 7)):
-    for yy in range(HOR - h_k, HOR + 1):
+        put(xx, yy, PAL['mont'][2] if xx < 534 else PAL['mont'][3])
+for cx_k, h_k, w_k in ((512, 46, 9), (526, 58, 11), (542, 50, 9), (556, 40, 7)):
+    for yy in range(HOR - h_k, HOR - 18):
         for dx in range(-w_k // 2, w_k // 2 + 1):
-            put(cx_k + dx, yy, PAL['mont'][2] if dx <= 0 else PAL['mont'][3])
-    for i in range(16):
-        hw = max(0, int((w_k // 2 + 1) * (1 - i / 15.0)))
+            put(cx_k + dx, yy, PAL['mont'][1] if dx <= 0 else PAL['mont'][3])
+    for i in range(15):
+        hw = max(0, int((w_k // 2 + 1) * (1 - i / 14.0)))
         for dx in range(-hw, hw + 1):
-            put(cx_k + dx, HOR - h_k - i, PAL['mont'][1] if dx <= 0 else PAL['mont'][2])
+            put(cx_k + dx, HOR - h_k - i, PAL['mont'][0] if dx <= 0 else PAL['mont'][2])
     if FASE != 'dia':
-        put(cx_k, HOR - h_k + 6, '#ffe090')
+        put(cx_k, HOR - h_k + 7, '#ffe090')
 
 # Pinos oscuros puntiagudos en la base de las colinas
 r_pin = random.Random(77)
@@ -457,16 +476,29 @@ for i in range(48):
             put(cx, yy, PAL['anti'][1])
             glow(cx, yy, 3, PAL['anti'][0], 0.55)
 
-# Grimorio negro flotando junto a la espada (x ~ 76, y ~ H - 38)
-gx_b, gy_b = 76, H - 38
-for dy in range(-5, 6):
-    for dx in range(-4, 5):
-        put(gx_b + dx, gy_b + dy, sw_dk if abs(dx) == 4 or abs(dy) == 5 else sw_m)
-put(gx_b, gy_b, PAL['anti'][0])
+# Atril de piedra + Grimorio abierto de Cinco Hojas junto a la espada (x ~ 78, y ~ H - 24)
+gx_b, gy_b = 78, H - 24
+for yy in range(gy_b + 4, H):
+    for dx in range(-5, 6):
+        put(gx_b + dx, yy, ST1 if dx < 0 else ST0)
+for dy in range(-7, 5):
+    tilt = abs(dy) // 4
+    for dx in range(-9, 10):
+        if abs(dx) >= 8:
+            put(gx_b + dx, gy_b + dy + tilt, sw_dk)  # cubierta negra del grimorio
+        elif abs(dx) == 0:
+            put(gx_b + dx, gy_b + dy, sw_dk)  # lomo central
+        elif abs(dy) == 6 or abs(dy) == 4 and dy > 0:
+            put(gx_b + dx, gy_b + dy, PAL['gold'][0])
+        else:
+            put(gx_b + dx, gy_b + dy, '#e8dcc4' if abs(dx) < 7 else sw_m)
+# Emblema carmesí del Trébol de 5 hojas sobre la página
+for dx, dy in ((0, -2), (-2, -1), (2, -1), (-2, 1), (2, 1), (0, 2)):
+    put(gx_b - 4 + dx, gy_b - 1 + dy, PAL['anti'][0])
 if ANIM:
-    RUNAS.append([gx_b, gy_b])
+    RUNAS.append([gx_b, gy_b - 9])
 else:
-    glow(gx_b, gy_b, 5, PAL['anti'][0], 0.55)
+    glow(gx_b, gy_b - 2, 7, PAL['anti'][0], 0.55)
 
 # Tréboles brillantes en las orillas inferiores
 for tx, ty in ((16, H - 18), (90, H - 12), (W - 36, H - 14), (W - 20, H - 10)):

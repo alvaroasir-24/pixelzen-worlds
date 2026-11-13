@@ -210,11 +210,14 @@ AD0, AD1, AD2 = PAL['adobe']
 DM0, DM1, DM2 = PAL['dome']
 
 r_cliff = Ruido(73)
-for x in range(0, 276):
-    # Terraza alta a la izquierda (0..180) bajando en escalón hacia el embarcadero/portal (180..275)
-    top_c = HOR - 24 if x < 175 else (HOR - 15 if x < 245 else HOR - 8)
-    if x > 245:
-        top_c += int((x - 245) * 0.25)
+for x in range(0, 282):
+    # Terraza continua a HOR-24 bajo toda la ciudadela y torre (0..234), bajando hacia el muelle/portal (234..282)
+    if x < 234:
+        top_c = HOR - 24
+    elif x < 268:
+        top_c = HOR - 14
+    else:
+        top_c = HOR - 14 + int((x - 268) * 0.9)
     for y in range(min(HOR, top_c), HOR + 1):
         d_c = y - top_c
         estrato = int(r_cliff(x * 0.14 + d_c * 0.22) * 3)
@@ -234,14 +237,14 @@ for x in range(0, 276):
         vy_f = top_c + 7 + (x % 6)
         put(x, vy_f, MANA_LO if FASE == 'dia' else MANA_HI)
 
-# Muralla almenada en la terraza media
-for x in range(60, 246):
-    y_m = HOR - 24 if x < 175 else HOR - 15
-    for yy in range(y_m - 6, y_m):
+# Muralla almenada en la terraza continua
+for x in range(60, 236):
+    y_m = HOR - 23
+    for yy in range(y_m - 8, y_m):
         put(x, yy, BS1 if (x // 4 + yy // 2) % 2 else BS0)
     if x % 7 < 4:
-        put(x, y_m - 7, BS2)
-        put(x, y_m - 8, BS2)
+        put(x, y_m - 9, BS2)
+        put(x, y_m - 10, BS2)
 
 def zigurat_demoniaco(x0, y_base, w, h, pisos=2):
     """Edificio escalonado estilo Rikarisu con cúpula o cuernos de obsidiana."""
@@ -285,18 +288,18 @@ def zigurat_demoniaco(x0, y_base, w, h, pisos=2):
         for k in range(5):
             put(cx + side * (top_w // 2 + k), cy_base - k, BS2)
 
-# Tres estructuras demoníacas escalonadas formando la ciudadela de Rikarisu
-zigurat_demoniaco(72, HOR - 30, 54, 42, pisos=2)   # Bastión occidental
-zigurat_demoniaco(124, HOR - 30, 62, 54, pisos=3)  # Ciudadela central de Rikarisu (con chimenea humeante)
-CHIMENEA = [132, HOR - 92]
-for yy in range(HOR - 90, HOR - 66):
+# Tres estructuras demoníacas escalonadas formando la ciudadela de Rikarisu (ancladas en HOR-23)
+zigurat_demoniaco(72, HOR - 26, 54, 42, pisos=2)   # Bastión occidental
+zigurat_demoniaco(124, HOR - 26, 62, 54, pisos=3)  # Ciudadela central de Rikarisu (con chimenea humeante)
+CHIMENEA = [132, HOR - 88]
+for yy in range(HOR - 86, HOR - 62):
     for x in range(130, 135):
         put(x, yy, BS0 if x > 132 else BS1)
 
-# Torre aguja de obsidiana (x ~ 196..220)
-for yy in range(HOR - 78, HOR - 20):
-    t = (yy - (HOR - 78)) / 58.0
-    hw = int(6 + 6 * t)
+# Torre aguja de obsidiana (x ~ 196..220) bien asentada en la terraza HOR-23
+for yy in range(HOR - 78, HOR - 21):
+    t = (yy - (HOR - 78)) / 57.0
+    hw = int(6 + 7 * t)
     for dx in range(-hw, hw + 1):
         put(208 + dx, yy, BS2 if dx < -hw // 3 else (BS1 if dx < hw // 3 else BS0))
 for wy in (HOR - 66, HOR - 50, HOR - 34):
@@ -317,12 +320,15 @@ else:
     disc(208, HOR - 85, 2, MANA_HI)
     glow(208, HOR - 85, 9, MANA_HI, 0.65)
 
-# Viaducto / arcos de piedra que salen hacia la derecha (x ~ 244..312) sobre el agua
-for ax in (254, 278, 302):
-    for yy in range(HOR - 12, HOR + 2):
-        put(ax, yy, BS0)
-        put(ax + 1, yy, BS1)
-for x in range(244, 314):
+# Viaducto / muelle de piedra sólido desde la terraza (x ~ 234..320) sobre el agua
+for yy in range(HOR - 10, HOR + 1):
+    for xx in range(288, 318):
+        put(xx, yy, CL1 if (xx + yy) % 4 else CL0)
+for ax in (254, 276, 298):
+    for yy in range(HOR - 12, HOR + 1):
+        for dx in (-1, 0, 1, 2):
+            put(ax + dx, yy, BS0 if dx > 0 else BS1)
+for x in range(234, 316):
     put(x, HOR - 13, BS2)
     put(x, HOR - 12, BS1)
 

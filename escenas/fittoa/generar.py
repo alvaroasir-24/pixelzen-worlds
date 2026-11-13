@@ -228,8 +228,13 @@ for y in range(HOR - 36, HOR + 1):
             c = PAL['isla'][2]
         put(x, y, c)
 
-# Muelle de piedra bajo la mansión + enredaderas de musgo
-for x in range(134, 278):
+# Terraplén verde y muelle de piedra continuo bajo la cabaña izquierda, la mansión y la torre
+for x in range(66, 94):
+    top_e = HOR - int((x - 66) / 28.0 * 10)
+    for yy in range(top_e, HOR + 1):
+        c = PAL['isla'][2] if yy <= top_e + 2 else (PAL['isla'][1] if (x + yy) % 4 else PAL['isla'][0])
+        put(x, yy, c)
+for x in range(90, 278):
     for yy in range(HOR - 10, HOR + 1):
         c = ST1 if ((x // 5 + yy // 3) % 2 == 0) else ST0
         if yy == HOR - 10:
@@ -513,14 +518,31 @@ else:
     for ox, oy in ((0, 0), (0, -1), (-1, 0), (1, 0)):
         put(BX + 12 + ox, BY - 17 + oy, WARM)
     glow(BX + 12, BY - 17, 11, WARM, 0.75)
-for yy in range(BY - 9, BY - 1):
-    for dx in range(-4 + (BY - 1 - yy) // 3, 3 - (BY - 1 - yy) // 4):
-        put(BX - 3 + dx, yy, PAL['boat'])
-for x in range(BX - 8, BX + 3):
-    put(x, BY - 10, PAL['boat'])
-for k in range(1, 6):
-    for x in range(BX - 6 + k // 2, BX + 1 - k // 2):
-        put(x, BY - 10 - k, PAL['boat'])
+# Viajera Roxy Migurdia en la barca (sombrero puntiagudo azul, trenzas azules, capa parda y báculo)
+for yy in range(BY - 11, BY - 1):
+    w_cloak = 3 + (BY - 1 - yy) // 4
+    for dx in range(-w_cloak, w_cloak + 1):
+        c_r = '#3b5898' if abs(dx) <= 1 else '#5a4232'
+        if yy == BY - 11:
+            c_r = '#d6e2f8'
+        put(BX - 3 + dx, yy, c_r)
+# Rostro y trenzas azules de Roxy
+for dy in range(-14, -11):
+    for dx in range(-2, 3):
+        put(BX - 3 + dx, BY + dy, '#f0d4be' if abs(dx) <= 1 else '#3c66b8')
+put(BX - 5, BY - 10, '#3c66b8'); put(BX - 5, BY - 9, '#3c66b8')
+put(BX - 1, BY - 10, '#3c66b8'); put(BX - 1, BY - 9, '#3c66b8')
+# Sombrero ancho puntiagudo de maga de Roxy
+for x in range(BX - 10, BX + 5):
+    put(x, BY - 14, '#24407c' if abs(x - (BX - 3)) > 4 else '#3658a8')
+for k in range(1, 8):
+    hw = max(0, 5 - (k * 5) // 7)
+    for x in range(BX - 3 - hw, BX - 3 + hw + 1):
+        put(x, BY - 14 - k, '#2a4a8e' if k != 2 else '#d4a84f')
+# Báculo de madera y gema azul
+for k in range(1, 14):
+    put(BX + 2, BY - 2 - k, '#68462c')
+put(BX + 2, BY - 16, MANA_HI)
 # Remo inclinado hacia el agua
 for k in range(1, 9):
     put(BX - 1 - k, BY - 3 + k, PAL['boat'])

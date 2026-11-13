@@ -131,6 +131,28 @@ for bx, bw, bh, ag in ((44, 24, 92, False), (76, 30, 128, True), (118, 22, 84, F
 for bx, bw, bh, ag in ((58, 28, 76, False), (104, 32, 98, False), (178, 34, 112, True), (254, 30, 88, False), (356, 32, 106, False)):
     torre(bx, bw, bh, PAL['sky_mid'], ag)
 
+# Malecón continuo de Midtown y pilotes para que ninguna torre flote sobre el río
+CN0, CN1, CN2 = PAL['concrete']
+ST0_M, ST1_M = PAL['steel']
+for yy in range(HOR - 10, HOR + 1):
+    for xx in range(38, 448):
+        if yy == HOR - 10:
+            c = CN1
+        elif yy < HOR - 7:
+            c = CN0 if (xx // 6) % 2 == 0 else CN2
+        else:
+            c = CN2 if (xx // 5 + yy) % 2 == 0 else ST0_M
+        put(xx, yy, c)
+for fx in range(46, 442, 22):
+    put(fx, HOR - 11, ST1_M)
+    put(fx, HOR - 12, ST0_M)
+    if FASE != 'dia':
+        if ANIM:
+            FAROLES.append([fx, HOR - 13])
+        else:
+            put(fx, HOR - 13, PAL['neon_y'])
+            glow(fx, HOR - 13, 3, PAL['neon_y'], 0.42)
+
 # 4. Viaducto del Metro Elevado de Harlem (y = 228..238, x = 220..640)
 ST0, ST1 = PAL['steel']
 for x in range(220, W):
@@ -157,24 +179,71 @@ for cx_car in (280, 326, 372):
 if ANIM:
     FAROLES.append([279, 222, 9])
 
-# 5. Edificios Brownstone de Harlem (derecha, x = 448..640)
+# 5. Edificios Brownstone de Harlem (derecha, x = 448..640) con paseo marítimo, escalinatas y escaleras de incendios
 BR0, BR1, BR2 = PAL['brick']
 for bx, bw, bh in ((452, 46, 128), (500, 52, 146), (554, 48, 134), (604, 36, 152)):
     by0 = HOR - bh
-    for yy in range(by0, HOR + 1):
-        for x in range(bx, min(W, bx + bw)):
-            c = BR1 if (x // 4 + yy // 3) % 2 == 0 else BR0
+    bx1 = min(W, bx + bw)
+    # Bloque de fachada de ladrillo fino + zócalo de piedra en planta baja
+    for yy in range(by0, HOR - 10):
+        for x in range(bx, bx1):
+            if yy >= HOR - 24:
+                c = CN2 if (yy + x // 6) % 2 == 0 else CN0
+            else:
+                c = BR1 if (x + (yy // 2) * 2) % 3 == 0 else BR0
+                if yy % 2 == 1 and (x + yy // 2) % 4 == 0:
+                    c = BR2
             if yy < by0 + 4:
-                c = PAL['concrete'][1]
+                c = CN1 if yy == by0 else CN2
             put(x, yy, c)
-    for wy in range(by0 + 12, HOR - 18, 16):
-        for wx in range(bx + 7, min(W - 4, bx + bw - 6), 11):
-            if ANIM:
+    # Cornisa moldurada en azotea
+    for x in range(max(448, bx - 1), min(W, bx1 + 1)):
+        put(x, by0, CN1)
+        put(x, by0 + 1, CN2)
+    # Puerta / portal de acceso y escalinata sobre la acera
+    door_x = bx + bw // 2 - 3
+    if door_x + 7 < W:
+        for yy in range(HOR - 22, HOR - 10):
+            for dx in range(6):
+                put(door_x + dx, yy, ST0_M if yy > HOR - 21 else CN1)
+        if FASE != 'dia':
+            put(door_x + 2, HOR - 19, WARM)
+            put(door_x + 3, HOR - 19, WARM)
+        for st_i in range(3):
+            for dx in range(-1 - st_i, 7 + st_i):
+                if 448 <= door_x + dx < W:
+                    put(door_x + dx, HOR - 12 + st_i, CN1 if st_i == 0 else CN0)
+    # Ventanas enmarcadas (iluminadas de noche/dorado, vidrio oscuro de día)
+    for wy in range(by0 + 10, HOR - 28, 15):
+        for wx in range(bx + 6, min(W - 5, bx + bw - 5), 11):
+            for dx in range(-1, 3):
+                put(wx + dx, wy - 1, CN1)
+                put(wx + dx, wy + 5, CN2)
+            if ANIM and FASE != 'dia':
                 VENTANAS.append([wx, wy])
             else:
-                for dy in range(4):
-                    put(wx, wy + dy, WARM)
-                    put(wx + 1, wy + dy, WARM)
+                win_c = ST1_M if FASE == 'dia' else WARM
+                for dy in range(5):
+                    put(wx, wy + dy, win_c)
+                    put(wx + 1, wy + dy, win_c)
+    # Escalera de incendios metálica en el primer y tercer bloque
+    if bx in (452, 554):
+        fx_e = bx + 5
+        fw_e = bw - 12
+        for fy in range(by0 + 15, HOR - 24, 15):
+            for xx in range(fx_e, min(W, fx_e + fw_e)):
+                put(xx, fy, ST0_M)
+                put(xx, fy - 2, ST1_M)
+            for k in range(10):
+                lx = fx_e + (k * fw_e // 10 if (fy // 15) % 2 == 0 else fw_e - k * fw_e // 10)
+                if lx < W:
+                    put(lx, fy + k, ST1_M)
+
+# Acera y muelle de Harlem (x = 446..640, y = HOR-10..HOR) que ancla todos los brownstones
+for yy in range(HOR - 10, HOR + 1):
+    for x in range(446, W):
+        c = CN1 if yy == HOR - 10 else (CN0 if yy < HOR - 6 else (CN2 if (x // 4 + yy) % 2 == 0 else ST0_M))
+        put(x, yy, c)
 
 # Cartel neón Spider-Verse en azotea de Harlem (x = 508..548, y = 116..134)
 for yy in range(114, 134):

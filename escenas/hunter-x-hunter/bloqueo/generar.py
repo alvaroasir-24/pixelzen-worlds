@@ -141,19 +141,19 @@ for gx in (ACX - 10, ACX, ACX + 10):
     else:
         put(gx, ACY + 16, PAL['gold'][1])
 
-# Malecón frente al agua con faroles del paseo
-for y in range(HOR - 5, HOR + 2):
+# Malecón urbano ancho con basamento sólido bajo la Torre Celestial y el skyline (y = HOR-8..HOR)
+for y in range(HOR - 8, HOR + 1):
     for x in range(W):
-        put(x, y, T1 if y > HOR - 3 else T3)
+        put(x, y, T0 if y > HOR - 3 else (T1 if y > HOR - 7 else T3))
 for fx in range(48, 600, 72):
-    if 256 <= fx <= 384:
+    if 244 <= fx <= 396:
         continue
-    for y in range(HOR - 12, HOR - 5):
+    for y in range(HOR - 15, HOR - 8):
         put(fx, y, T0)
     if ANIM:
-        FAROLES.append([fx, HOR - 13, 6])
+        FAROLES.append([fx, HOR - 16, 6])
     else:
-        put(fx, HOR - 13, PAL['cyan'])
+        put(fx, HOR - 16, PAL['cyan'])
 
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=('#ffe498', '#c8e8ff'))
 aplica_vineta(lz, PAL['vig'])

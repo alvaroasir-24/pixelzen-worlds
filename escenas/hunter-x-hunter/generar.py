@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, en_zona, exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    dith, en_zona, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
     render_estrellas, render_lago, render_nubes,
 )
 
@@ -161,12 +161,14 @@ for side in (-1, 1):
         by_r = 96 - int(k * 0.55)
         for dy in range(0, max(1, 3 - k // 12)):
             put(bx_r, by_r + dy, wt_m if side < 0 else wt_d)
-# Neblina de gran altitud cruzando el tronco medio
-for yy in range(134, 152):
-    for xx in range(wt_x - 24, wt_x + 25):
-        dist_m = abs(yy - 143) / 9.0
-        if dith(xx, yy, (1.0 - dist_m) * 0.42):
-            over(xx, yy, PAL['mist'][0], 0.48)
+# Bruma suave integrada en el propio tronco (sin bordes rectangulares)
+for y in range(126, 162):
+    t_y = (y - 72) / (HOR - 72)
+    hw_tr = int(9 + 20 * (t_y ** 2.1) + 2.2 * math.sin(y * 0.08))
+    dens_m = max(0.0, 1.0 - abs(y - 144) / 18.0) * 0.36
+    for xx in range(wt_x - hw_tr, wt_x + hw_tr + 1):
+        if dith(xx, y, dens_m):
+            over(xx, y, PAL['mist'][0], 0.42)
 for cx, cy, rx, ry in (
     (wt_x, 76, 62, 16),
     (wt_x - 32, 62, 42, 14),
@@ -246,9 +248,13 @@ RF0, RF1, RF2 = PAL['roof']
 WARM = '#ffd074'
 
 for x in range(0, 256):
-    # Colina verde alta a la izquierda (0..90), explanada de la casa (90..195), descenso al muelle (195..256)
-    if x < 90:
-        top_y = HOR - 28 - int(10 * math.cos(x / 90.0 * 1.57))
+    # Colina verde alta a la izquierda (0..98) bajando suavemente a la explanada de la casa (98..195) y al muelle (195..256)
+    if x < 48:
+        top_y = HOR - 36
+    elif x < 98:
+        t_sm = (x - 48) / 50.0
+        sm = t_sm * t_sm * (3.0 - 2.0 * t_sm)
+        top_y = HOR - 36 + int(22 * sm)
     elif x < 195:
         top_y = HOR - 14
     else:
@@ -270,10 +276,10 @@ for x in range(0, 256):
         if x % 34 == 3:
             put(x + 1, top_y - 1, '#f8e690')
 
-# Molino de viento rústico en la colina izquierda (x ~ 54)
-mx_w, my_w = 54, HOR - 30
-for yy in range(my_w - 28, my_w):
-    t = (yy - (my_w - 28)) / 28.0
+# Molino de viento rústico con zócalo bien clavado en la colina (x ~ 48)
+mx_w, my_w = 48, HOR - 32
+for yy in range(my_w - 28, my_w + 4):
+    t = (yy - (my_w - 28)) / 32.0
     hw = int(4 + 4 * t)
     for dx in range(-hw, hw + 1):
         put(mx_w + dx, yy, WL0 if dx < 0 else WL1)
@@ -388,17 +394,37 @@ for i in range(16):
     for dx in range(1, 13 - i * 12 // 16):
         put(bx_s + dx, by_s - 3 - i, PAL['sail'][0] if dx < 6 else PAL['sail'][1])
 
-# Silueta de Gon pescando en la punta del muelle + caña
-gx, gy = 344, HOR - 5
-for dy in range(-5, 0):
-    put(gx, gy + dy, '#12241a')
-    put(gx + 1, gy + dy, '#183424')
-disc(gx, gy - 6, 2, '#0c1c14')
-for k in range(1, 18):
-    put(gx + 2 + k, gy - 4 - k // 2, '#644428')
-for k in range(1, 14):
+# Gon Freecss pescando en el muelle (cabello en punta verde-negro, chaqueta verde/naranja y caña)
+gon_cmap = {
+    'O': '#0b120e', 'H': '#102418', 'E': '#1e5834', 'S': '#f2d0b6', 'e': '#3a2010',
+    'G': '#248c48', 'g': '#186432', 'R': '#ee6e2c', 'W': '#f2f4ec', 'B': '#16341c',
+}
+gon_fish_spr = [
+    "....OO...OO.....",
+    "...OEEO.OEEO....",
+    "..OEHHEOEHHEO...",
+    "..OHHHHHHHHHO...",
+    "..OHHHHHHHHHO...",
+    "...OSSSSSSSO....",
+    "...OSeSSSeSO....",
+    "....OSSSSSO.....",
+    "...OORWGWROO....",
+    "..ORGWWWWGRO....",
+    "..OGGWWWWGGO....",
+    "..OGGGGGGGGO....",
+    "..OSSGGGGSSO....",
+    "...OOGGGGOO.....",
+    "...OGGOOGGO.....",
+    "...OSSO.OSSO....",
+    "...OBBO.OBBO....",
+    "...OOO...OOO....",
+]
+pinta_sprite(lz, 340, HOR - 4, gon_fish_spr, gon_cmap)
+for k in range(1, 20):
+    put(345 + k, HOR - 11 - k // 2, '#7c5230')
+for k in range(1, 16):
     if k % 2 == 0:
-        put(gx + 19, gy - 12 + k, '#c8e8f0')
+        put(365, HOR - 21 + k, '#d8f4fc')
 
 # Faroles cálidos
 def farol_puerto(x, y):

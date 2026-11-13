@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PixelZen Worlds - Continente Demoníaco (Monitor 2): Castillo de Atofe y Atoferatofe Raibaku."""
+"""PixelZen Worlds - Continente Demoníaco (Monitor 2): Ciudadela de Basalto y Rudeus Greyrat lanzando un hechizo."""
 import math
 import os
 import random
@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
     render_estrellas, render_lago, render_nubes,
 )
 
@@ -148,15 +148,15 @@ AR0, AR1, AR2, AR3 = PAL['armor']
 MANA_HI, MANA_LO = PAL['mana']
 WARM = '#ff7848'
 
-# Acantilado escarpado base del castillo con textura orgánica volcánica
+# Acantilado escarpado con cumbre plana en x=68..302 para anclar el Castillo de Atofe sin huecos
 r_rock = Ruido(803)
-for x in range(24, 336):
-    if x < 64:
-        ridge = HOR - 18 - int((x - 24) * 0.7)
-    elif x < 292:
-        ridge = HOR - 46 + int(4 * math.sin(x * 0.08))
+for x in range(18, 338):
+    if x < 68:
+        ridge = HOR - 14 - int((x - 18) * 0.6)
+    elif x <= 302:
+        ridge = HOR - 44
     else:
-        ridge = HOR - 46 + int((x - 292) * 0.85)
+        ridge = HOR - 44 + int((x - 302) * 1.2)
     for y in range(max(0, ridge), HOR + 1):
         c = CL2 if y < ridge + 4 else (CL1 if r_rock(x * 0.14 + y * 0.22) > 0.48 else CL0)
         if (y - ridge) % 10 == 0 and r_rock(x * 0.09) > 0.42:
@@ -165,9 +165,9 @@ for x in range(24, 336):
             c = CL3
         put(x, y, c)
 
-# Muralla principal del Castillo de Atofe (x = 80..294)
+# Muralla principal del Castillo de Atofe (x = 80..294) hundida en el risco hasta HOR - 40
 for x in range(80, 294):
-    for yy in range(HOR - 76, HOR - 42):
+    for yy in range(HOR - 76, HOR - 40):
         c = CS2 if x < 186 else CS1
         if (yy % 7 == 0) or (x % 14 == 0 and (yy // 7) % 2 == 0):
             c = CS0
@@ -239,25 +239,20 @@ top_tc = torre_atofe(186, 40, 74, 42, central=True)
 top_t2 = torre_atofe(260, 26, 52, 30)
 CHIMENEA = [112, top_t1]
 
-# Puente fortificado hacia el promontorio de Atofe (x = 294..364)
-for x in range(294, 366):
+# Puente fortificado hacia el promontorio derecho (x = 290..366) con estribos y pilas macizas
+for ax_p in (294, 358):
+    for yy in range(HOR - 42, HOR + 1):
+        for dx in range(6):
+            put(ax_p + dx, yy, CS1 if dx < 3 else CS0)
+for x in range(290, 366):
     for yy in range(HOR - 42, HOR - 35):
         put(x, yy, AR1 if yy == HOR - 42 else CS0)
     if x % 14 == 0:
         for yy in range(HOR - 35, HOR + 1):
-            put(x, yy, CS1)
-            put(x + 1, yy, CS0)
-# Dos caballeros de la Guardia Real Negra en el puente
-for gx_k in (312, 338):
-    for yy in range(HOR - 54, HOR - 42):
-        for dx in (-2, -1, 0, 1, 2):
-            put(gx_k + dx, yy, AR1 if abs(dx) < 2 else AR0)
-    disc(gx_k, HOR - 56, 2, AR2)
-    put(gx_k, HOR - 58, DM2)  # penacho/cuerno del casco
-    for yy in range(HOR - 64, HOR - 42):
-        put(gx_k + 4, yy, AR3 if yy < HOR - 58 else AR1)  # lanza
+            for dx in range(3):
+                put(x + dx, yy, CS1 if dx == 0 else CS0)
 
-# 4. Promontorio derecho (x = 342..470) con ATOFERATOFE RAIBAKU (Atofe) fiel al diseño original
+# 4. Promontorio derecho (x = 342..470) con RUDEUS GREYRAT lanzando un hechizo con Aqua Heartia
 PX0, PX1, PY_TOP = 344, 468, HOR - 38
 for y in range(PY_TOP, HOR + 1):
     d_y = y - PY_TOP
@@ -267,148 +262,86 @@ for y in range(PY_TOP, HOR + 1):
             c = CL2
         put(x, y, c)
 
-def dibuja_atofe(cx, by):
-    """Atoferatofe Raibaku (fiel al sprite IDLE): cabello blanco puntiagudo barrido atrás,
-    cuerno único curvo en la frente, piel azul cielo, ojos rojos, alas de murciélago carmesí,
-    armadura oscuro-azulada con faldón rasgado y gran espadón rojo de filo plateado en diagonal."""
-    skin = mix('#78a2f0', PAL['filo'], 0.08 if FASE == 'dia' else 0.0)
-    skin_d = '#4c72be'
-    skin_h = '#aac8ff'
-    hair = mix('#f4f6fc', PAL['filo'], 0.05 if FASE != 'noche' else 0.0)
-    hair_m = '#c8d2e8'
-    hair_d = '#8b98b8'
-    horn = '#8ea6dc'
-    horn_h = '#dce6ff'
-    wing_m = '#b81c30'
-    wing_d = '#74101e'
-    arm_h = '#4e5d84'
-    arm_m = '#2c354f'
-    arm_d = '#181d2e'
-    cape = '#10121e'
-    scab = '#b81a2c'
-    scab_d = '#700e1b'
-    sil = '#e4eaf8'
-    sil_d = '#96a2be'
-    out = '#0b0914'
-    eye = '#ff2c34'
-    eye_h = '#ffcccc'
 
+def dibuja_rudeus(cx, by):
+    """Rudeus Greyrat lanzando un hechizo acuático/arcano con su báculo Aqua Heartia y círculo mágico."""
+    MANA_HI, MANA_LO = PAL['mana']
+    MAGIC_CORE = '#ffffff'
+    MAGIC_RING = '#4ce8ff'
+    MAGIC_EDGE = '#2498e8'
     cmap = {
-        'O': out, 'o': out,
-        'H': hair, 'h': hair_m, 'g': hair_d,
-        'N': horn, 'n': horn_h,
-        'S': skin, 's': skin_d, 'L': skin_h,
-        'E': eye, 'e': eye_h,
-        'W': wing_m, 'w': wing_d,
-        'A': arm_h, 'M': arm_m, 'D': arm_d,
-        'B': cape,
-        'R': scab, 'r': scab_d, 'G': sil, 'f': sil_d,
+        'O': '#0b0914',
+        'H': '#8c5a3c', 'h': '#b87c52', 'd': '#5a3622',
+        'S': '#f4d2bc', 's': '#cfa48c', 'E': '#3b2416',
+        'T': '#e8dfd0', 't': '#b8ae9e',
+        'C': '#9e7e56', 'c': '#725838', 'k': '#4c3824',
+        'R': '#8a2a2c',
+        'B': '#422c20', 'b': '#281a12',
+        'W': '#6c4228', 'w': '#9a623c',
+        'G': '#56f2ff', 'g': '#1ea4d8',
     }
-
-    # Sprite pixel art exacto (82x73 px): centro corporal en col 37, punta del espadón en col 78
-    # . = transparente, O = contorno oscuro
     spr = [
-        ".......................................OO.........................................",
-        "......................................OnNO........................................",
-        "...........................OO........OnNNO........................................",
-        "....................OO....OHHO..OO...OnNNO........................................",
-        ".................OOOHHO..OHHHHOOHHO..OnNHOOO......................................",
-        "..............OOOHHHHHHOOHHHHHHHHHOOOnNNHHHHOOO...................................",
-        "............OOHHHHHHHHHHHHHHHHHHHHOONNNHHHHHHHOO..................................",
-        "..........OOHHHHhhhhHHHHHHHHHHHHHHHONNNHHHHHHHHHO.................................",
-        "........OOHHHHhhggggHHHHHHHHHhhHHHhONNHHHHHHHHHhHO................................",
-        ".......OOHHhhgggHHHHHHHHHHHhhLLSSSHNNhHHSHHHHHHhhHO...............................",
-        "....OO..OOHHhHHHHHHHHHHHHhhLLSSSSSHNNSHHSSSHHHHHhHO.....OOO.......................",
-        "..OOWWOO.OOHHHHHHHhhhHHHHHhLSSSSOEOSSSOEOSSHHHHHhO...OOWWWWOO.....................",
-        ".OWWWWWWO.OOHHHHHhhggggHHhLSSSLLeEOSSSeEOsSSHHHHhO..OWWWwwWWWOO...................",
-        "OWWWwwWWWOOOHHHHhgggHHHHHhLSSSSsSSSSSSSSSsSSHHHhOO.OWWwwwwwwWWWOO.................",
-        "OWWwwwwWWWWOOHHHhHHHHHHHHhOSLSSSSSSSSoSSSSSsHHhO..OWWwwwwwwwwwWWWO................",
-        "OWwwwwwwwWWWOOHHhhHHHHHHHhOOsSSSSSSsssSSSSsSHhO..OWWwwwWWWWwwwwWWWO...............",
-        "OWwwwWWWWwWWWOOHhggHHHHHHHhOOsSSSSSSSSSSSSssHO...OWWwwWWWWwWWwwwWWWO..............",
-        ".OWwWWOOwWWWWOOgggHHHHHHHHhOOSSsssSSSSsSSShO....OWWWWOOWWWOOwwwWWWO...............",
-        "..OWO..OOOWWWWOOHHhHHHHHHHHhOOODMMMMMMMDhHO.....OWWOO..OWO..OOwWWO................",
-        "...O.....OOWWOOOHhggHHHHHhhHOOAMMMMMMMMMAOO......OO.....O.....OWO.................",
-        "..........OOO..OOHgHHHHHhhOOAMMMDDDDDDMMMAAO...................O..................",
-        "................OOHHhHHHHhHOOOAMMDMMMMMMDMMMMAO...................................",
-        "...............OOHHHhHHHhhOAMMMMDMMMMMMMMDMMMMAMO.................................",
-        "..............OOHhggHHHHhOAMMDDMMDMMMMMMDMMDMMDMAO................................",
-        ".............OOHgHHHHHHHHhOAMMMMMMMMMMMMMMMMMMMAMO................................",
-        ".............OOgHHHHHHHhhOOODMMMDDDDDDDDDDMMMDMDO.................................",
-        "..............OOHHHHHhhgOO.OMMMMMMDDDDDDMMMMMMMO..................................",
-        "..............OOHHHhhggOO..OAMMMMMMDDDDMMMMMMMAO..................................",
-        ".............OOHHhhgOOO....OAMMMMDDDDDDDDDMMMMAO..................................",
-        "............OOHhhgOO......OOSMMMMMMMMMMMMMMMMMSOO.................................",
-        "...........OOHhgOO........OOsDMMMMDDDDDDMMMMMDsOO.................................",
-        "..........OOHhOO..........OOODDMMMDDffDDMMMMDOOO..................................",
-        "...........OO.............OMMMDDDDDDDDDDDDDDMMMO..................................",
-        "..........................OMMMMMMDMMMMMMDMMMMMMO..................................",
-        ".................OOOO.....OMMMMMMMDDDDDDMMMMMMMO..................................",
-        "................OGffGO...OAMMDMMMMMMMMMMMMMMDMMO..................................",
-        "................OGGGGOOO.OAMDOBBBBBBBBBBBBBBODMO..................................",
-        ".................OODDDGGOOAMDOBBBBBBDDDBBBBBODMO..................................",
-        "...................OODDGGOAMOOBBBBBBDDDBBBBBODMO..................................",
-        "....................OOODDGMMOOBBBBBDDDDDBBBBODMO..................................",
-        ".....................OOGGGGGGGOOBBBDDDDDBBBBOAMO..................................",
-        ".....................OOGfGRRGGGGOOBBDDDDBBBOODMO..................................",
-        "......................OOGGGRRRRRGGGOODDDOOO.ODMO..................................",
-        ".......................OOGfGRRRRRRRGGGGGO....OO...................................",
-        "........................OOOGfGRRRRRRRRRRGGGGOO....................................",
-        ".........................OOBOGfGRRRRRRRRRRRRGGGGGOO...............................",
-        "........................OBBBOOGGfGRRrrRRRRRRRRRRRRGGGOO...........................",
-        ".......................OBBBBO..OOGfGRRrrrRRRRRRRRRRRRRRGGGOO......................",
-        "......................OBBBBBO...OOGGfGRRrrrrRRRRRRRRRRRRRRRRGGGOO.................",
-        ".....................OBBBBBO.OAMDOOOGGfGRRrrrrRRRRRRRRRRRRRRRRRRRGGGOO............",
-        "....................OBBBBBO..OMDMMO..OOGfGRRrrrrRRRRRRRRRRRRRRRRRRRRRRGGGOO.......",
-        "...................OBBBBBO...OMDMMO...OOGGfGRRrrrrRRRRRRRRRRRRRRRRRRRRRRRRRGGGO...",
-        "..................OBBBBO.OO..OAMMMO.OBBOOGGfGGrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrGGGO",
-        "...................OBBO......ODDDDO.OBBO..OOOGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGO",
-        ".............................OMMMMO.OBBO.....OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO.",
-        ".............................OMDDMO.OBO...........................................",
-        "............................OAMMDMO.OO......OAMMMO................................",
-        "............................OAMDDMO.........OAMMMO................................",
-        "............................OMMDDMO.........OADDDO................................",
-        "............................ODDDDMO.........OMMDMO................................",
-        "...........................OAMMDDMO.........OMMDMO................................",
-        "...........................OAMMDDMO........OAMMDMO................................",
-        "...........................OMMDDDMO........OAMMDMO................................",
-        "...........................ODDDDDMO........OMMDDMO................................",
-        "..........................OAMDDDDMO........OMDDDMO................................",
-        "..........................OAMDDDDMO........ODDDDMO................................",
-        "..........................OMDDDDDMO.......OAMDDDMO................................",
-        "..........................ODDDDDDMO.......OAMDDDMO................................",
-        ".........................OAMDDDDDMO.......OMDDDDMO................................",
-        ".........................ODDDDDDDMO.......ODDDDDMO................................",
-        "........................OAMDDDDDDO........OMDDDDDMO...............................",
-        "........................ODDDDDDDDO........ODDDDDDMO...............................",
-        "........................OOOOOOOOOO........OOOOOOOOO...............................",
+        "..............OOO................................",
+        ".............OGGGO...............................",
+        "............OGGGGG...............................",
+        ".............OGGGO........OOOOOO.................",
+        "..............OWO........OhHHHHHhO...............",
+        "..............OWwO......OHHHHHdHHHO..............",
+        "..............OWO.......OHHhSSSSHHHO.............",
+        "..............OWwO......OHdSSESSSSHO.............",
+        "..............OWO.......OdSSSSSSSSSO.............",
+        "..............OWwO.......OSSSssSSSO..............",
+        "..............OWO........OCCCCCCcOO..............",
+        "..........OOOOOWwO......OCcTTTTTCcOO.............",
+        ".........OSSSSOWO......OCcTTTTtTTCCcO............",
+        "..........ObbBOWwO....OCcTTTTTTTCCCcO............",
+        "...........OOOOWO.....OcTTTRRRRTTCccO............",
+        "..............OWwO...OCcTTTTCCCTTCCCcO...........",
+        "..............OWO....OCcTTTCCCCcTTTCcO...........",
+        "..............OWO....OTTTTTCCCCcTTCCcO...........",
+        "..............OWO.....OTTTCCCCCCCCCCcO...........",
+        "..............OWO......OCCCCccccccCcO............",
+        "..............OWO......OCCCccccccCCcO............",
+        "..............OWO......OCCcO....OCCcO............",
+        "..............OWO......OCCO......OCCO............",
+        "..............OWO......OBBbO....OBBbO............",
+        "..............OWO......OBbO......OBbO............",
+        "..............OWO......OBbO......OBbO............",
+        "..............OWO.....OBBBO.....OBBBO............",
+        "..............OOO.....OOOOO.....OOOOO............",
     ]
-    assert len({len(r) for r in spr}) == 1, f"Atofe filas desiguales: {[len(r) for r in spr]}"
+    w_max = max(len(r) for r in spr)
+    spr = [r.ljust(w_max, '.') for r in spr]
+    pinta_sprite(lz, cx, by, spr, cmap)
 
-    sw = len(spr[0])
-    sh = len(spr)
-    x0 = cx - 37
-    y0 = by - sh + 1
-
-    # Faldón negro interior detrás entre las piernas y tras la pierna izquierda
-    for dy in range(40, 62):
-        hw = 7 + (dy - 40) // 4
-        for dx in range(-hw - 2, hw):
-            if dy > 55 and ((dx + dy) % 3 == 0):
-                continue
-            put(cx + dx, y0 + dy, '#111320')
-
-    for ry, row in enumerate(spr):
-        for rx, ch in enumerate(row):
-            col = cmap.get(ch)
-            if col:
-                put(x0 + rx, y0 + ry, col)
-
+    # Círculo mágico luminoso flotando frente a la punta del báculo Aqua Heartia
+    mx_c, my_c = cx - 22, by - 36
+    for rad_c, col_c in ((18, MAGIC_EDGE), (13, MAGIC_RING), (7, '#a8f8ff')):
+        for ang in range(0, 360, 4):
+            rx = int(round(mx_c + rad_c * math.cos(math.radians(ang))))
+            ry = int(round(my_c + rad_c * 0.78 * math.sin(math.radians(ang))))
+            over(rx, ry, col_c, 0.85)
+    for ang in range(0, 360, 60):
+        rad = math.radians(ang)
+        for t_s in range(6, 18):
+            rx = int(round(mx_c + t_s * math.cos(rad)))
+            ry = int(round(my_c + t_s * 0.78 * math.sin(rad)))
+            over(rx, ry, MANA_HI if ang % 120 == 0 else MAGIC_RING, 0.72)
+    disc(mx_c, my_c, 3, MAGIC_CORE)
+    sx0, sy0 = cx - 10, by - 25
+    for k in range(12):
+        px_m = int(round(sx0 + (mx_c - sx0) * k / 11.0))
+        py_m = int(round(sy0 + (my_c - sy0) * k / 11.0))
+        put(px_m, py_m, MAGIC_CORE if k % 2 == 0 else MAGIC_RING)
     if ANIM:
-        RUNAS.append([cx, y0 + 6])
+        RUNAS.append([mx_c, my_c])
+        FAROLES.append([cx - 10, by - 25, 10])
     else:
-        glow(cx, y0 + 7, 8, MANA_LO, 0.25)
+        glow(mx_c, my_c, 16, MAGIC_RING, 0.55)
+        glow(cx - 10, by - 25, 8, MANA_LO, 0.45)
 
-dibuja_atofe(402, PY_TOP)
+
+dibuja_rudeus(410, PY_TOP)
 
 # 5. Reflejo en el mar de obsidiana (sin duplicar astro en Monitor 2)
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=(PAL['filo'], PAL['ola'][0]), reflejo_astro=False)

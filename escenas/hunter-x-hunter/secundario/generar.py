@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
     render_estrellas, render_lago, render_nubes,
 )
 
@@ -123,11 +123,17 @@ for base, amp, seed, col, mist in (
         for y in range(top, HOR + 1):
             put(x, y, mix(col, mist, 0.28 * ((y - top) / max(1, HOR - top)) ** 1.8))
 
-# 3. ISLA CENTRAL DE GREED ISLAND: Masadora & Castillo de Limeiro (x = 200..462)
+# 3. ISLA CENTRAL DE GREED ISLAND: mesetas planas bajo Masadora, Portal y Castillo de Limeiro (x = 194..470)
 IS0, IS1, IS2, IS3 = PAL['isla']
-for x in range(202, 462):
-    t = (x - 202) / 260.0
-    elev = int(34 * math.sin(t * math.pi) ** 0.75 + 8 * math.sin(x * 0.09))
+for x in range(194, 470):
+    if x < 232:
+        t_l = (x - 194) / 38.0
+        elev = int(32 * (t_l ** 0.75))
+    elif x <= 426:
+        elev = 32
+    else:
+        t_r = (470 - x) / 44.0
+        elev = int(32 * (t_r ** 0.75))
     for y in range(HOR - elev, HOR + 1):
         c = IS3 if y < HOR - elev + 4 else (IS2 if y < HOR - 6 else PAL['sand'][0])
         if y >= HOR - 3:
@@ -149,9 +155,9 @@ for yy in range(HOR - 54, HOR + 1):
     for dx in (-2, -1, 0, 1):
         if dx == 0 or (yy + dx) % 3:
             put(436 + dx, yy, PAL['ola'][0] if dx <= 0 else PAL['ola'][1])
-# Castillo blanco/verde de Limeiro (ciudad final de Greed Island, x = 352..422)
+# Castillo blanco/verde de Limeiro (anclado en terraza elev=32 hasta HOR - 28)
 for x in range(358, 418):
-    for yy in range(HOR - 54, HOR - 26):
+    for yy in range(HOR - 54, HOR - 28):
         put(x, yy, PAL['wall'][0] if x < 388 else PAL['wall'][1])
 def torre_limeiro(cx, tw, th, sh):
     y0 = HOR - 54 - th
@@ -174,10 +180,10 @@ torre_limeiro(368, 12, 22, 12)
 torre_limeiro(388, 18, 36, 18)
 torre_limeiro(408, 12, 24, 12)
 
-# Ciudad inicial de Masadora (izquierda de la isla, x = 228..298)
+# Ciudad inicial de Masadora bien cimentada sobre la terraza plana (x = 236..312)
 for cx_m, cw, ch in ((238, 22, 16), (266, 24, 20), (294, 18, 14)):
-    hy0 = HOR - 28 - ch
-    for yy in range(hy0, HOR - 26):
+    hy0 = HOR - 30 - ch
+    for yy in range(hy0, HOR - 28):
         for x in range(cx_m, cx_m + cw):
             put(x, yy, PAL['wall'][0] if x < cx_m + cw // 2 else PAL['wall'][1])
     for i in range(10):
@@ -276,10 +282,14 @@ dibuja_carta_gi(178, 86, 26, 36, PAL['card'][2], 'estrella')   # Ruler's Blessin
 dibuja_carta_gi(248, 124, 22, 30, PAL['nen'][0], 'gain')       # Gain
 dibuja_carta_gi(426, 178, 22, 30, PAL['card'][3], 'ala')       # Angel's Breath
 
-# 6. PROMONTORIO IZQUIERDO (x = 0..162): Pedestal "BOOK!" + GON y KILLUA contemplando Greed Island
+# 6. PROMONTORIO IZQUIERDO PLANO (x = 0..176): Pedestal "BOOK!" + GON y KILLUA jugando juntos
 r_grass = Ruido(617)
-for x in range(0, 164):
-    ridge = HOR - 38 + int((x / 164.0) ** 2 * 36)
+for x in range(0, 176):
+    if x <= 146:
+        ridge = HOR - 36
+    else:
+        t_down = (x - 146) / 30.0
+        ridge = HOR - 36 + int((t_down * t_down) * 36)
     for y in range(max(0, ridge), HOR + 1):
         d_y = y - ridge
         n_g = r_grass(x * 0.16 + y * 0.22)
@@ -288,70 +298,127 @@ for x in range(0, 164):
             c = PAL['gold'][0]
         put(x, y, c)
 
-# Pedestal con el Libro de Cartas ("BOOK!" Binder abierto) + Anillo luminoso en la esquina izquierda
-PX_B, PY_B = 54, HOR - 34
-for yy in range(PY_B - 12, PY_B):
+# Pedestal con el Libro de Cartas ("BOOK!" Binder abierto) a la izquierda (x = 28)
+PX_B, PY_B = 28, HOR - 35
+for yy in range(PY_B - 12, PY_B + 1):
     for dx in range(-8, 9):
         put(PX_B + dx, yy, PAL['ring'][0] if dx > 0 else PAL['ring'][1])
-# Libro abierto encima del pedestal con páginas luminosas Nen
-for dy in range(-5, 0):
-    for dx in range(-10, 11):
-        if dx == 0:
+for dy in range(-6, 1):
+    for dx in range(-11, 12):
+        if abs(dx) == 11 or dy in (-6, 0):
+            put(PX_B + dx, PY_B - 12 + dy, PAL['rama'][0])
+        elif dx == 0:
             put(PX_B + dx, PY_B - 12 + dy, PAL['gold'][1])
         else:
             put(PX_B + dx, PY_B - 12 + dy, PAL['card'][0] if dy > -4 else PAL['nen'][1])
 if ANIM:
     FAROLES.append([PX_B, PY_B - 20, 12])
 else:
-    glow(PX_B, PY_B - 18, 10, PAL['nen'][0], 0.6)
+    glow(PX_B, PY_B - 18, 9, PAL['nen'][0], 0.48)
 
-# GON FREECSS (x = 96) y KILLUA ZOLDYCK (x = 118) contemplando Greed Island y las cartas
-def dibuja_gon(cx, by):
-    # Botas y piernas
-    for yy in range(by - 9, by):
-        for dx in (-3, -2, 1, 2):
-            put(cx + dx, yy, '#1a3820' if yy < by - 3 else '#102414')
-    # Chaqueta verde con ribete blanco/naranja
-    for yy in range(by - 20, by - 9):
-        for dx in range(-4, 5):
-            c = '#f0a448' if abs(dx) == 4 else ('#288c48' if dx <= 0 else '#1e6e38')
-            put(cx + dx, yy, c)
-    # Cabeza y pelo oscuro en punta característico de Gon
-    for yy in range(by - 27, by - 20):
-        for dx in range(-3, 4):
-            put(cx + dx, yy, '#f0d4bc')
-    for dx, h_sp in ((-3, 7), (-1, 9), (1, 9), (3, 6)):
-        for dy in range(h_sp):
-            put(cx + dx, by - 25 - dy, '#0e1e18')
-            put(cx + dx + (1 if dx >= 0 else -1), by - 25 - dy // 2, '#143022')
 
-def dibuja_killua(cx, by):
-    # Pantalón oscuro y zapatillas
-    for yy in range(by - 10, by):
-        for dx in (-3, -2, 1, 2):
-            put(cx + dx, yy, '#1e2238' if yy < by - 3 else '#38466e')
-    # Camiseta azul-índigo sobre manga blanca
-    for yy in range(by - 21, by - 10):
-        for dx in range(-4, 5):
-            c = '#263874' if abs(dx) < 3 else '#e2e8f6'
-            put(cx + dx, yy, c)
-    # Cabeza y pelo blanco/plateado alborotado de Killua
-    for yy in range(by - 28, by - 21):
-        for dx in range(-3, 4):
-            put(cx + dx, yy, '#f4dcd0')
-    for dx in range(-5, 6):
-        h_k = 6 if abs(dx) < 3 else 4
-        for dy in range(h_k):
-            put(cx + dx, by - 26 - dy, '#eef4ff' if dx <= 0 else '#c4d4ec')
-    # Chispa Nen eléctrica (Godspeed / Kanmuru) sutil junto a su mano
-    if ANIM:
-        RUNAS.append([cx + 6, by - 16])
-    else:
-        put(cx + 6, by - 16, PAL['elec'][1])
-        glow(cx + 6, by - 16, 5, PAL['elec'][0], 0.55)
+def dibuja_gon_jugando(cx, by):
+    """Gon Freecss en pose dinámica de juego (brazos alzados lanzando/recibiendo pelota, sonrisa entusiasta)."""
+    cmap = {
+        'O': '#0a0f0c',
+        'H': '#0e1b14', 'E': '#1a4c2e', 'L': '#26683e',
+        'S': '#f4d2ba', 's': '#d2aa90', 'I': '#2a1810',
+        'W': '#f2f6ee',
+        'G': '#248c46', 'g': '#176632', 'd': '#104622',
+        'R': '#ec6a2c', 'B': '#164626', 'b': '#0d2b16',
+    }
+    spr = [
+        "....OO.......OO...........",
+        "...OLLO.....OLLO..........",
+        "...OEEO..OO.OEEO..OO......",
+        "..OEHHEOOEEOOEHHOOEEO.....",
+        "..OHHHHOEHHHOHHHHEHHO.....",
+        "..OHHHHHHHHHHHHHHHHHO.....",
+        "...OHHHHHHHHHHHHHHHO..OO..",
+        "...OHHSSSSSSSSSSSHHO.OSSO.",
+        "....OHSSISSSISSSSHOO.OSSO.",
+        "....OSSSSSSSSSSSSOOOOSSO..",
+        ".....OSSSSsSSSSSSOOOGGO...",
+        "......OOSSSSSSSOOOGGGO....",
+        ".......ORRWGGGWRGGGO......",
+        "...OOOOORWWWWWWWGGGO......",
+        "..OSSOOGGWWWWWWWWGO.......",
+        "..OSSO.OGGGGGGGGGGO.......",
+        "...OO..OGGGggGGGGO........",
+        ".......ORRRRRRRRRO........",
+        "......OGGGGGGGGGGO........",
+        "......OGGggOOggGGO........",
+        "......OSSO....OSSO........",
+        ".....OSSO......OSSO.......",
+        "....OBBO........OBBO......",
+        "....OBbO........OBbO......",
+        "...OBbBO........OBbBO.....",
+        "...OOOOO........OOOOO.....",
+    ]
+    assert len({len(r) for r in spr}) == 1
+    pinta_sprite(lz, cx, by, spr, cmap)
 
-dibuja_gon(94, HOR - 24)
-dibuja_killua(116, HOR - 18)
+
+def dibuja_killua_jugando(cx, by):
+    """Killua Zoldyck sobre su patineta amarilla jugando con Gon y lanzando chispas Nen."""
+    cmap = {
+        'O': '#101424',
+        'H': '#eef4ff', 'h': '#c2d2ee', 'g': '#90a6cc',
+        'S': '#f8e2d6', 's': '#d8bcb0', 'E': '#2264d8',
+        'B': '#1e2c64', 'W': '#f4f6fc', 'w': '#cfd8ea',
+        'P': '#222240', 'p': '#16162c',
+        'K': '#3e3a88', 'Z': '#e8eef8',
+        'Y': '#ffd238', 'y': '#d48c1c',  # Patineta clásica de Killua
+    }
+    spr = [
+        "......OO..OO..OO..........",
+        "....OOHHOOHHOOHHOO........",
+        "...OHHHHHHHHHHHHHHO.......",
+        "..OHhHHHHHHHhHHHHHhO......",
+        ".OHggHHHHHHHHHHHggHHO.....",
+        ".OOghHHSSSSSSSSSHHhgO.....",
+        ".OSSOHSSESSSESSSSHHO......",
+        ".OSSOOSSSsSSSsSSSSO.......",
+        "..OSSOOSSSSSSSSSSO........",
+        "...OGGGOOBBBBBBOO.........",
+        "....OGGWWBBBBBBWWO........",
+        "....OWWWWWBBBBWWWWO.......",
+        "....OWWWwWWWWWWwWWWO......",
+        ".....OWWWOWWWWWO..OSSO....",
+        "......OBBBBBBBBO...OO.....",
+        "......OPPPPPPPPO..........",
+        ".....OPPPppOOppPO.........",
+        ".....OSSO....OSSO.........",
+        "....OSSO......OSSO........",
+        "...OKKO........OKKO.......",
+        "...OZZO........OZZO.......",
+        "..OYYYYYYYYYYYYYYYYO......",
+        "..OyyyyyyyyyyyyyyyyO......",
+        "...OO.OO......OO.OO.......",
+    ]
+    assert len({len(r) for r in spr}) == 1
+    pinta_sprite(lz, cx, by, spr, cmap)
+
+
+# Gon (izq) y Killua (der) pasándose un balón de Nen / Dodgeball brillante entre sí
+dibuja_gon_jugando(70, HOR - 36)
+dibuja_killua_jugando(132, HOR - 36)
+
+# Pelota de Dodgeball de Greed Island en pleno vuelo + estela de juego entre ambos
+BX_B, BY_B = 102, HOR - 66
+disc(BX_B, BY_B, 5, '#ff4c58')
+disc(BX_B - 1, BY_B - 1, 3, '#ffd858')
+put(BX_B - 2, BY_B - 2, '#ffffff')
+for k_arc in range(-12, 13, 4):
+    ax_p = BX_B + k_arc
+    ay_p = BY_B + (k_arc * k_arc) // 18 + 3
+    over(ax_p, ay_p, PAL['elec'][1], 0.72)
+if ANIM:
+    RUNAS.append([BX_B, BY_B])
+    RUNAS.append([120, HOR - 54])
+else:
+    glow(BX_B, BY_B, 7, '#ffaa44', 0.45)
+    glow(120, HOR - 54, 5, PAL['elec'][0], 0.50)
 
 # Pequeño farol en el muelle de Masadora
 for xx_m in range(190, 224):

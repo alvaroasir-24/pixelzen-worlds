@@ -86,9 +86,20 @@ for base, amp, seed, col, mist in ((240, 82, 71, PAL['mont'][0], PAL['mist'][0])
 ST0, ST1, ST2, ST3 = PAL['stone']
 CR0, CR1, CR2 = PAL['crimson']
 
-# Torres góticas laterales en segundo plano
+# Orilla rocosa nevada continua + zócalos de piedra bajo las torres laterales y el santuario
+for y in range(HOR - 10, HOR + 1):
+    for x in range(0, W):
+        c_s = ST2 if y <= HOR - 8 else (ST1 if (x + y) % 5 else ST0)
+        if y == HOR - 10 and (x % 7 < 3):
+            c_s = ST3
+        put(x, y, c_s)
+
+# Torres góticas laterales bien cimentadas en el malecón
 for tx, top_y in ((58, 174), (556, 168)):
-    for y in range(top_y, HOR + 1):
+    for y in range(HOR - 14, HOR + 1):
+        for dx in range(-4, 32):
+            put(tx + dx, y, ST1 if dx < 12 else ST0)
+    for y in range(top_y, HOR - 8):
         for x in range(tx, tx + 28):
             put(x, y, ST2 if x < tx + 8 else ST0)
     for dy in range(26):
@@ -101,10 +112,10 @@ for tx, top_y in ((58, 174), (556, 168)):
         for dy in range(4):
             put(tx + 13, top_y + 22 + dy, PAL['gold'][0])
 
-# Santuario gótico central en la terraza del lago (x=196..444)
-for y in range(HOR - 16, HOR + 4):
-    pad = (HOR + 4 - y)
-    for x in range(186 + pad, 454 - pad):
+# Santuario gótico central bien asentado con peldaños amplios hasta HOR
+for y in range(HOR - 16, HOR + 1):
+    extra = max(0, y - (HOR - 16))
+    for x in range(186 - extra, 454 + extra):
         put(x, y, ST1 if y > HOR - 12 else ST3)
 
 # Dos pilares góticos labrados y arco ojival superior

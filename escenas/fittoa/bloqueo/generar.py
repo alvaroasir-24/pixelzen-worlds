@@ -90,17 +90,28 @@ for base, amp, seed, col, mist, nv in ((236, 84, 11, PAL['mont'][0], PAL['mist']
                 cc = mix(PAL['nieve'][0], PAL['nieve'][1], min(1.0, d / 11.0))
             put(x, y, cc)
 
-# Orilla boscosa y cabaña del guardabosques a la izquierda
+# Orilla boscosa nivelada bajo la cabaña (meseta plana en x=42..130, y=HOR-14)
 ST0, ST1, ST2, ST3 = PAL['stone']
 for x in range(0, 210):
-    gy = HOR - 16 + int(math.sin(x * 0.03) * 5) + max(0, (x - 165) // 2)
-    for y in range(gy, HOR + 4):
-        put(x, y, PAL['pino'][1] if (x + y) % 3 else PAL['pino'][0])
+    if x < 42:
+        gy = HOR - 18 + int((x / 42.0) * 4)
+    elif x <= 130:
+        gy = HOR - 14
+    else:
+        gy = HOR - 14 + int(((x - 130) / 80.0) ** 1.3 * 16)
+    for y in range(gy, HOR + 1):
+        c_g = PAL['pino'][1] if (x + y) % 3 else PAL['pino'][0]
+        if y <= gy + 2:
+            c_g = PAL['nieve'][1] if (x % 9 == 0) else PAL['pino'][1]
+        put(x, y, c_g)
 
-# Cabaña rústica con tejado a dos aguas y chimenea
-for y in range(240, 272):
+# Cabaña rústica con cimiento de piedra hundido hasta y=HOR-10 (sin bordes colgantes)
+for y in range(240, HOR - 10):
     for x in range(62, 114):
-        put(x, y, ST2 if x < 98 else ST1)
+        if y >= HOR - 16:
+            put(x, y, ST1 if ((x // 4 + y // 3) % 2) else ST0)
+        else:
+            put(x, y, ST2 if x < 98 else ST1)
 for y in range(224, 242):
     hw = 30 - (241 - y) * 14 // 17
     for x in range(88 - hw, 88 + hw + 1):
@@ -117,13 +128,13 @@ for wx, wy in ((70, 248), (82, 248), (94, 248), (76, 258)):
             for dx in range(2):
                 put(wx + dx, wy + dy, PAL['win'])
 
-# Promontorio central con Altar del Monolito de Teletransporte (x=250..390)
-for y in range(HOR - 10, HOR + 6):
-    pad = (HOR + 6 - y)
-    for x in range(246 + pad, 394 - pad):
+# Promontorio central ancho y sólido (x=224..416) soportando todos los escalones del Monolito
+for y in range(HOR - 12, HOR + 1):
+    extra = y - (HOR - 12)
+    for x in range(246 - extra * 2, 394 + extra * 2):
         put(x, y, ST1 if (y % 4 == 0 or (x + y) % 9 == 0) else ST0)
-for step, sx0, sx1, sy in ((0, 268, 372, HOR - 14), (1, 282, 358, HOR - 19)):
-    for y in range(sy, sy + 5):
+for step, sx0, sx1, sy in ((0, 268, 372, HOR - 16), (1, 282, 358, HOR - 20)):
+    for y in range(sy, HOR - 11):
         for x in range(sx0, sx1):
             put(x, y, ST3 if y == sy else ST2)
 

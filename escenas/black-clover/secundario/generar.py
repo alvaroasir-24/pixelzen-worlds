@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PixelZen Worlds - Black Clover (Monitor 2): Reino de Picas y la Tríada Oscura."""
+"""PixelZen Worlds - Black Clover (Monitor 2): Reino de Picas y Asta invocando la espada de su Grimorio."""
 import math
 import os
 import random
@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
     render_estrellas, render_lago, render_nubes,
 )
 
@@ -158,21 +158,22 @@ SP0, SP1, SP2 = PAL['spire']
 CR0, CR1, CR2 = PAL['crimson']
 GD0, GD1 = PAL['gold']
 
-# Risco helado base del castillo con textura orgánica de roca y nieve
+# Risco helado amplio bajo TODO el Castillo de Picas (meseta plana en HOR-26 de x=96..316 hasta x=64..348 en HOR)
 r_cliff = Ruido(701)
-for y in range(HOR - 36, HOR + 1):
-    t = (HOR - y) / 36.0
-    ww = int(124 * (1 - t ** 1.35))
-    for x in range(max(0, 206 - ww), 206 + ww):
+for y in range(HOR - 26, HOR + 1):
+    t = (y - (HOR - 26)) / 26.0
+    x_l = int(96 - t * 34)
+    x_r = int(316 + t * 34)
+    for x in range(max(0, x_l), min(W, x_r)):
         n = r_cliff(x * 0.14 + y * 0.21)
-        c = CS2 if y < HOR - 33 else (CS1 if n > 0.48 else CS0)
-        if y < HOR - 30 and r_cliff(x * 0.09) > 0.56:
+        c = CS2 if y < HOR - 23 else (CS1 if n > 0.48 else CS0)
+        if y < HOR - 20 and r_cliff(x * 0.09) > 0.54:
             c = mix(c, PAL['nieve'][1], 0.55)
         put(x, y, c)
 
-# Muralla exterior y almenas de Picas
+# Muralla exterior y almenas de Picas (hundida hasta HOR - 22 dentro del risco)
 for x in range(114, 298):
-    for yy in range(HOR - 60, HOR - 24):
+    for yy in range(HOR - 60, HOR - 21):
         put(x, yy, CS2 if x < 206 else CS1)
     if x % 6 < 3:
         put(x, HOR - 62, CS3)
@@ -246,8 +247,8 @@ for r_ring, col_r in ((24, CR1), (17, PAL['grav'][1]), (10, PAL['spatial'][1])):
 if not ANIM:
     glow(Q_CX, Q_CY, 12, CR0, 0.35)
 
-# 5. Bastión / Terraza real de la TRÍADA OSCURA (x = 292..474, despejada para apreciar sus siluetas)
-DX0, DX1, DY_TOP = 294, 472, HOR - 24
+# 5. Bastión / Terraza real de la TRÍADA OSCURA (x = 292..474, superficie firme sin nieve sobre las botas)
+DX0, DX1, DY_TOP = 292, 476, HOR - 24
 r_dais = Ruido(709)
 for y in range(DY_TOP, HOR + 1):
     for x in range(DX0 - (y - DY_TOP) // 2, min(W, DX1 + (y - DY_TOP) // 2)):
@@ -257,294 +258,102 @@ for y in range(DY_TOP, HOR + 1):
         put(x, y, c)
 for x in range(DX0, DX1 + 1):
     put(x, DY_TOP, PAL['dais'][2])
-    if x % 8 < 4:
+    if x % 10 < 3 and (x < 304 or x > 466):
         put(x, DY_TOP - 1, PAL['nieve'][1])
 
 
-def _pinta_sprite(cx, by, spr, cmap, off_x=0):
-    """Pinta una matriz pixel-art centrada en cx+off_x con base en by."""
-    assert len({len(r) for r in spr}) == 1, f"Sprite filas desiguales: {[len(r) for r in spr]}"
-    sw = len(spr[0])
-    sh = len(spr)
-    x0 = cx - sw // 2 + off_x
-    y0 = by - sh + 1
-    for ry, row in enumerate(spr):
-        for rx, ch in enumerate(row):
-            col = cmap.get(ch)
-            if col:
-                put(x0 + rx, y0 + ry, col)
-    return x0, y0
-
-
-def dibuja_zenon(cx, by):
-    """Zenon Zogratis (fiel al sprite ZENON): pelo corto oscuro, piel pálida fría con marca frontal,
-    cuello de piel gris claro, capa negra larga, túnica granate con cinturón y picos de Magia de Hueso."""
-    bn0, bn1, bn2 = PAL['bone']
-
-    # Picos afilados de Magia de Hueso blanco saliendo diagonalmente hacia fuera (ZENON IDLE 3/4)
-    for sx, sy, ex, ey, th in (
-        (cx - 10, by, cx - 22, by - 21, 2),
-        (cx + 10, by, cx + 22, by - 21, 2),
-        (cx - 14, by - 2, cx - 26, by - 13, 1),
-        (cx + 14, by - 2, cx + 26, by - 13, 1),
-        (cx - 9, by - 31, cx - 22, by - 43, 1),
-        (cx + 9, by - 31, cx + 22, by - 43, 1),
-    ):
-        steps = 18
-        for s in range(steps + 1):
-            t = s / steps
-            px = int(sx + (ex - sx) * t)
-            py = int(sy + (ey - sy) * t)
-            w_cur = max(0, int(th * (1 - t * 0.92)))
-            for d_w in range(-w_cur - 1, w_cur + 2):
-                if abs(d_w) == w_cur + 1:
-                    put(px + d_w, py, '#0b0a12')
-                else:
-                    put(px + d_w, py, bn1 if d_w <= 0 else bn0)
-            if s == steps:
-                put(px, py - 1, bn2)
-
-    cmap = {
-        'O': '#0b0a12',
-        'H': '#1c1e2a', 'h': '#32364a',
-        'S': '#d4cee0', 's': '#a8a0b8',
-        'M': '#221c34', 'e': '#1a1526',
-        'F': '#d8dae4', 'f': '#9fa4b6', 'W': '#eff1f8',
-        'K': '#222430', 'k': '#343848', 'd': '#14151e',
-        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
-        'B': '#5a3a24', 'G': '#eab844',
-        'P': '#222534', 'p': '#151722',
-    }
-    # 33x51 px
-    spr = [
-        "............OOOOOOOO.............",
-        "...........OHHHHHHHHO............",
-        "..........OHHhHHHHHhHO...........",
-        "..........OHHHHHHHHHHO...........",
-        "..........OHHHhHHhHHHO...........",
-        "..........OHSSSSSSSSHO...........",
-        "..........OSSSSMMSSSSO...........",
-        "..........OSSeSMMSeSSO...........",
-        "...........OSSSSSSSSO............",
-        "............OOSssSOO.............",
-        ".............OSSSSO..............",
-        "........OOOOOOWFFWOOOOOO.........",
-        ".......OOWWFFFFWWFFFFWWOO........",
-        "......OWFFFFWFFFFFFWFFFFWO.......",
-        ".....OOFfFFFFfFFFFfFFFFfFO.......",
-        ".....OKOOffffVVVVVVffffOOKO......",
-        "....OKKKOOKOVVVvvVVVOKOKKKKO.....",
-        "....OKkkKOKOVVvvvvVVOKOKkkKO.....",
-        "...OKKKdKOKOVVVvvVVVOKOKdKKKO....",
-        "...OKKKdKOKOVVVVVVVVOKOKdKKKO....",
-        "...OKKdKKOKOBBBBBBBKOKOKKdKKO....",
-        "...OKKdKKOKOBBBGGGBKOKOKKdKKO....",
-        "...OKKdKKOKOVVVVVVVVOKOKKdKKO....",
-        "..OKKKdKKOKOVVVvvVVVOKOKKdKKKO...",
-        "..OKKdKKdOKOVVvvvvVVOKOKdKKdKO...",
-        "..OKKdKSSOOKOVVVVVVOKOOSSKdKKO...",
-        "..OKKddOO.OKOVVuuVVOK..OOddKKO...",
-        "..OKKdO...OKOVVuuVVOK....OdKKO...",
-        "..OKKdO...OKOVVuuVVOK....OdKKO...",
-        "..OKdO....OKOVVOOOVOK.....OdKO...",
-        "..OKdO....OKOPPOOOPPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OKOPPpOppPO.....OdKO...",
-        "..OKdO....OOOPPpOppPO.....OdKO...",
-        "..OKdO......OKKOOOKKO.....OdKO...",
-        "..OKOO......OKKOOOKKO.....OOKO...",
-        "..OO........OKkOOOkKO.......OO...",
-        "............OKkOOOkKO............",
-        "............OKkOOOkKO............",
-        "............OKkOOOkKO............",
-        "............OKdOOOdKO............",
-        "............OKdOOOdKO............",
-        "............OKdOOOdKO............",
-        "...........OKKdOOOdKKO...........",
-        "..........OKKKdOOOdKKKO..........",
-        "..........OOOOO...OOOOO..........",
-    ]
-    _pinta_sprite(cx, by, spr, cmap)
-    if ANIM:
-        RUNAS.append([cx, by - 46])
-
-
-def dibuja_dante(cx, by):
-    """Dante Zogratis (fiel al sprite IDLE 0/1): corona dorada alta con picos, cabello castaño oscuro,
-    cuello de piel claro, capa negra amplia, túnica granate con cinturón, botas marrón-oliva
-    y mano izquierda alzada sosteniendo esfera negro-púrpura de Gravedad."""
+def dibuja_asta(cx, by):
+    """Asta (Toro Negro): cabello ceniza en picos, cinta negra con emblema dorado, manto de los Toros Negros,
+    grimorio de 5 hojas abierto en ángulo flotando a su lado y empuñando la gran espada Danma al sacarla."""
     cmap = {
         'O': '#0b0812',
-        'G': '#f0c044', 'g': '#b2821e', 'y': '#ffe07a',
-        'H': '#3a2420', 'h': '#563630',
-        'S': '#e6c6b6', 's': '#be9a8c',
-        'M': '#281624', 'e': '#1c1218',
-        'F': '#d8dae4', 'f': '#9fa4b6', 'W': '#eff1f8',
-        'K': '#222430', 'k': '#343848', 'd': '#14151e',
-        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
-        'B': '#5a3a24',
-        'P': '#222534', 'p': '#151722',
-        'T': '#6e5a28', 't': '#4c3e18',
+        'H': '#dad4ce', 'h': '#f4f0ec', 'g': '#989290',
+        'B': '#161420', 'G': '#f0c044',
+        'S': '#f0cbb6', 's': '#c69a84', 'E': '#28b858',
+        'K': '#1c1b28', 'k': '#2d2b3e', 'd': '#11101a',
+        'R': '#c82038', 'r': '#881224',
+        'T': '#302c3c',
     }
-    # 45x51 px (centro del cuerpo en col 18; mano izquierda extendida a col 36)
     spr = [
-        ".............O...O...O...O...................",
-        "............OyO.OGOOOGOOOyO..................",
-        "............OGGOGGGOOGGGOGGO.................",
-        "............OGGGGyGGGGyGGGGO.................",
-        "............OGGGGGGGGGGGGGGO.................",
-        "............OggggggggggggggO.................",
-        "............OHHHHHHHHHHHHHHO.................",
-        "...........OHhHHHHHHHHHHHHhHO................",
-        "...........OHHHSSSSSSSSSSHHHO................",
-        "...........OHHSSSeSSMMSSSeSHO................",
-        "............OSSSSSSSSSSSSSSO.................",
-        ".............OSSSSssssSSSSO..................",
-        ".............OOSSSHHHHSSSOO..................",
-        ".............OOHHHHHHHHHHOO..................",
-        "........OOOOOOWWFFFFFFFWWOOOOO...............",
-        ".......OOWFFFFFWWFFFFFWWFFFFFWOO.............",
-        "......OWFFFFfFFFFFWFFWFFFFFfFFFWO............",
-        "......OOFfffFFFFfFFFFFFfFFFFfffFO............",
-        ".....OKKOOOfffOKKVVvvVVKKOfffOOKKO...........",
-        "....OKKKdKKOOOOKOVVvvVVOKOOOOOKKKKO..........",
-        "....OKKdKKKKKKOKOVVvvVVOKOKKKKKdKKO..........",
-        "...OKKKdKKKKKKOKOVVvvVVOKOKKKKKKdKKO.........",
-        "...OKKdKKKKKKdOKOVVVVVVOKOKKKKKKdKKO.........",
-        "...OKKdKKKKKKdOKOBBBBBBBKOKKKKKKdKKO.........",
-        "...OKKdKKKKdKdOKOBBGGGBBKOKKKKKKKSSOO........",
-        "..OKKKdKKKKdKdOKOVVVVVVOKOKKKKOOOOSSO........",
-        "..OKKdKKKSSOOKOKOVVvvVVOKOKKKO....OO.........",
-        "..OKKdKKSSOO.OKOVVvvvvVVOKOKKO...............",
-        "..OKKdKKOO...OKOVVVuuVVVOKOKKO...............",
-        "..OKKdKO.....OKOVVVuuVVVOKOKKO...............",
-        "..OKKdKO.....OKOVVVuuVVVOKOKKO...............",
-        "..OKKdO......OKOVVVuuVVVOKOdKO...............",
-        "..OKdKO......OKOVVOOOOVVOKOdKO...............",
-        "..OKdKO......OKOPPPOOOPPPOOdKO...............",
-        "..OKdKO......OKOPPpOOOpPPOOdKO...............",
-        "..OKdKO......OKOPPpOOOpPPOOdKO...............",
-        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
-        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
-        "..OKdO.......OKOPPpOOOpPPOOdKO...............",
-        "..OKdO.......OOOPPpOOOpPPdOKOO...............",
-        "..OKdO.........OPPpOOOpPPO.OO................",
-        "..OKOO.........OTTO...OTTO...................",
-        "..OO...........OTtO...OTtO...................",
-        "...............OTtO...OTtO...................",
-        "...............OTtO...OTtO...................",
-        "...............OTtO...OTtO...................",
-        "...............OTtO...OTtO...................",
-        "...............OTTO...OTTO...................",
-        "..............OTTtO...OTttO..................",
-        ".............OTTTtO...OTttTO.................",
-        ".............OOOOOO...OOOOOO.................",
+        "..............O..O...O..O.............",
+        "...........OOOHhOOhOOhOOhOOO..........",
+        "..........OHHHHHHHHHHHHHHHHHO.........",
+        "...........OHhHHgHHHHHgHHhHO..........",
+        "...........OBBBBBBGGBBBBBBO...........",
+        "...........OHHSSSSSSSSSSHHO...........",
+        "............OHSSEsSSsESSHO............",
+        "............OSSSSSSSSSSSSO............",
+        ".............OSSSSssSSSSO.............",
+        "..........OOOOKKKKKKKKKKOOOO..........",
+        ".........OKKkKGKKKKKKKKGKkKKO.........",
+        "........OKKKKRRRRKKKKRRRRKKKKO........",
+        ".....OOOOKKdKKKKKKKKKKKKKKKKdKKO......",
+        "....OSSOKKKOOKKKKKKKKKKKKKKO.OSSO.....",
+        ".....OO.OSSO.OKKRRRRRRRKKOO...OO......",
+        ".............OKKRRRRRRRKKO............",
+        ".............OKKKKKKKKKKKO............",
+        ".............OTTTTOOTTTTTO............",
+        "............OTTTTTOOTTTTTO............",
+        "............OTTTTO..OTTTTO............",
+        "............OKKKKO..OKKKKO............",
+        "............OKkKKO..OKKkKO............",
+        "............OKKKKO..OKKKKO............",
+        "...........OKKKKRO..ORKKKKO...........",
+        "...........OOOOOOO..OOOOOOO...........",
     ]
-    x0, y0 = _pinta_sprite(cx, by, spr, cmap, off_x=4)
+    w_max = max(len(r) for r in spr)
+    spr = [r.ljust(w_max, '.') for r in spr]
 
-    # Esfera negro-púrpura de Magia de Gravedad flotando sobre su palma extendida (IDLE 0)
-    orb_x = x0 + 35
-    orb_y = y0 + 18
-    disc(orb_x, orb_y, 5, '#090412')
-    for ang in range(0, 360, 18):
-        rad = math.radians(ang)
-        put(int(orb_x + 5.2 * math.cos(rad)), int(orb_y + 5.2 * math.sin(rad)), '#8c3cf0')
-        if ang % 54 == 0:
-            put(int(orb_x + 6.2 * math.cos(rad)), int(orb_y + 6.2 * math.sin(rad)), '#d69cff')
+    # Grimorio negro de 5 hojas abierto en perspectiva (V inclinada flotando junto a su mano)
+    gx_g, gy_g = cx - 28, by - 18
+    for dy in range(-8, 8):
+        shift = abs(dy) // 3
+        for dx in range(-10, 11):
+            if abs(dx) > 9 - shift // 2:
+                continue
+            y_page = gy_g + dy - abs(dx) // 4
+            if abs(dx) == 9 - shift // 2 or dy in (-8, 7):
+                c_g = '#09070e'
+            elif dx == 0:
+                c_g = PAL['gold'][1]
+            elif dx < 0:
+                c_g = '#1c1526' if abs(dx) > 6 else '#e4dce8'
+            else:
+                c_g = '#1c1526' if dx > 6 else '#d6cedc'
+            put(gx_g + dx, y_page, c_g)
+    # Pequeño trébol carmesí de 5 hojas en el lomo/aura del grimorio
+    for tx, ty in ((0, -2), (-2, -4), (2, -4), (-1, 0), (1, 0)):
+        put(gx_g + tx, gy_g + ty, CR2)
+
+    # Gran espada Danma saliendo desde el interior del grimorio directo a la mano izquierda extendida de Asta
+    hx_s, hy_s = cx - 14, by - 11
+    bx_tip, by_tip = gx_g - 14, gy_g - 26
+    steps_sw = 28
+    for k in range(steps_sw + 1):
+        u_s = k / float(steps_sw)
+        sx_p = int(round(hx_s + (bx_tip - hx_s) * u_s))
+        sy_p = int(round(hy_s + (by_tip - hy_s) * u_s))
+        bw_s = 1 if u_s > 0.90 else (3 if u_s > 0.18 else 2)
+        for d_b in range(-bw_s, bw_s + 1):
+            col_b = CR2 if abs(d_b) == bw_s else ('#38324a' if d_b == 0 else '#181522')
+            if u_s < 0.14:
+                col_b = '#9c8236' if abs(d_b) == 0 else '#14121c'
+            put(sx_p + d_b, sy_p, col_b)
+        if k % 4 == 0:
+            over(sx_p + bw_s + 1, sy_p - 1, CR1, 0.7)
+
+    pinta_sprite(lz, cx, by, spr, cmap)
     if ANIM:
-        RUNAS.append([orb_x, orb_y])
+        RUNAS.append([gx_g, gy_g - 2])
+        FAROLES.append([bx_tip + 6, by_tip + 6, 11])
     else:
-        glow(orb_x, orb_y, 9, '#8c3cf0', 0.55)
+        glow(gx_g, gy_g - 2, 12, CR1, 0.58)
+        glow(bx_tip + 6, by_tip + 6, 8, CR2, 0.45)
 
 
-def dibuja_vanica(cx, by):
-    """Vanica Zogratis (fiel al sprite VANICA): coronita dorada, cabello oscuro con flequillo
-    sobre su parche negro en ojo derecho, sonrisa entusiasta, cuello de piel claro, capa negra,
-    túnica/falda corta granate con cinturón, botas altas y aura de Magia de Sangre carmesí."""
-    bl0, bl1, bl2 = PAL['blood']
+dibuja_asta(396, DY_TOP)
 
-    # Trazos dinámicos sinuosos de Magia de Sangre carmesí-negra alrededor (VANICA IDLE 4/5)
-    for t in range(34):
-        ang = t * 0.25
-        sx = int(cx - 2 + math.cos(ang) * (13 + t * 0.25))
-        sy = int(by - 8 - t * 1.15)
-        put(sx, sy, bl1 if t % 3 else bl2)
-        put(sx + 1, sy, '#18050c' if t % 2 else bl0)
-    if ANIM:
-        RUNAS.append([cx + 15, by - 32])
-    else:
-        glow(cx + 14, by - 30, 8, bl0, 0.45)
-
-    cmap = {
-        'O': '#0b0812',
-        'G': '#f0c044', 'g': '#b2821e',
-        'H': '#221a2a', 'h': '#3a2c48',
-        'S': '#f0d4ce', 's': '#c8a6a0',
-        'P': '#0d0912', 'E': '#1a1220',
-        'R': '#b81c30', 'W': '#f8eef0',
-        'F': '#d8dae4', 'f': '#9fa4b6', 'Z': '#eff1f8',
-        'K': '#20222e', 'k': '#323646', 'd': '#14151e',
-        'V': '#6c202c', 'v': '#922e3e', 'u': '#4a141e',
-        'B': '#5a3a24',
-    }
-    # 35x42 px
-    spr = [
-        "..............O..O..O..............",
-        ".............OGOGGGOGO.............",
-        ".............OGGGGGGGGO............",
-        "............OOOHHHHHHOOO...........",
-        "...........OHHHhHHHHhHHHO..........",
-        "..........OHHHHHHHHHHHHHHO.........",
-        "..........OHHHhHHHhHHHHHHO.........",
-        "..........OHHHSSSHHHHHHHHO.........",
-        "..........OHHSeSSPPPHHHHHO.........",
-        "..........OHHSSSSPPPSHHHHO.........",
-        "..........OOHSSSWWWRSSSHHO.........",
-        "...........OOHSSRRRSSSHHO..........",
-        "............OOSSSSSSSOOO...........",
-        "........OOOOOZZFFFFFZZOOOO.........",
-        ".......OOZFFFFZFFFFFZFFFFZOO.......",
-        "......OZFFFFfFFFFZFFFFFfFFFZO......",
-        "......OOFfffFFFFFFFFFFFfffFO.......",
-        ".....OKKOOOffOVVVvvVVVOffOOKKO.....",
-        "....OKKKdKKOOOVVvvvvVVOOOOKdKKO....",
-        "...OKKKdKKKKOKOVVVvvVVOKOKKKKdKO...",
-        "...OKKdKKSSOKKOVVVVVVVOKKKSSKdKO...",
-        "...OKKdKKOO..OKOBBBBBBBKOKOOOdKO...",
-        "...OKKdKO....OKOBGGGBBBKOK...OdO...",
-        "..OKKKdO.....OKOVVVVVVVKO..........",
-        "..OKKdKO.....OKOVVvvvVVKO..........",
-        "..OKKdO......OKOVVVvvVVKO..........",
-        "..OKdKO......OKOVVuuuVVKO..........",
-        "..OKdO.......OOOVVVVVVVOO..........",
-        "..OKdO........OSSSSOSSSSO..........",
-        "..OKdO........OSSSSOSSSSO..........",
-        "..OKdO.......OOKKKO.OKKKOO.........",
-        "..OKOO.......OKkKKO.OKKkKO.........",
-        "..OO.........OKKKKO.OKKKKO.........",
-        "............OKKKdKO.OKdKKKO........",
-        "............OKKKdKO.OKdKKKO........",
-        "............OKKdKKO.OKKdKKO........",
-        "............OKKdKO...OKdKKO........",
-        "............OKKdKO...OKdKKO........",
-        "............OKKdKO...OKdKKO........",
-        "...........OKKKdKO...OKdKKKO.......",
-        "..........OKKKKdKO...OKdKKKKO......",
-        "..........OOOOOOOO...OOOOOOOO......",
-    ]
-    _pinta_sprite(cx, by, spr, cmap)
-
-
-dibuja_zenon(326, DY_TOP)
-dibuja_dante(386, DY_TOP)
-dibuja_vanica(446, DY_TOP)
-
-# Pequeños braseros rúnicos bajos en los extremos de la terraza (sin tapar a la Tríada)
+# Pequeños braseros rúnicos bajos en los extremos de la terraza
 for fx in (300, 468):
     for yy in range(DY_TOP - 7, DY_TOP):
         put(fx, yy, SP0)

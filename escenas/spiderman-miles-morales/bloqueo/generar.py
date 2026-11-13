@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'src'))
 from pz_lib import (  # noqa: E402
     HOR, Lienzo, Ruido, W, H, aplica_vineta, dibuja_luna_estandar, dibuja_sol_estandar,
-    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, render_cielo,
+    dith, exporta_salida, exporta_sprites_si_aplica, fbm, mix, pinta_sprite, render_cielo,
     render_estrellas, render_lago, render_nubes,
 )
 
@@ -68,37 +68,60 @@ if not ANIM:
 render_nubes(lz, [(95, 58, 175, PAL['nube'][0], 3), (320, 48, 160, PAL['nube'][1], 3), (520, 114, 150, PAL['nube'][2], 2)], NUBES, ANIM)
 
 B0, B1, B2, B3 = PAL['bldg']
-# Skyline denso de Manhattan (izquierda a derecha)
+# Skyline denso de Manhattan (izquierda a derecha) con retranqueos y malecón continuo en HOR
 edificios = [
     (6, 168, 42, False), (52, 204, 36, False), (92, 134, 46, True), (144, 186, 40, False),
     (190, 106, 48, True), (244, 198, 38, False), (288, 156, 44, False), (338, 182, 36, False),
     (380, 92, 52, True), (438, 172, 42, False), (486, 196, 38, False), (530, 146, 46, True), (582, 184, 50, False),
 ]
 for bx, top_y, bw, aguja in edificios:
-    for y in range(top_y, HOR + 1):
+    if aguja:
+        # Retranqueo escalonado clásico Art-Deco bajo la aguja
+        cw = max(14, bw - 14)
+        cx_t = bx + (bw - cw) // 2
+        for y in range(top_y - 12, top_y):
+            for x in range(cx_t, cx_t + cw):
+                put(x, y, B3 if x < cx_t + 3 else (B2 if x < cx_t + cw - 3 else B1))
+    for y in range(top_y, HOR - 6):
         for x in range(bx, bx + bw):
             c = B3 if x < bx + 5 else (B2 if x < bx + bw // 2 else (B1 if x < bx + bw - 5 else B0))
             if (y - top_y) % 16 == 0:
                 c = B0
             put(x, y, c)
+    # Remate / cornisa superior
+    for x in range(bx, bx + bw):
+        put(x, top_y, B3)
     if aguja:
         ax = bx + bw // 2
-        for y in range(top_y - 28, top_y):
+        spire_top = top_y - 36
+        for y in range(spire_top, top_y - 12):
             for dx in range(-1, 2):
                 put(ax + dx, y, B2 if dx == 0 else B0)
         if ANIM:
-            FAROLES.append([ax, top_y - 29, 7])
+            FAROLES.append([ax, spire_top - 1, 7])
         else:
-            put(ax, top_y - 29, PAL['neon'][0])
-    for wy in range(top_y + 12, HOR - 16, 12):
-        for wx in range(bx + 8, bx + bw - 8, 11):
+            put(ax, spire_top - 1, PAL['neon'][0])
+    for wy in range(top_y + 10, HOR - 14, 11):
+        for wx in range(bx + 7, bx + bw - 7, 10):
             if (wx + wy) % 7 != 0:
-                if ANIM:
+                if ANIM and FASE != 'dia':
                     VENTANAS.append([wx, wy])
                 else:
+                    win_c = B1 if FASE == 'dia' else PAL['win']
                     for dy in range(4):
                         for dx in range(2):
-                            put(wx + dx, wy + dy, PAL['win'])
+                            put(wx + dx, wy + dy, win_c)
+
+# Malecón continuo del río Hudson anclando todo el skyline (x = 0..W, y = HOR-6..HOR)
+for y in range(HOR - 6, HOR + 1):
+    for x in range(W):
+        c = B3 if y == HOR - 6 else (B2 if (x // 6 + y) % 2 == 0 else B0)
+        put(x, y, c)
+for fx_m in range(18, W - 12, 34):
+    put(fx_m, HOR - 7, B0)
+    put(fx_m, HOR - 8, B2)
+    if FASE != 'dia':
+        put(fx_m, HOR - 9, PAL['win'])
 
 # Reflejo urbano en el río Hudson antes de dibujar la cornisa del primer plano
 render_lago(lz, PAL['agua'], PAL['ola'], DESTELLOS, ANIM, mx=CX_ASTRO, reflejo_cols=('#ffe49c', '#88d8ff'))
@@ -110,31 +133,96 @@ for y in range(342, H):
         put(x, y, RF3 if y < 347 else (RF2 if y < 354 else (RF1 if (x + y) % 11 else RF0)))
 for y in range(298, 342):
     for x in range(24, 152):
-        put(x, y, RF2 if x < 140 else RF0)
+        c = RF2 if x < 140 else RF0
+        if y % 8 == 0 or (x + (y // 8) * 10) % 18 == 0:
+            c = RF1 if x < 140 else RF0
+        put(x, y, c)
 for x in range(20, 156):
     for y in range(292, 299):
         put(x, y, RF3 if y < 295 else RF1)
 
-# Gárgola esculpida vigilando desde el pilar izquierdo (x=54..122, y=236..292)
-for y in range(256, 292):
-    for x in range(60, 118):
-        if x < 104 - (y - 256) // 3:
-            put(x, y, RF2 if x < 84 else RF1)
-disc(76, 250, 12, RF3)
-disc(72, 248, 8, RF2)
-# Alas plegadas hacia atrás
-for dy in range(28):
-    for dx in range(dy // 2, 26):
-        put(84 + dx, 232 + dy + dx // 4, RF1 if (dx + dy) % 3 else RF0)
+# Miles Morales sentado/agachado en la esquina del pretil izquierdo vigilando Manhattan (Spider-Verse hoodie + Jordans)
+MILES_PERCH = [
+    "..............OOOOOOOO............",
+    "............OOKKKKKKKKOO..........",
+    "...........OKKKKKKKKKKKKO.........",
+    "..........OKKKKKKKrKKKKKKO........",
+    "..........OKWWKKKKrKKWWKKO........",
+    "..........OKWWWKKKrKWWWKKO........",
+    "...........OKWWKKKrKKWWKO.........",
+    "............OKKKKKKKKKKO..........",
+    "............OORRRRRRRROO..........",
+    "..........OOORRRRRRRRRROOO........",
+    ".........ORRRRRKKKKKKRRRRRO.......",
+    "........ORRRRRKKRRRRKKRRRRRO......",
+    ".......ORRRRKKKRRRRRRKKKRRRRO.....",
+    "......ORRRKKKKKKRRRRKKKKKKRRRO....",
+    ".....OSSOOKKKKKKKRRKKKKKKKOOSSO...",
+    "....OSS..ORRKKKKKKKKKKKKRRO..SSO..",
+    "...OO....ORRRKKKKKKKKKKRRRO...OO..",
+    ".........ORRRRRKKKKKKRRRRRO.......",
+    ".........OORRRRKKKKKKRRRROO.......",
+    "..........OKKKKKKKKKKKKKKO........",
+    ".........OKKKKKOOOOOOKKKKKO.......",
+    "........OKKKKKO......OKKKKKO......",
+    "........OKKKKO........OKKKKO......",
+    ".......OKSSSKO........OKSSSKO.....",
+    ".......OKKKKO..........OKKKKO.....",
+    "......OKKKKO............OKKKKO....",
+    ".....ORRRRRO............ORRRRRO...",
+    ".....ORWWWRRO..........ORRRWWRO...",
+    ".....OWWWWWWO..........OWWWWWWO...",
+    "......OOOOOO............OOOOOO....",
+]
+w_mp = max(len(r) for r in MILES_PERCH)
+MILES_PERCH = [r.ljust(w_mp, '.') for r in MILES_PERCH]
+miles_cmap = {
+    'O': '#090a10',
+    'K': '#161826',
+    'S': '#2b304c',
+    'R': '#cc2034',
+    'r': '#7c1424',
+    'W': '#f2f7ff',
+}
+pinta_sprite(lz, 88, 297, MILES_PERCH, miles_cmap)
+put(69, 282, PAL['neon'][1])
+put(67, 284, PAL['neon'][2])
+put(71, 285, PAL['neon'][1])
+if not ANIM:
+    glow(69, 283, 5, PAL['neon'][1], 0.55)
+else:
+    RUNAS.append([69, 283])
 
-# Depósito de agua neoyorquino y letrero neón en la azotea derecha (x=520..616)
+# Letrero neón con emblema de araña en el tejado derecho + depósito de agua neoyorquino con refuerzos
+for rx_n in range(472, 518):
+    for ry_n in range(304, 326):
+        c_s = PAL['neon'][0] if ry_n in (304, 325) or rx_n in (472, 517) else '#0c0d18'
+        put(rx_n, ry_n, c_s)
+for px_p in (480, 510):
+    for py_p in range(326, 343):
+        put(px_p, py_p, RF0)
+put(495, 315, PAL['neon'][0])
+for dx_s, dy_s in ((-4, -2), (-2, -1), (2, -1), (4, -2), (-4, 2), (-2, 1), (2, 1), (4, 2), (0, -2), (0, 2)):
+    put(495 + dx_s, 315 + dy_s, PAL['neon'][0])
+
 for sx in (546, 586):
-    for y in range(266, 342):
+    for y in range(266, 343):
         for dx in range(4):
             put(sx + dx, y, RF0)
+for y in range(272, 342):
+    t_b = (y - 272) / 70.0
+    bx_l = int(548 + 40 * t_b)
+    bx_r = int(588 - 40 * t_b)
+    put(bx_l, y, RF1)
+    put(bx_l + 1, y, RF0)
+    put(bx_r, y, RF1)
+    put(bx_r + 1, y, RF0)
 for y in range(222, 268):
     for x in range(538, 598):
-        put(x, y, RF3 if x < 554 else (RF2 if x < 582 else RF1))
+        c_wt = RF3 if x < 554 else (RF2 if x < 582 else RF1)
+        if y in (234, 250):
+            c_wt = RF0
+        put(x, y, c_wt)
 for y in range(208, 224):
     hw = 34 * (y - 208) // 16
     for x in range(568 - hw, 568 + hw + 1):

@@ -90,13 +90,21 @@ for base, amp, seed, col, mist in ((238, 92, 31, PAL['mont'][0], PAL['mist'][0])
 R0, R1, R2, R3 = PAL['rock']
 CR0, CR1, CR2 = PAL['crimson']
 
-# Dos acantilados negros y torres gemelas de la Puerta de Obsidiana (x=196 y x=402)
-for x0, x1 in ((0, 224), (416, 640)):
-    for y in range(HOR - 22, HOR + 6):
-        for x in range(x0, x1):
-            put(x, y, R1 if (x + y) % 7 == 0 else R0)
+# Dos acantilados de obsidiana escarpados anclando las torres gemelas y los cristales (0..238 y 402..640)
+for x0, x1, slope_left in ((0, 238, False), (402, 640, True)):
+    for x in range(x0, x1):
+        edge_d = (x - x0) if slope_left else (x1 - 1 - x)
+        top_r = HOR - 18 + max(0, (18 - edge_d) // 2)
+        for y in range(top_r, HOR + 1):
+            c = R2 if y <= top_r + 2 else (R1 if (x + y) % 5 == 0 else R0)
+            put(x, y, c)
 
 for cx in (202, 438):
+    # Zócalo amplio cimentado dentro de la roca hasta HOR
+    for y in range(HOR - 22, HOR + 1):
+        hw_b = 26 + (y - (HOR - 22)) // 3
+        for dx in range(-hw_b, hw_b + 1):
+            put(cx + dx, y, R2 if dx < -hw_b // 2 else (R1 if dx < hw_b // 3 else R0))
     for y in range(118, HOR - 18):
         hw = 22 if y > 170 else max(4, 22 - (170 - y) * 18 // 52)
         for dx in range(-hw, hw + 1):
@@ -133,10 +141,14 @@ for x in range(224, 417):
         for y in range(by - 8, by):
             put(x, y, R2)
 
-# Monolitos gigantes de cristal de maná en primer plano izquierdo/derecho
+# Monolitos gigantes de cristal incrustados con base rocosa en los acantilados
 for mx, mh in ((46, 56), (82, 42), (558, 46), (594, 62)):
+    for dy in range(-4, 4):
+        hw_s = 13 + dy
+        for dx in range(-hw_s, hw_s + 1):
+            put(mx + dx, HOR - 18 + dy, R2 if dy < 0 else R0)
     for dy in range(mh):
-        y = HOR - 18 - dy
+        y = HOR - 16 - dy
         hw = max(2, 10 - dy * 8 // mh)
         for dx in range(-hw, hw + 1):
             put(mx + dx, y, CR2 if dx < 0 and dy % 5 == 0 else (CR1 if dx < 1 else CR0))

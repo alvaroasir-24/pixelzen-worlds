@@ -286,12 +286,16 @@ for sx_d, sy_d in ((CBX - 90, CBY - 32), (CBX + 86, CBY - 26)):
         put(sx_d + dx, sy_d - abs(dx) // 2, PAL['nieve'][0])
     put(sx_d, sy_d + 1, MANA_HI)
 
-# 4. REINO DE ASURA: Capital Real de Ars y Palacio Blanco (x = 228..466, fuera de HUD)
-for y in range(HOR - 38, HOR + 1):
-    t = (HOR - y) / 38.0
-    ww = int(140 * (1 - t ** 1.45))
-    for x in range(max(180, 355 - ww), min(W, 355 + ww)):
-        put(x, y, PAL['isla'][1] if (x + y) % 4 else PAL['isla'][0])
+# 4. REINO DE ASURA: Meseta firme y amurallada para el Palacio Blanco (x = 204..496, fuera de HUD)
+for y in range(HOR - 15, HOR + 1):
+    t = (HOR - y) / 15.0
+    ww = int(146 - t * 24)
+    for x in range(max(198, 350 - ww), min(W, 350 + ww)):
+        c_is = PAL['isla'][2] if y <= HOR - 13 else (PAL['isla'][1] if (x + y) % 4 else PAL['isla'][0])
+        put(x, y, c_is)
+for x in range(226, 472):
+    for yy in range(HOR - 16, HOR - 12):
+        put(x, yy, ST1 if (x // 4 + yy) % 2 else ST0)
 
 # Muralla imperial de la Capital de Ars con contrafuertes y gran puerta real arqueada
 for x in range(236, 462):
@@ -354,7 +358,11 @@ torre_asura(348, 34, 58, 18, oro_dome=True)  # Gran Palacio Real de Ars
 torre_asura(398, 22, 42, 22)
 torre_asura(436, 16, 30, 18)
 
-# 5. Puente Imperial arqueado sobre el Lago de Asura (x = 76..236) y Posada del camino (izquierda)
+# 5. Puente Imperial arqueado sobre el Lago de Asura (x = 68..238) con estribos sólidos
+for ax0, ax1 in ((64, 78), (228, 240)):
+    for yy in range(HOR - 14, HOR + 1):
+        for xx in range(ax0, ax1 + 1):
+            put(xx, yy, ST1 if (xx + yy) % 3 else ST0)
 for x in range(74, 238):
     arch_y = HOR - 12
     for yy in range(arch_y, HOR + 1):
@@ -389,15 +397,16 @@ for yy in range(HOR - 20, HOR - 14):
 for wx in (CX_CAR - 5, CX_CAR + 5):
     disc(wx, HOR - 14, 3, PAL['timber'][0])
 
-# Promontorio izquierdo con puesto de guardia/posada de Fittoa hacia Asura (x = 12..76)
-for y in range(HOR - 20, HOR + 1):
-    t = (HOR - y) / 20.0
-    ww = int(52 * (1 - t ** 1.4))
-    for x in range(max(0, 38 - ww), 38 + ww):
-        put(x, y, PAL['isla'][1] if (x + y) % 3 else PAL['isla'][0])
-for yy in range(HOR - 36, HOR - 18):
+# Promontorio izquierdo plano bajo la posada (x = 6..84) para evitar esquinas colgantes
+for y in range(HOR - 18, HOR + 1):
+    d_m = HOR - y
+    x_l = max(0, 8 + d_m // 2)
+    x_r = min(84, 82 - d_m)
+    for x in range(x_l, x_r):
+        put(x, y, PAL['isla'][2] if y <= HOR - 16 else (PAL['isla'][1] if (x + y) % 3 else PAL['isla'][0]))
+for yy in range(HOR - 36, HOR - 14):
     for x in range(24, 54):
-        put(x, yy, MB1 if yy < HOR - 26 else ST1)
+        put(x, yy, MB1 if yy < HOR - 24 else ST1)
 CHIMENEA = [29, HOR - 46]
 for yy in range(HOR - 45, HOR - 35):
     for x in range(27, 32):
