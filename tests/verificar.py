@@ -42,11 +42,14 @@ def check_python():
 
 
 def check_shell():
-    sh_files = [
-        os.path.join(ROOT, 'linux', fn)
-        for fn in sorted(os.listdir(os.path.join(ROOT, 'linux')))
-        if fn.endswith('.sh')
-    ]
+    sh_files = []
+    for sub in ('linux', 'scripts'):
+        d = os.path.join(ROOT, sub)
+        if not os.path.isdir(d):
+            continue
+        for fn in sorted(os.listdir(d)):
+            if fn.endswith('.sh'):
+                sh_files.append(os.path.join(d, fn))
     for path in sh_files:
         subprocess.run(['bash', '-n', path], check=True)
     print(f'[OK] bash -n ({len(sh_files)} scripts shell)')

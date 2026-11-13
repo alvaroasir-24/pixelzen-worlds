@@ -35,45 +35,32 @@ pixelzen-worlds/
 
 ## Descarga e instalación automática
 
-> **Nota sobre visibilidad:** mientras el repositorio sea **privado**, necesitas tener sesión iniciada en GitHub (`gh auth login` o tu clave SSH configurada).
+Los instaladores viven en [`scripts/instalar.sh`](scripts/instalar.sh) (Linux) y [`scripts/instalar.ps1`](scripts/instalar.ps1) (Windows).
 
 ### Linux (GNOME Shell 46–50+)
 
-Descarga el repositorio, compila/instala los 5 mundos y activa el ciclo completo de 24 horas en 90 minutos:
-
 ```bash
-bash -c '
-set -e
-DEST="${PIXELZEN_DIR:-$HOME/pixelzen-worlds}"
-TEMA="${PIXELZEN_TEMA:-spiderman-miles-morales}"
-if [ -d "$DEST/.git" ]; then
-  git -C "$DEST" pull -4 --ff-only
-elif command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  gh repo clone davidlpizano/pixelzen-worlds "$DEST"
-else
-  git clone git@github.com:davidlpizano/pixelzen-worlds.git "$DEST"
-fi
-cd "$DEST/linux"
-./instalar.sh --tema="$TEMA" --90m
-echo "Instalado. Abre Extensiones -> PixelZen Worlds para cambiar tema o ciclo con GUI."
-'
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.sh)"
 ```
 
-*(Puedes elegir otro tema inicial cambiando `PIXELZEN_TEMA=fittoa`, `continente-demoniaco`, `hunter-x-hunter` o `black-clover`).*
+Si el repositorio está en **privado**, ejecuta el mismo script autenticándote con `gh`:
+
+```bash
+bash -c "$(gh api repos/davidlpizano/pixelzen-worlds/contents/scripts/instalar.sh -H 'Accept: application/vnd.github.raw')"
+```
+
+*(Puedes elegir el tema inicial con `PIXELZEN_TEMA=fittoa` — u otro de los 5 temas — antes de ejecutar el comando).*
 
 ### Windows (PowerShell + Lively Wallpaper o Python)
 
 ```powershell
-$dest = "$env:USERPROFILE\pixelzen-worlds"
-if (Test-Path "$dest\.git") {
-  git -C $dest pull --ff-only
-} elseif (Get-Command gh -ErrorAction SilentlyContinue) {
-  gh repo clone davidlpizano/pixelzen-worlds $dest
-} else {
-  git clone https://github.com/davidlpizano/pixelzen-worlds.git $dest
-}
-# Abre la carpeta para arrastrar lively\index.html a Lively Wallpaper, o ejecuta ejecutar.bat:
-explorer "$dest\windows"
+irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
+```
+
+Si el repositorio está en **privado**, usando `gh`:
+
+```powershell
+gh api repos/davidlpizano/pixelzen-worlds/contents/scripts/instalar.ps1 -H "Accept: application/vnd.github.raw" | Out-String | iex
 ```
 
 ## Uso en Linux (GNOME Shell)
