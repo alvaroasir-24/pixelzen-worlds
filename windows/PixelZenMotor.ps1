@@ -567,13 +567,167 @@ public class PzmRenderer {
     }
 }
 
+public class PzmDCompHost : IDisposable {
+    [DllImport("d3d11.dll")]
+    static extern int D3D11CreateDevice(IntPtr pAdapter, int DriverType, IntPtr Software, uint Flags,
+        [In] int[] pFeatureLevels, uint FeatureLevels, uint SDKVersion,
+        out IntPtr ppDevice, out int pFeatureLevel, out IntPtr ppImmediateContext);
+
+    [DllImport("dcomp.dll")]
+    static extern int DCompositionCreateDevice(IntPtr dxgiDevice, ref Guid iid, out IntPtr dcompositionDevice);
+
+    [StructLayout(LayoutKind.Sequential)] struct DXGI_SAMPLE_DESC { public uint Count, Quality; }
+    [StructLayout(LayoutKind.Sequential)] struct DXGI_SWAP_CHAIN_DESC1 {
+        public uint Width, Height, Format;
+        public int Stereo;
+        public DXGI_SAMPLE_DESC SampleDesc;
+        public uint BufferUsage, BufferCount, Scaling, SwapEffect, AlphaMode, Flags;
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnQI(IntPtr obj, ref Guid riid, out IntPtr ppv);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate uint FnRel(IntPtr obj);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnGetAdapter(IntPtr obj, out IntPtr adapter);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnGetParent(IntPtr obj, ref Guid riid, out IntPtr parent);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnCreateSwapForComp(IntPtr factory2, IntPtr dev, ref DXGI_SWAP_CHAIN_DESC1 desc, IntPtr restrictOut, out IntPtr sc);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnDCompCommit(IntPtr dcomp);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnCreateTarget(IntPtr dcomp, IntPtr hwnd, int topmost, out IntPtr target);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnCreateVisual(IntPtr dcomp, out IntPtr visual);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnSetRoot(IntPtr target, IntPtr visual);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnSetContent(IntPtr visual, IntPtr content);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnGetBuffer(IntPtr sc, uint buf, ref Guid riid, out IntPtr surf);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate int FnPresent(IntPtr sc, uint sync, uint flags);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] delegate void FnUpdateSub(IntPtr ctx, IntPtr dst, uint sub, IntPtr box, IntPtr src, uint rowPitch, uint depthPitch);
+
+    static T VFn<T>(IntPtr comObj, int slot) where T : class {
+        IntPtr vtbl = Marshal.ReadIntPtr(comObj);
+        IntPtr fnPtr = Marshal.ReadIntPtr(vtbl, slot * IntPtr.Size);
+        return Marshal.GetDelegateForFunctionPointer(fnPtr, typeof(T)) as T;
+    }
+
+    public IntPtr Dev, Ctx, DxgiDev, Adapter, Factory2, DComp;
+    public int FeatureLevel;
+    public bool Ready;
+    public string InitDiag = "none";
+    public int LastCommitHr;
+    private static readonly Guid IidTex2D = new Guid("6f15aaf2-d208-4e89-9ab4-489535d34f9c");
+
+    public PzmDCompHost() {
+        try {
+            int[] fls = new int[] { 0xb000, 0xa100, 0xa000 };
+            int hr = D3D11CreateDevice(IntPtr.Zero, 1, IntPtr.Zero, 0x20, fls, 3, 7, out Dev, out FeatureLevel, out Ctx);
+            string drv = "hw";
+            if (hr != 0) {
+                drv = "warp";
+                hr = D3D11CreateDevice(IntPtr.Zero, 5, IntPtr.Zero, 0x20, fls, 3, 7, out Dev, out FeatureLevel, out Ctx);
+            }
+            if (hr != 0) { InitDiag = string.Format("d3d11=0x{0:X8}", hr); Dispose(); return; }
+
+            Guid iidDxgi = new Guid("54ec77fa-1377-44e6-8c32-88fd5f44c84c");
+            hr = VFn<FnQI>(Dev, 0)(Dev, ref iidDxgi, out DxgiDev);
+            if (hr != 0) { InitDiag = string.Format("qidxgi=0x{0:X8}", hr); Dispose(); return; }
+
+            hr = VFn<FnGetAdapter>(DxgiDev, 7)(DxgiDev, out Adapter);
+            if (hr != 0) { InitDiag = string.Format("adapter=0x{0:X8}", hr); Dispose(); return; }
+
+            Guid iidFac2 = new Guid("50c83a1c-e072-4c48-87b0-3630fa36a6d0");
+            hr = VFn<FnGetParent>(Adapter, 6)(Adapter, ref iidFac2, out Factory2);
+            if (hr != 0) { InitDiag = string.Format("fac2=0x{0:X8}", hr); Dispose(); return; }
+
+            Guid iidDc = new Guid("C37EA93A-E7AA-450D-B16F-9746CB0407F3");
+            hr = DCompositionCreateDevice(DxgiDev, ref iidDc, out DComp);
+            if (hr != 0) { InitDiag = string.Format("dcomp=0x{0:X8}", hr); Dispose(); return; }
+
+            Ready = true;
+            InitDiag = string.Format("{0}/0x{1:X}", drv, FeatureLevel);
+        } catch (Exception ex) {
+            InitDiag = "ex:" + ex.Message;
+            Dispose();
+        }
+    }
+
+    public bool BindWindow(IntPtr hwnd, int w, int h, out IntPtr target, out IntPtr visual, out IntPtr swapChain, out string err) {
+        target = IntPtr.Zero; visual = IntPtr.Zero; swapChain = IntPtr.Zero; err = "ok";
+        if (!Ready || hwnd == IntPtr.Zero || w <= 0 || h <= 0) { err = "not-ready"; return false; }
+        int hr = VFn<FnCreateTarget>(DComp, 6)(DComp, hwnd, 0, out target);
+        if (hr != 0) { err = string.Format("target=0x{0:X8}", hr); return false; }
+
+        hr = VFn<FnCreateVisual>(DComp, 7)(DComp, out visual);
+        if (hr != 0) { err = string.Format("visual=0x{0:X8}", hr); ReleaseBind(ref target, ref visual, ref swapChain); return false; }
+
+        hr = VFn<FnSetRoot>(target, 3)(target, visual);
+        if (hr != 0) { err = string.Format("setroot=0x{0:X8}", hr); ReleaseBind(ref target, ref visual, ref swapChain); return false; }
+
+        var desc = new DXGI_SWAP_CHAIN_DESC1 {
+            Width = (uint)w, Height = (uint)h, Format = 87, Stereo = 0,
+            SampleDesc = new DXGI_SAMPLE_DESC { Count = 1, Quality = 0 },
+            BufferUsage = 0x20, BufferCount = 2, Scaling = 0, SwapEffect = 4, AlphaMode = 3, Flags = 0
+        };
+        hr = VFn<FnCreateSwapForComp>(Factory2, 24)(Factory2, Dev, ref desc, IntPtr.Zero, out swapChain);
+        if (hr != 0) { err = string.Format("sc=0x{0:X8}", hr); ReleaseBind(ref target, ref visual, ref swapChain); return false; }
+
+        hr = VFn<FnSetContent>(visual, 15)(visual, swapChain);
+        if (hr != 0) { err = string.Format("content=0x{0:X8}", hr); ReleaseBind(ref target, ref visual, ref swapChain); return false; }
+
+        LastCommitHr = VFn<FnDCompCommit>(DComp, 3)(DComp);
+        return LastCommitHr >= 0;
+    }
+
+    public int PresentPixels(IntPtr swapChain, int[] pixels, int w) {
+        if (!Ready || swapChain == IntPtr.Zero) return -1;
+        IntPtr tex;
+        Guid iid = IidTex2D;
+        int hr = VFn<FnGetBuffer>(swapChain, 9)(swapChain, 0, ref iid, out tex);
+        if (hr != 0) return hr;
+        GCHandle pin = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try {
+            VFn<FnUpdateSub>(Ctx, 48)(Ctx, tex, 0, IntPtr.Zero, pin.AddrOfPinnedObject(), (uint)(w * 4), 0);
+        } finally {
+            pin.Free();
+            VFn<FnRel>(tex, 2)(tex);
+        }
+        return VFn<FnPresent>(swapChain, 8)(swapChain, 0, 0);
+    }
+
+    public void Commit() {
+        if (Ready && DComp != IntPtr.Zero) {
+            LastCommitHr = VFn<FnDCompCommit>(DComp, 3)(DComp);
+        }
+    }
+
+    public static void ReleaseBind(ref IntPtr target, ref IntPtr visual, ref IntPtr swapChain) {
+        if (swapChain != IntPtr.Zero) { VFn<FnRel>(swapChain, 2)(swapChain); swapChain = IntPtr.Zero; }
+        if (visual != IntPtr.Zero) { VFn<FnRel>(visual, 2)(visual); visual = IntPtr.Zero; }
+        if (target != IntPtr.Zero) { VFn<FnRel>(target, 2)(target); target = IntPtr.Zero; }
+    }
+
+    public void Dispose() {
+        Ready = false;
+        IntPtr[] ptrs = new IntPtr[] { DComp, Factory2, Adapter, DxgiDev, Ctx, Dev };
+        DComp = Factory2 = Adapter = DxgiDev = Ctx = Dev = IntPtr.Zero;
+        foreach (var p in ptrs) { if (p != IntPtr.Zero) { try { VFn<FnRel>(p, 2)(p); } catch {} } }
+    }
+}
+
 public class PzmWallForm : Form {
     public Bitmap FrameRef;
     public Rectangle ScreenBounds { get; set; }
+    public PzmDCompHost DCompHost;
+    public bool UseDComp = false;
     public int PaintCount = 0;
     public bool LastUlwOk = false;
     public int LastUlwErr = 0;
+    public int LastPresentHr = 0;
+    public string BindErr = "none";
     private bool _fallbackGdi = false;
+
+    private IntPtr _dcTarget = IntPtr.Zero;
+    private IntPtr _dcVisual = IntPtr.Zero;
+    private IntPtr _dcSwap = IntPtr.Zero;
+    private int _dcW = 0, _dcH = 0;
+    private int[] _srcBuf = new int[640 * 400];
+    private int[] _dstBuf = null;
+    private int[] _xMap = null;
+    private int[] _yMap = null;
 
     private IntPtr _memDc = IntPtr.Zero;
     private IntPtr _hDib = IntPtr.Zero;
@@ -592,6 +746,8 @@ public class PzmWallForm : Form {
 
     [DllImport("user32.dll", SetLastError=true)] private static extern bool UpdateLayeredWindow(IntPtr hwnd, IntPtr hdcDst, IntPtr pptDst, ref WSIZE psize, IntPtr hdcSrc, ref WPOINT pptSrc, uint crKey, ref BLENDFUNCTION pblend, uint dwFlags);
     [DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+    [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
     [DllImport("user32.dll")] private static extern IntPtr GetDC(IntPtr hWnd);
     [DllImport("user32.dll")] private static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
     [DllImport("gdi32.dll")] private static extern IntPtr CreateCompatibleDC(IntPtr hdc);
@@ -600,8 +756,10 @@ public class PzmWallForm : Form {
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr ho);
     [DllImport("gdi32.dll")] private static extern IntPtr CreateDIBSection(IntPtr hdc, ref BITMAPINFOHEADER pbmi, uint iUsage, out IntPtr ppvBits, IntPtr hSection, uint dwOffset);
 
-    public PzmWallForm(Rectangle bounds) {
+    public PzmWallForm(Rectangle bounds, PzmDCompHost dcomp) {
         ScreenBounds = bounds;
+        DCompHost = dcomp;
+        UseDComp = (dcomp != null && dcomp.Ready);
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         Enabled = false;
@@ -616,14 +774,12 @@ public class PzmWallForm : Form {
     protected override CreateParams CreateParams {
         get {
             var cp = base.CreateParams;
-            // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_TRANSPARENT
-            cp.ExStyle |= 0x08000000 | 0x00000080 | 0x00080000 | 0x00000020;
+            // DirectComposition: WS_EX_NOREDIRECTIONBITMAP | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT
+            // Layered fallback: WS_EX_LAYERED | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT
+            int modeEx = UseDComp ? 0x00200000 : 0x00080000;
+            cp.ExStyle |= 0x08000000 | 0x00000080 | 0x00000020 | modeEx;
             return cp;
         }
-    }
-
-    protected override void OnHandleCreated(EventArgs e) {
-        base.OnHandleCreated(e);
     }
 
     protected override void WndProc(ref Message m) {
@@ -668,8 +824,8 @@ public class PzmWallForm : Form {
         }
     }
 
-    private void ComputeSourceCrop(int w, int h, out float srcX, out float srcY, out float srcW, out float srcH) {
-        double scale = Math.Max((double)w / 640.0, (double)h / 400.0);
+    private void ComputeSourceCrop(int w, int h, out float srcX, out float srcY, out float srcW, out float srcH, out double scale) {
+        scale = Math.Max((double)w / 640.0, (double)h / 400.0);
         srcW = (float)(w / scale);
         srcH = (float)(h / scale);
         srcX = (float)((640.0 - srcW) * 0.5);
@@ -678,15 +834,89 @@ public class PzmWallForm : Form {
         if (srcY + srcH > 400f) srcY = 400f - srcH;
     }
 
+    private bool EnsureDCompBuffers(int w, int h) {
+        if (_dcSwap != IntPtr.Zero && _dcW == w && _dcH == h) return true;
+        PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
+        _dcW = 0; _dcH = 0;
+        string err;
+        if (!DCompHost.BindWindow(this.Handle, w, h, out _dcTarget, out _dcVisual, out _dcSwap, out err)) {
+            BindErr = err;
+            return false;
+        }
+        BindErr = "ok";
+        _dcW = w; _dcH = h;
+        _dstBuf = new int[w * h];
+        _xMap = new int[w];
+        _yMap = new int[h];
+        float srcX, srcY, srcW, srcH;
+        double scale;
+        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH, out scale);
+        for (int x = 0; x < w; x++) {
+            int sx = (int)(srcX + (x + 0.5) / scale);
+            _xMap[x] = sx < 0 ? 0 : (sx > 639 ? 639 : sx);
+        }
+        for (int y = 0; y < h; y++) {
+            int sy = (int)(srcY + (y + 0.5) / scale);
+            _yMap[y] = sy < 0 ? 0 : (sy > 399 ? 399 : sy);
+        }
+        return true;
+    }
+
+    private void SwitchToLayeredFallback() {
+        UseDComp = false;
+        PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
+        int ex = GetWindowLong(this.Handle, -20);
+        ex = (ex & ~0x00200000) | 0x00080000;
+        SetWindowLong(this.Handle, -20, ex);
+    }
+
     public void PushFrame() {
         var f = FrameRef;
         if (f == null || !IsHandleCreated) return;
+        int w = ScreenBounds.Width, h = ScreenBounds.Height;
+        if (w <= 0 || h <= 0) return;
+
+        if (UseDComp && DCompHost != null && DCompHost.Ready) {
+            if (EnsureDCompBuffers(w, h)) {
+                var bd = f.LockBits(new Rectangle(0, 0, 640, 400), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+                try {
+                    if (bd.Stride == 640 * 4) {
+                        Marshal.Copy(bd.Scan0, _srcBuf, 0, 640 * 400);
+                    } else {
+                        for (int r = 0; r < 400; r++) Marshal.Copy(IntPtr.Add(bd.Scan0, r * bd.Stride), _srcBuf, r * 640, 640);
+                    }
+                } finally {
+                    f.UnlockBits(bd);
+                }
+                int prevSy = -1;
+                int prevRowOff = 0;
+                for (int y = 0; y < h; y++) {
+                    int sy = _yMap[y];
+                    int rowOff = y * w;
+                    if (sy == prevSy) {
+                        Array.Copy(_dstBuf, prevRowOff, _dstBuf, rowOff, w);
+                    } else {
+                        int srcOff = sy * 640;
+                        for (int x = 0; x < w; x++) _dstBuf[rowOff + x] = _srcBuf[srcOff + _xMap[x]];
+                        prevSy = sy;
+                        prevRowOff = rowOff;
+                    }
+                }
+                int hrP = DCompHost.PresentPixels(_dcSwap, _dstBuf, w);
+                LastPresentHr = hrP;
+                if (hrP >= 0) {
+                    PaintCount++;
+                    return;
+                }
+                BindErr = string.Format("pres=0x{0:X8}", hrP);
+            }
+            SwitchToLayeredFallback();
+        }
+
         if (_fallbackGdi) {
             Invalidate();
             return;
         }
-        int w = ScreenBounds.Width, h = ScreenBounds.Height;
-        if (w <= 0 || h <= 0) return;
         if (!EnsureDib(w, h)) {
             _fallbackGdi = true;
             try { SetLayeredWindowAttributes(this.Handle, 0, 255, 0x02); } catch {}
@@ -694,7 +924,8 @@ public class PzmWallForm : Form {
             return;
         }
         float srcX, srcY, srcW, srcH;
-        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH);
+        double scale;
+        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH, out scale);
         using (var g = Graphics.FromHdc(_memDc)) {
             g.InterpolationMode = InterpolationMode.NearestNeighbor;
             g.PixelOffsetMode = PixelOffsetMode.Half;
@@ -729,7 +960,8 @@ public class PzmWallForm : Form {
         int w = ClientSize.Width, h = ClientSize.Height;
         if (w <= 0 || h <= 0) return;
         float srcX, srcY, srcW, srcH;
-        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH);
+        double scale;
+        ComputeSourceCrop(w, h, out srcX, out srcY, out srcW, out srcH, out scale);
 
         var g = e.Graphics;
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
@@ -739,6 +971,7 @@ public class PzmWallForm : Form {
     }
 
     protected override void Dispose(bool disposing) {
+        PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
         ReleaseDib();
         base.Dispose(disposing);
     }
@@ -819,22 +1052,24 @@ public static class PzmDesktopHost {
 
     public static bool AttachForm(PzmWallForm form, IntPtr targetParent, IntPtr insertAfter) {
         if (form == null || targetParent == IntPtr.Zero || !IsWindow(targetParent)) return false;
-        if (!form.Visible) form.Show();
-        int style = GetWindowLong(form.Handle, -16);
+        IntPtr h = form.Handle;
+        int style = GetWindowLong(h, -16);
         style = (style & ~unchecked((int)0x80000000)) | 0x40000000 | 0x10000000 | 0x04000000; // WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
-        SetWindowLong(form.Handle, -16, style);
+        SetWindowLong(h, -16, style);
 
-        int exStyle = GetWindowLong(form.Handle, -20);
-        exStyle = (exStyle & ~0x00040000) | 0x08000000 | 0x00000080 | 0x00080000 | 0x00000020; // -APPWINDOW + NOACTIVATE|TOOLWINDOW|LAYERED|TRANSPARENT
-        SetWindowLong(form.Handle, -20, exStyle);
+        int exStyle = GetWindowLong(h, -20);
+        exStyle = (exStyle & ~(0x00040000 | 0x00010000 | 0x00080000 | 0x00200000))
+                | 0x08000000 | 0x00000080 | 0x00000020
+                | (form.UseDComp ? 0x00200000 : 0x00080000);
+        SetWindowLong(h, -20, exStyle);
 
-        SetParent(form.Handle, targetParent);
+        SetParent(h, targetParent);
 
         Rectangle sb = form.ScreenBounds;
         POINT pt = new POINT { X = sb.Left, Y = sb.Top };
         ScreenToClient(targetParent, ref pt);
-        bool okPos = SetWindowPos(form.Handle, insertAfter, pt.X, pt.Y, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
-        ShowWindow(form.Handle, 8);
+        bool okPos = SetWindowPos(h, insertAfter, pt.X, pt.Y, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
+        ShowWindow(h, 8);
         return okPos;
     }
 
@@ -1043,9 +1278,12 @@ function Recargar-Escenas {
     Write-MotorLog "Escenas cargadas: tema=$($script:temaAct) mon=$($script:monAct) prim=$($script:fondoPrimAct) sec=$($script:fondoSecAct)"
 }
 
+$script:dcomp = New-Object PzmDCompHost
+Write-MotorLog "DComp init: ready=$($script:dcomp.Ready) diag=$($script:dcomp.InitDiag)"
+
 $curAfter = $script:desktopAfter
 foreach ($scr in [System.Windows.Forms.Screen]::AllScreens) {
-    $form = New-Object PzmWallForm($scr.Bounds)
+    $form = New-Object PzmWallForm($scr.Bounds, $script:dcomp)
     $okAttach = [PzmDesktopHost]::AttachForm($form, $script:desktopParent, $curAfter)
     if ($curAfter -ne [IntPtr]::Zero -or $script:desktopMode -ne 'split-workerw') {
         $curAfter = $form.Handle
@@ -1098,6 +1336,7 @@ function Render-MotorFrame([int]$t) {
     foreach ($fItem in $script:forms) {
         $fItem.Form.PushFrame()
     }
+    if ($script:dcomp -and $script:dcomp.Ready) { $script:dcomp.Commit() }
 }
 
 Render-MotorFrame 0
@@ -1155,8 +1394,11 @@ $timer.Add_Tick({
         }
         if ($t -eq 12) {
             $pc = ($script:forms | ForEach-Object { $_.Form.PaintCount }) -join ','
+            $pres = ($script:forms | ForEach-Object { ('0x{0:X}' -f $_.Form.LastPresentHr) }) -join ','
+            $bnds = ($script:forms | ForEach-Object { "$($_.Form.UseDComp)/$($_.Form.BindErr)" }) -join ','
             $ulw = ($script:forms | ForEach-Object { "$($_.Form.LastUlwOk)/$($_.Form.LastUlwErr)" }) -join ','
-            Write-MotorLog ("Tree t12: paints=[$pc] ulw=[$ulw] " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
+            $cm = if ($script:dcomp) { '0x{0:X}' -f $script:dcomp.LastCommitHr } else { 'none' }
+            Write-MotorLog ("Tree t12: paints=[$pc] dc=[$bnds] pres=[$pres] cm=$cm ulw=[$ulw] " + [PzmDesktopHost]::DescribeChildren($script:desktopParent))
         }
     }
 
