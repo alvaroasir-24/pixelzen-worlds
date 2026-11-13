@@ -55,7 +55,23 @@
       ],
     },
   ];
-  const MILES_COLS = { K: '#151521', R: '#eb2d3c', W: '#e4eeff' };
+  const MILES_HANG_ROWS = [
+    [
+      '......BRB......', '.....BKKKB.....', '....BKK.KKB....', '...BKK...KKB...',
+      '...BRK...KRB...', '....BKKKKKB....', '...BKKRRRKKB...', '..BKKRRRRRKKB..',
+      '..BRKRRRRRKRB..', '.BKK.KKKKK.KKB.', '.BK...KRK...KB.', '....BKKKKKB....',
+      '...BKKKKKKKB...', '..BKKWKKKWKKB..', '..BKWWKKKWWKB..', '..BKKWKKKWKKB..',
+      '...BKKRRRKKB...', '....BKKKKKB....',
+    ],
+    [
+      '......BRB......', '.....BKKKB.....', '....BKK.KKB....', '...BKK...KKB...',
+      '...BRK...KRB...', '....BKKKKKB....', '...BKKRRRKKB...', '..BKKRRRRRKKB..',
+      '..BRKRRRRRKRB..', '..BK.KKKKK.KKB.', '.....BKRK...KB.', '....BKKKKKB....',
+      '...BKKKKKKKB...', '..BKKKKKKKKKB..', '..BKKWKKKWKKB..', '..BKKKKKKKKKB..',
+      '...BKKRRRKKB...', '....BKKKKKB....',
+    ],
+  ];
+  const MILES_COLS = { K: '#151521', R: '#eb2d3c', W: '#e4eeff', B: '#4a527a' };
 
   function lcg(seed) {
     let s = seed;
@@ -215,6 +231,55 @@
       }
     }
 
+    function pintaMilesColgado(t, nf) {
+      const CYCLE = 220;
+      const xs = [108, 224, 348, 418, 162, 578];
+      const dropYs = [96, 82, 108, 88, 76, 94];
+      const slot = Math.floor(t / CYCLE);
+      const idx = ((slot % xs.length) + xs.length) % xs.length;
+      const u = (((t % CYCLE) + CYCLE) % CYCLE) / CYCLE;
+      if (u < 0.14 || u >= 0.88) return;
+
+      const anchorX = xs[idx], targetY = dropYs[idx];
+      let yTop, swayAmp = 0;
+      if (u < 0.30) {
+        const p = (u - 0.14) / 0.16;
+        const ease = 1 - Math.pow(1 - p, 2);
+        yTop = Math.round(-20 + (targetY + 20) * ease + Math.sin(p * Math.PI) * 5);
+        swayAmp = 1;
+      } else if (u < 0.72) {
+        yTop = Math.round(targetY + Math.sin(t * 0.22));
+        swayAmp = 2;
+      } else {
+        const p = (u - 0.72) / 0.16;
+        yTop = Math.round(targetY - (targetY + 22) * (p * p));
+        swayAmp = 1;
+      }
+
+      const mx = anchorX + Math.round(Math.sin(t * 0.14) * swayAmp);
+      const footY = yTop + 1;
+      if (footY > 0) {
+        const steps = Math.max(1, footY);
+        for (let i = 0; i <= steps; i++) {
+          const wx = Math.round(anchorX + (mx - anchorX) * i / steps);
+          const wy = Math.round(footY * i / steps);
+          if (wy >= 0) px('#dceaff', (i % 2 === 0 ? 0.86 : 0.64) * (1 - 0.12 * nf), wx, wy, 1, 1);
+        }
+      }
+
+      const fIdx = (u >= 0.30 && u < 0.72 && (t % 64) < 5) ? 1 : 0;
+      const rows = MILES_HANG_ROWS[fIdx];
+      for (let r = 0; r < rows.length; r++) {
+        const ry = yTop + r;
+        if (ry < 0) continue;
+        const row = rows[r];
+        for (let c = 0; c < row.length; c++) {
+          const ch = row[c];
+          if (ch !== '.') px(MILES_COLS[ch], 1, mx + c - 7, ry, 1, 1);
+        }
+      }
+    }
+
     function pintaFerry(t, nf) {
       const P = 1800, mitad = 900;
       const f = ((t % P) + P) % P;
@@ -357,6 +422,7 @@
       if (wB > 0.01) { ctx.globalAlpha = wB; ctx.drawImage(I['escena-dia'], 0, 0); }
 
       if (T.modo_heroe === 'miles_morales') { pintaFerry(t, nf); pintaMiles(t, nf); }
+      else if (T.modo_heroe === 'miles_colgado') { pintaFerry(t, nf); pintaMilesColgado(t, nf); }
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {

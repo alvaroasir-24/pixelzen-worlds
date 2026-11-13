@@ -284,20 +284,23 @@ for y in range(PY_TOP, 376):
 
 
 def dibuja_rudeus(cx, by):
-    """Rudeus Greyrat lanzando un hechizo acuático/arcano con su báculo Aqua Heartia y círculo mágico."""
+    """Silueta sombreada de Rudeus Greyrat lanzando un hechizo con Aqua Heartia y círculo mágico."""
     MANA_HI, MANA_LO = PAL['mana']
     MAGIC_CORE = '#ffffff'
     MAGIC_RING = '#4ce8ff'
     MAGIC_EDGE = '#2498e8'
+    sh0 = mix(PAL['cliff'][0], '#06030c', 0.48)
+    sh1 = mix(PAL['cliff'][1], '#0b0816', 0.25)
+    rim = mix(PAL['cliff'][2], '#56f2ff', 0.28)
     cmap = {
-        'O': '#0b0914',
-        'H': '#8c5a3c', 'h': '#b87c52', 'd': '#5a3622',
-        'S': '#f4d2bc', 's': '#cfa48c', 'E': '#3b2416',
-        'T': '#e8dfd0', 't': '#b8ae9e',
-        'C': '#9e7e56', 'c': '#725838', 'k': '#4c3824',
-        'R': '#8a2a2c',
-        'B': '#422c20', 'b': '#281a12',
-        'W': '#6c4228', 'w': '#9a623c',
+        'O': '#05040a',
+        'H': sh0, 'h': rim, 'd': sh0,
+        'S': sh0, 's': sh1, 'E': '#05040a',
+        'T': sh1, 't': sh0,
+        'C': sh0, 'c': sh1, 'k': sh0,
+        'R': sh1,
+        'B': sh0, 'b': '#05040a',
+        'W': sh1, 'w': rim,
         'G': '#56f2ff', 'g': '#1ea4d8',
     }
     spr = [

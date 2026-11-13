@@ -85,6 +85,7 @@ public class PzmSceneData {
 
     public bool ModoWyvern;
     public bool ModoMiles;
+    public bool ModoMilesColgado;
     public bool ModoBrasas;
     public bool SinLago;
     public Color ColorPajaros = Color.FromArgb(40, 48, 72);
@@ -385,6 +386,80 @@ public class PzmRenderer {
         }
     }
 
+    static readonly string[][] MilesHangRows = new string[][] {
+        new string[] {
+            "......BRB......", ".....BKKKB.....", "....BKK.KKB....", "...BKK...KKB...",
+            "...BRK...KRB...", "....BKKKKKB....", "...BKKRRRKKB...", "..BKKRRRRRKKB..",
+            "..BRKRRRRRKRB..", ".BKK.KKKKK.KKB.", ".BK...KRK...KB.", "....BKKKKKB....",
+            "...BKKKKKKKB...", "..BKKWKKKWKKB..", "..BKWWKKKWWKB..", "..BKKWKKKWKKB..",
+            "...BKKRRRKKB...", "....BKKKKKB....",
+        },
+        new string[] {
+            "......BRB......", ".....BKKKB.....", "....BKK.KKB....", "...BKK...KKB...",
+            "...BRK...KRB...", "....BKKKKKB....", "...BKKRRRKKB...", "..BKKRRRRRKKB..",
+            "..BRKRRRRRKRB..", "..BK.KKKKK.KKB.", ".....BKRK...KB.", "....BKKKKKB....",
+            "...BKKKKKKKB...", "..BKKKKKKKKKB..", "..BKKWKKKWKKB..", "..BKKKKKKKKKB..",
+            "...BKKRRRKKB...", "....BKKKKKB....",
+        },
+    };
+
+    void PintaMilesColgado(Graphics g, int t, double nf) {
+        int CYCLE = 220;
+        int[] xs = new int[] { 108, 224, 348, 418, 162, 578 };
+        int[] dropYs = new int[] { 96, 82, 108, 88, 76, 94 };
+        int slot = (int)Math.Floor((double)t / CYCLE);
+        int idx = ((slot % xs.Length) + xs.Length) % xs.Length;
+        double u = (double)(((t % CYCLE) + CYCLE) % CYCLE) / CYCLE;
+        if (u < 0.14 || u >= 0.88) return;
+
+        int anchorX = xs[idx], targetY = dropYs[idx];
+        int yTop;
+        double swayAmp;
+        if (u < 0.30) {
+            double p = (u - 0.14) / 0.16;
+            double ease = 1.0 - (1.0 - p) * (1.0 - p);
+            yTop = (int)Math.Round(-20.0 + (targetY + 20) * ease + Math.Sin(p * Math.PI) * 5.0);
+            swayAmp = 1.0;
+        } else if (u < 0.72) {
+            yTop = (int)Math.Round(targetY + Math.Sin(t * 0.22));
+            swayAmp = 2.0;
+        } else {
+            double p = (u - 0.72) / 0.16;
+            yTop = (int)Math.Round(targetY - (targetY + 22) * (p * p));
+            swayAmp = 1.0;
+        }
+
+        int mx = anchorX + (int)Math.Round(Math.Sin(t * 0.14) * swayAmp);
+        int footY = yTop + 1;
+        if (footY > 0) {
+            int steps = Math.Max(1, footY);
+            Color wc = Color.FromArgb(220, 234, 255);
+            for (int i = 0; i <= steps; i++) {
+                int wx = (int)Math.Round(anchorX + (mx - anchorX) * (double)i / steps);
+                int wy = (int)Math.Round(footY * (double)i / steps);
+                if (wy >= 0) Px(g, wc, ((i % 2 == 0) ? 0.86 : 0.64) * (1.0 - 0.12 * nf), wx, wy, 1, 1);
+            }
+        }
+
+        int fIdx = (u >= 0.30 && u < 0.72 && (t % 64) < 5) ? 1 : 0;
+        string[] rows = MilesHangRows[fIdx];
+        Color cK = Color.FromArgb(21, 21, 33);
+        Color cR = Color.FromArgb(235, 45, 60);
+        Color cW = Color.FromArgb(228, 238, 255);
+        Color cB = Color.FromArgb(74, 82, 122);
+        for (int r = 0; r < rows.Length; r++) {
+            int ry = yTop + r;
+            if (ry < 0) continue;
+            string row = rows[r];
+            for (int c = 0; c < row.Length; c++) {
+                char ch = row[c];
+                if (ch == '.') continue;
+                Color col = ch == 'K' ? cK : (ch == 'R' ? cR : (ch == 'W' ? cW : cB));
+                Px(g, col, 1.0, mx + c - 7, ry, 1, 1);
+            }
+        }
+    }
+
     public void Render(PzmSceneData S, DateTime fecha, int t) {
         if (S == null || S.CieloNoche == null || S.EscenaNoche == null) return;
         double e, az, H, H0;
@@ -470,6 +545,7 @@ public class PzmRenderer {
             DrawAlpha(g, S.EscenaDia, 0, 0, wB);
 
             if (S.ModoMiles) { PintaFerry(g, t, nf); PintaMiles(g, t, nf); }
+            else if (S.ModoMilesColgado) { PintaFerry(g, t, nf); PintaMilesColgado(g, t, nf); }
 
             if (S.Chimenea != null && S.Chimenea.Length >= 2) {
                 int hx = S.Chimenea[0], hy = S.Chimenea[1];
@@ -1188,6 +1264,7 @@ function Cargar-SceneData([string]$dir, [bool]$conAstro) {
         $t = Get-Content $temaPath -Raw -Encoding UTF8 | ConvertFrom-Json
         $sd.ModoWyvern = ($t.modo_pajaros -eq 'wyverns')
         $sd.ModoMiles = ($t.modo_heroe -eq 'miles_morales')
+        $sd.ModoMilesColgado = ($t.modo_heroe -eq 'miles_colgado')
         $sd.ModoBrasas = ($t.modo_particulas -eq 'brasas_mana')
         $sd.SinLago = [bool]($t.sin_lago)
         $sd.ColorPajaros = [PzmSceneData]::ParseHex($t.color_pajaros, $sd.ColorPajaros)

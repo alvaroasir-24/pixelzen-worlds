@@ -523,31 +523,30 @@ else:
     for ox, oy in ((0, 0), (0, -1), (-1, 0), (1, 0)):
         put(BX + 12 + ox, BY - 17 + oy, WARM)
     glow(BX + 12, BY - 17, 11, WARM, 0.75)
-# Viajera Roxy Migurdia en la barca (sombrero puntiagudo azul, trenzas azules, capa parda y báculo)
+# Viajera sombreada en la barca (silueta de Roxy con sombrero puntiagudo, capa y báculo)
+sh_roxy = PAL['boat']
+sh_rim = mix(PAL['boat'], PAL['sky'][4], 0.18)
 for yy in range(BY - 11, BY - 1):
     w_cloak = 3 + (BY - 1 - yy) // 4
     for dx in range(-w_cloak, w_cloak + 1):
-        c_r = '#3b5898' if abs(dx) <= 1 else '#5a4232'
-        if yy == BY - 11:
-            c_r = '#d6e2f8'
-        put(BX - 3 + dx, yy, c_r)
-# Rostro y trenzas azules de Roxy
+        put(BX - 3 + dx, yy, sh_rim if dx == w_cloak else sh_roxy)
 for dy in range(-14, -11):
     for dx in range(-2, 3):
-        put(BX - 3 + dx, BY + dy, '#f0d4be' if abs(dx) <= 1 else '#3c66b8')
-put(BX - 5, BY - 10, '#3c66b8'); put(BX - 5, BY - 9, '#3c66b8')
-put(BX - 1, BY - 10, '#3c66b8'); put(BX - 1, BY - 9, '#3c66b8')
-# Sombrero ancho puntiagudo de maga de Roxy
+        put(BX - 3 + dx, BY + dy, sh_roxy)
+# Trenzas en sombra
+put(BX - 5, BY - 10, sh_roxy); put(BX - 5, BY - 9, sh_roxy)
+put(BX - 1, BY - 10, sh_roxy); put(BX - 1, BY - 9, sh_roxy)
+# Sombrero ancho puntiagudo en silueta
 for x in range(BX - 10, BX + 5):
-    put(x, BY - 14, '#24407c' if abs(x - (BX - 3)) > 4 else '#3658a8')
+    put(x, BY - 14, sh_rim if x == BX + 4 else sh_roxy)
 for k in range(1, 8):
     hw = max(0, 5 - (k * 5) // 7)
     for x in range(BX - 3 - hw, BX - 3 + hw + 1):
-        put(x, BY - 14 - k, '#2a4a8e' if k != 2 else '#d4a84f')
-# Báculo de madera y gema azul
+        put(x, BY - 14 - k, sh_roxy)
+# Báculo sombreado con tenue gema en la punta
 for k in range(1, 14):
-    put(BX + 2, BY - 2 - k, '#68462c')
-put(BX + 2, BY - 16, MANA_HI)
+    put(BX + 2, BY - 2 - k, sh_roxy)
+over(BX + 2, BY - 16, MANA_HI, 0.72)
 # Remo inclinado hacia el agua
 for k in range(1, 9):
     put(BX - 1 - k, BY - 3 + k, PAL['boat'])

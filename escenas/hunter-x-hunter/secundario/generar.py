@@ -172,30 +172,175 @@ for y in range(114, H):
             c = mix(PAL['mont'][0], c, (y - 113) / 33.0)
         put(x, y, c)
 
-# Dos diminutos estanques y arbolitos lejanos en el extremo izquierdo (fieles a la captura)
-for px, py, pw in ((18, 162, 26), (10, 186, 36)):
+# Arroyo serpenteante, puente de madera, estanques y arboledas de Greed Island en la izquierda
+for y in range(154, 268):
+    t_s = (y - 154) / 114.0
+    cx_stream = 14 + 92 * (t_s ** 0.85) + 14 * math.sin(t_s * math.pi * 1.6)
+    if y > 236:
+        cx_stream -= (y - 236) * 2.2
+    hw_s = int(6 + 10 * t_s)
+    for dx in range(-hw_s - 2, hw_s + 3):
+        px_s = int(round(cx_stream + dx))
+        if 0 <= px_s < W:
+            if abs(dx) >= hw_s:
+                put(px_s, y, PAL['dirt'][1] if (px_s + y) % 3 else PAL['grass_sh'])
+            else:
+                shimmer = ((px_s + y * 2) % 9 == 0) and abs(dx) < hw_s * 0.6
+                put(px_s, y, PAL['pond'][1] if shimmer else PAL['pond'][0])
+
+for px, py, pw in ((22, 160, 14),):
     for dy in range(-2, 3):
         span = int(pw * math.sqrt(max(0.0, 1.0 - (dy / 2.6) ** 2)))
         for dx in range(-span, span + 1):
             put(px + dx, py + dy, PAL['pond'][1] if (abs(dx) < span * 0.55 and dy == 0) else PAL['pond'][0])
 
-for tx, ty, tr in ((16, 146, 5), (27, 148, 4), (58, 152, 3)):
-    for y in range(ty + tr - 1, ty + tr + 4):
-        put(tx, y, PAL['grass_sh'])
-    for dy in range(-tr, tr + 1):
-        for dx in range(-tr, tr + 1):
-            if dx * dx + dy * dy <= tr * tr:
-                put(tx + dx, ty + dy, PAL['grass_sh'] if dy > 0 else PAL['grass_mid'])
+# Camino sinuoso de tierra y losas desde el primer plano izquierdo hasta la torre de Eta y Elena
+for step_p in range(180):
+    u_p = step_p / 179.0
+    px_p = int(round(48 + u_p * 422))
+    py_p = int(round(378 - math.sin(u_p * math.pi * 0.92) * 86 - u_p * 20))
+    pw_p = int(round(13 - u_p * 4))
+    for dy in range(-2, 3):
+        for dx in range(-pw_p, pw_p + 1):
+            xx, yy = px_p + dx, py_p + dy
+            if 0 <= xx < W and 130 <= yy < H:
+                if abs(dx) > pw_p - 2:
+                    over(xx, yy, PAL['dirt'][1], 0.45)
+                else:
+                    stone = ((xx * 11 + yy * 17) % 29 == 0)
+                    put(xx, yy, PAL['dirt'][2] if stone else PAL['dirt'][0])
 
-# Pequeños guijarros claros salpicados por la llanura
-for _ in range(42):
-    px = random.randint(25, 395)
-    py = random.randint(170, 388)
-    rw = 1 + int((py - 160) / 110)
-    for dx in range(-rw, rw + 1):
-        put(px + dx, py, PAL['dirt'][2] if dx <= 0 else PAL['dirt'][0])
-    if rw >= 2:
-        put(px, py - 1, PAL['dirt'][2])
+# Puente rústico de madera cruzando el arroyo (cx = 84, y = 218)
+bx_br, by_br = 84, 218
+for dx in range(-18, 19):
+    arch = int(round(3.0 * (1.0 - (dx / 18.0) ** 2)))
+    for dy in range(-3, 3):
+        col_w = PAL['dirt'][2] if dy == -2 else (PAL['dirt'][0] if dy < 1 else PAL['roof_line'])
+        put(bx_br + dx, by_br - arch + dy, col_w)
+    if dx % 9 == 0:
+        for post_y in range(by_br - arch - 6, by_br - arch + 5):
+            put(bx_br + dx, post_y, PAL['roof_line'])
+for dx in range(-18, 19):
+    arch = int(round(3.0 * (1.0 - (dx / 18.0) ** 2)))
+    put(bx_br + dx, by_br - arch - 5, PAL['dirt'][1])
+
+# Ruinas antiguas musgosas en el horizonte medio-izquierdo (x = 84..136, y = 148)
+for rx_a, rh_a, rw_a in ((86, 18, 5), (104, 22, 5), (120, 14, 4)):
+    for yy in range(148 - rh_a, 149):
+        for xx in range(rx_a, rx_a + rw_a):
+            col_r = PAL['pillar'][0] if xx == rx_a else (PAL['pillar'][2] if yy > 143 else PAL['pillar'][1])
+            if (xx + yy) % 5 == 0:
+                col_r = mix(col_r, PAL['grass_mid'], 0.45)
+            put(xx, yy, col_r)
+for xx in range(85, 111):
+    for yy in range(129, 133):
+        put(xx, yy, PAL['pillar'][1] if yy > 130 else PAL['pillar'][0])
+
+# Arboledas y arbustos repartidos por la llanura para dar profundidad
+def pinta_arbol_pradera(tx, by_t, trunk_h, rad):
+    for dy in range(-1, 3):
+        for dx in range(-rad, rad + 1):
+            if (dx / float(max(2, rad))) ** 2 + (dy / 2.2) ** 2 <= 1.0:
+                over(tx + dx + 2, by_t + dy, PAL['shadow'], 0.42)
+    for yy in range(by_t - trunk_h, by_t + 1):
+        put(tx, yy, PAL['roof_line'])
+        put(tx - 1, yy, PAL['dirt'][1])
+    cy_c = by_t - trunk_h - rad // 2
+    for dy in range(-rad, rad + 1):
+        for dx in range(-rad - 1, rad + 2):
+            if (dx * 0.88) ** 2 + (dy * 1.05) ** 2 <= rad * rad:
+                col_t = PAL['grass_hi'] if (dy < -rad * 0.25 and dx < 1) else (PAL['grass_sh'] if dy > rad * 0.35 or dx > rad * 0.45 else PAL['grass_mid'])
+                put(tx + dx, cy_c + dy, col_t)
+
+for tx, ty, th, tr in (
+    (16, 150, 4, 5), (29, 152, 4, 4), (58, 156, 3, 4),
+    (152, 168, 6, 7), (170, 174, 5, 6), (28, 224, 9, 10), (48, 240, 8, 9),
+    (618, 280, 9, 10), (632, 294, 7, 8),
+):
+    pinta_arbol_pradera(tx, ty, th, tr)
+
+# Campamento de aventureros (tienda de campaña + hoguera + poste indicador en el primer plano izquierdo)
+tx_c, by_c = 86, 336
+for dy in range(-2, 5):
+    for dx in range(-24, 28):
+        if (dx / 26.0) ** 2 + (dy / 4.2) ** 2 <= 1.0:
+            over(tx_c + dx + 3, by_c + dy, PAL['shadow'], 0.50)
+for yy in range(by_c - 30, by_c + 1):
+    t_h = (yy - (by_c - 30)) / 30.0
+    hw_t = int(round(3 + t_h * 20))
+    for dx in range(-hw_t, hw_t + 1):
+        if abs(dx) < int(4 + t_h * 5) and yy > by_c - 18:
+            col_c = mix(PAL['shadow'], '#090a0e', 0.65)
+        elif dx < -hw_t + 3:
+            col_c = PAL['bowl_hi']
+        elif dx > hw_t - 4:
+            col_c = PAL['bowl_lo']
+        else:
+            col_c = PAL['bowl_mid'] if (dx + yy) % 7 else PAL['tile_y']
+        put(tx_c + dx, yy, col_c)
+put(tx_c, by_c - 31, PAL['dirt'][2])
+for dx_s in (-22, 22):
+    put(tx_c + dx_s, by_c + 1, PAL['roof_line'])
+
+# Pequeña hoguera con farol cálido junto al campamento
+fx_f, fy_f = 128, 342
+for dx in range(-6, 7):
+    put(fx_f + dx, fy_f + 1, PAL['pillar'][2] if dx % 2 else PAL['pillar'][1])
+for dx in range(-4, 5):
+    put(fx_f + dx, fy_f, PAL['dirt'][1])
+if ANIM:
+    FAROLES.append([fx_f, fy_f - 3, 11])
+else:
+    glow(fx_f, fy_f - 3, 10, PAL['ball'][0], 0.55)
+    disc(fx_f, fy_f - 3, 2, PAL['ball'][1])
+
+# Poste indicador de madera hacia Masadora / Torre de Recepción
+sx_p, sy_p = 166, 338
+for dy in range(-18, 2):
+    put(sx_p, sy_p + dy, PAL['roof_line'])
+    put(sx_p + 1, sy_p + dy, PAL['dirt'][1])
+for dx in range(-10, 12):
+    for dy in (-15, -14, -13, -10, -9, -8):
+        if (dy < -11 and dx < 10) or (dy > -11 and dx > -8):
+            put(sx_p + dx, sy_p + dy, PAL['dirt'][2] if dy in (-15, -10) else PAL['dirt'][0])
+
+# Monolito musgoso con runa de carta de Greed Island en la pradera derecha-centro (x = 342, by = 314)
+mx_r, my_r = 342, 314
+for dy in range(-1, 4):
+    for dx in range(-10, 13):
+        if (dx / 11.0) ** 2 + (dy / 3.0) ** 2 <= 1.0:
+            over(mx_r + dx + 2, my_r + dy, PAL['shadow'], 0.50)
+for yy in range(my_r - 24, my_r + 1):
+    hw_m = 6 if yy > my_r - 20 else max(2, 6 - (my_r - 20 - yy))
+    for dx in range(-hw_m, hw_m + 1):
+        col_m = PAL['pillar'][0] if dx < -2 else (PAL['pillar'][2] if dx > 2 else PAL['pillar'][1])
+        if (dx * 3 + yy * 5) % 11 == 0:
+            col_m = mix(col_m, PAL['grass_mid'], 0.55)
+        put(mx_r + dx, yy, col_m)
+put(mx_r, my_r - 14, PAL['nen'][1])
+for gx_r, gy_r in ((-2, -12), (2, -12), (0, -10), (-1, -16), (1, -16)):
+    put(mx_r + gx_r, my_r + gy_r, PAL['nen'][0])
+RUNAS.append([mx_r, my_r - 13])
+
+# Rocas musgosas, flores silvestres y matas de hierba en el primer plano
+for bx_r, by_r, rw_r, rh_r in ((36, 366, 8, 5), (218, 364, 7, 4), (312, 356, 6, 4), (386, 374, 9, 5)):
+    for dy in range(-rh_r, rh_r + 1):
+        for dx in range(-rw_r, rw_r + 1):
+            if (dx / float(rw_r)) ** 2 + (dy / float(rh_r)) ** 2 <= 1.0:
+                col_rk = PAL['pillar'][0] if (dx < 0 and dy < 0) else (PAL['pillar'][2] if dy > 1 else PAL['pillar'][1])
+                put(bx_r + dx, by_r + dy, col_rk)
+    over(bx_r + 2, by_r + rh_r, PAL['shadow'], 0.45)
+
+for _ in range(55):
+    px = random.randint(18, 410)
+    py = random.randint(250, 392)
+    rw = 1 + int((py - 240) / 80)
+    if _ % 3 == 0:
+        put(px, py, PAL['ball'][1] if _ % 6 == 0 else '#f6fbff')
+        put(px, py + 1, PAL['grass_sh'])
+    else:
+        for dx in range(-rw, rw + 1):
+            put(px + dx, py, PAL['dirt'][2] if dx <= 0 else PAL['dirt'][0])
 
 # 4. Sombra larga proyectada por la Torre de Eta/Elena hacia la esquina inferior derecha
 shadow_poly_y = lambda x: (342 + (x - 420) * 0.34, 376 + (x - 420) * 0.42)
@@ -324,102 +469,76 @@ pinta_cuenco_terracota(472, 196, 235, 146, 104, ribs=13)
 pinta_tejado_conico(472, 64, 197, 84)
 RUNAS.extend([(442, 250), (472, 266), (502, 250), (582, 226)])
 
-# 6. GON y KILLUA jugando sobre la pradera (cx_gon = 205, cx_killua = 272, pie en y = 328)
-def sombra_suelo(cx, by, rx=13, ry=3):
+# 6. GON y KILLUA sombreados jugando al fondo de la pradera (cx_gon = 254, cx_killua = 290, pie en y = 236)
+def sombra_suelo(cx, by, rx=7, ry=2):
     for dy in range(-ry, ry + 1):
         for dx in range(-rx, rx + 1):
             if (dx / float(rx)) ** 2 + (dy / float(ry)) ** 2 <= 1.0:
-                over(cx + dx, by + dy, PAL['shadow'], 0.55)
+                over(cx + dx, by + dy, PAL['shadow'], 0.50)
+
+def pinta_silueta_chibi(cx, by, spr):
+    sh0 = mix(PAL['shadow'], '#06100a', 0.45)
+    sh1 = mix(PAL['grass_sh'], '#102418', 0.25)
+    rim = mix(PAL['grass_hi'], PAL['nen'][1], 0.24)
+    w_s = len(spr[0])
+    h_s = len(spr)
+    x0 = cx - w_s // 2
+    y0 = by - h_s
+    for ry, row in enumerate(spr):
+        for rx, ch in enumerate(row):
+            if ch == '.':
+                continue
+            c = sh0 if ch == 'O' else (rim if ch == 'R' else sh1)
+            put(x0 + rx, y0 + ry, c)
 
 def dibuja_gon_jugando(cx, by):
-    sombra_suelo(cx + 1, by, 13, 3)
-    for (x, y) in ((-5, -1), (-4, -1), (-3, -1), (2, -1), (3, -1), (4, -1), (-4, -2), (3, -2)):
-        put(cx + x, by + y, '#102418')
-    for x in (-4, -3, 2, 3):
-        for y in (-3, -4, -5):
-            put(cx + x, by + y, '#dfb494')
-    for dy in range(-10, -5):
-        for dx in range(-5, 6):
-            if abs(dx) < 5 or dy > -9:
-                put(cx + dx, by + dy, '#1e7844' if dx <= 0 else '#145832')
-    for dy in range(-21, -10):
-        for dx in range(-5, 6):
-            if abs(dx) == 5 and dy == -21:
-                continue
-            put(cx + dx, by + dy, '#249450' if dx < 1 else '#186c3a')
-    for dy in (-21, -20, -16, -15):
-        for dx in range(-4, 5):
-            put(cx + dx, by + dy, '#f05a30')
-    for k in range(1, 10):
-        put(cx + 5 + k // 2, by - 19 - k, '#f2c8a4')
-        put(cx + 4 + k // 2, by - 19 - k, '#249450' if k < 4 else '#f2c8a4')
-    for k in range(1, 7):
-        put(cx - 5 - k // 2, by - 17 + k // 2, '#f2c8a4')
-    for dy in range(-31, -21):
-        hw = 5 if dy > -29 else 4
-        for dx in range(-hw, hw + 1):
-            put(cx + dx, by + dy, '#f4c8a6')
-    put(cx - 2, by - 26, '#14181e')
-    put(cx + 2, by - 26, '#14181e')
-    put(cx - 1, by - 23, '#a04e3c'); put(cx, by - 23, '#a04e3c'); put(cx + 1, by - 23, '#a04e3c')
-    for dy in range(-40, -29):
-        hw = 6 if dy < -32 else 7
-        for dx in range(-hw, hw + 1):
-            if dy < -36 and abs(dx) in (1, 4):
-                continue
-            if dy >= -32 and abs(dx) < 5:
-                continue
-            put(cx + dx, by + dy, '#0d2218' if (dx + dy) % 3 else '#1e5838')
-    for sx in (-5, -2, 0, 2, 5):
-        put(cx + sx, by - 41, '#123624')
-        put(cx + sx, by - 42, '#0d2218')
+    sombra_suelo(cx + 1, by, 7, 2)
+    spr = [
+        "..O.O.O.O...",
+        ".OOOOOOOOO..",
+        ".OOOSSSOORO.",
+        "..OSSSSSSR..",
+        "..OOSSSSO...",
+        "...OSSSOOOR.",
+        "..OSSSSSSR..",
+        "..OSSSSSO...",
+        "...OSSSO....",
+        "...OOOOO....",
+        "..OO...OO...",
+        "..OO...OO...",
+        "..OO...OO...",
+        ".OOO...OOO..",
+    ]
+    pinta_silueta_chibi(cx, by, spr)
 
 def dibuja_killua_jugando(cx, by):
-    sombra_suelo(cx, by + 1, 14, 3)
-    for dx in range(-8, 9):
-        put(cx + dx, by - 1, '#5844b4' if abs(dx) < 6 else '#e4b848')
-    for (x, y) in ((-5, -3), (-4, -3), (-3, -3), (2, -3), (3, -3), (4, -3), (-4, -4), (3, -4)):
-        put(cx + x, by + y, '#283878' if abs(x) != 3 else '#f4f6fc')
-    for x in (-4, -3, 2, 3):
-        for y in (-5, -6, -7):
-            put(cx + x, by + y, '#f4d8c8')
-    for dy in range(-12, -7):
-        for dx in range(-5, 6):
-            put(cx + dx, by + dy, '#4a527c' if dx <= 0 else '#363c62')
-    for dy in range(-23, -12):
-        for dx in range(-5, 6):
-            c = '#eef2fa' if (dy < -16 or abs(dx) < 4) else '#d0d8ea'
-            if abs(dx) <= 2 and dy < -18:
-                c = '#38468c'
-            put(cx + dx, by + dy, c)
-    for k in range(1, 9):
-        put(cx - 5 - k // 2, by - 21 - k // 2, '#f6dacc')
-        put(cx + 5 + k // 2, by - 20 + k // 3, '#f6dacc')
-    for dy in range(-33, -23):
-        hw = 5 if dy > -31 else 4
-        for dx in range(-hw, hw + 1):
-            put(cx + dx, by + dy, '#f6dacc')
-    put(cx - 2, by - 28, '#2864b8'); put(cx + 2, by - 28, '#2864b8')
-    for dy in range(-41, -31):
-        hw = 7 if dy > -39 else 5
-        for dx in range(-hw, hw + 1):
-            if dy >= -34 and abs(dx) < 5:
-                continue
-            if dy < -38 and abs(dx) in (2, 5):
-                continue
-            put(cx + dx, by + dy, '#e4ecf6' if (dx < 2) else '#c2cce0')
-    for sx, sy in ((-6, -35), (-4, -42), (-1, -43), (3, -42), (6, -36)):
-        put(cx + sx, by + sy, '#f4f8ff')
+    sombra_suelo(cx, by + 1, 7, 2)
+    spr = [
+        "...O.O.O....",
+        ".OOOOOOOOO..",
+        ".OROOOOOO...",
+        "..RSSSSSO...",
+        "...OSSSO....",
+        ".ROOSSSSO...",
+        "R..OSSSSSO..",
+        "...OSSSSO...",
+        "...OOOOOO...",
+        "...OO..OO...",
+        "...OO..OO...",
+        "...OO..OO...",
+        "..OOO..OOO..",
+    ]
+    pinta_silueta_chibi(cx, by, spr)
 
-dibuja_gon_jugando(208, 326)
-dibuja_killua_jugando(274, 326)
+dibuja_gon_jugando(254, 236)
+dibuja_killua_jugando(290, 236)
 
-# Pelota luminosa de Nen en el aire entre Gon y Killua
-bx, by_ball = 240, 290
-glow(bx, by_ball, 13, PAL['nen'][0], 0.34)
-disc(bx, by_ball, 4, PAL['ball'][0])
-disc(bx - 1, by_ball - 1, 2, PAL['ball'][1])
-RUNAS.extend([(bx, by_ball), (bx - 5, by_ball + 2), (bx + 5, by_ball - 2)])
+# Pelota luminosa de Nen en el aire entre Gon y Killua al fondo
+bx, by_ball = 272, 217
+glow(bx, by_ball, 8, PAL['nen'][0], 0.34)
+disc(bx, by_ball, 2, PAL['ball'][0])
+put(bx - 1, by_ball - 1, PAL['ball'][1])
+RUNAS.extend([(bx, by_ball), (bx - 3, by_ball + 1), (bx + 3, by_ball - 1)])
 
 aplica_vineta(lz, PAL['vig'])
 out = ARGS[0] if ARGS else '.'

@@ -295,16 +295,18 @@ for x in range(DX0, DX1 + 1):
 
 
 def dibuja_asta(cx, by):
-    """Asta (Toro Negro): cabello ceniza en picos, cinta negra con emblema dorado, manto de los Toros Negros,
-    grimorio de 5 hojas abierto en ángulo flotando a su lado y empuñando la gran espada Danma al sacarla."""
+    """Silueta sombreada de Asta con grimorio de 5 hojas abierto y gran espada Danma con filo antimagia."""
+    sh0 = mix(PAL['dais'][0], '#05040a', 0.50)
+    sh1 = mix(PAL['dais'][1], '#0a0814', 0.25)
+    rim = mix(PAL['dais'][2], CR1, 0.30)
     cmap = {
-        'O': '#0b0812',
-        'H': '#dad4ce', 'h': '#f4f0ec', 'g': '#989290',
-        'B': '#161420', 'G': '#f0c044',
-        'S': '#f0cbb6', 's': '#c69a84', 'E': '#28b858',
-        'K': '#1c1b28', 'k': '#2d2b3e', 'd': '#11101a',
-        'R': '#c82038', 'r': '#881224',
-        'T': '#302c3c',
+        'O': '#05040a',
+        'H': sh0, 'h': rim, 'g': sh1,
+        'B': '#07050e', 'G': rim,
+        'S': sh0, 's': sh1, 'E': '#05040a',
+        'K': sh0, 'k': rim, 'd': '#05040a',
+        'R': sh1, 'r': sh0,
+        'T': sh0,
     }
     spr = [
         "..............O..O...O..O.............",
@@ -347,11 +349,11 @@ def dibuja_asta(cx, by):
             if abs(dx) == 9 - shift // 2 or dy in (-8, 7):
                 c_g = '#09070e'
             elif dx == 0:
-                c_g = PAL['gold'][1]
+                c_g = sh1
             elif dx < 0:
-                c_g = '#1c1526' if abs(dx) > 6 else '#e4dce8'
+                c_g = sh0 if abs(dx) > 6 else mix(sh1, CR1, 0.18)
             else:
-                c_g = '#1c1526' if dx > 6 else '#d6cedc'
+                c_g = sh0 if dx > 6 else sh1
             put(gx_g + dx, y_page, c_g)
     # Pequeño trébol carmesí de 5 hojas en el lomo/aura del grimorio
     for tx, ty in ((0, -2), (-2, -4), (2, -4), (-1, 0), (1, 0)):
