@@ -1,10 +1,20 @@
 # PixelZen Worlds para Windows 10/11
 
-## Opción recomendada para usuarios: Instalador único (`PixelZenWorlds-Setup.exe`)
+## Opción recomendada para usuarios (sin `.exe` · compatible con Control inteligente de Windows 11)
 
-Descarga **`PixelZenWorlds-Setup.exe`** desde [GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest) y ejecútalo. Instala todo silenciosamente en `%LOCALAPPDATA%\PixelZenWorlds` sin requerir Python y crea tu acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio.
+En Windows PowerShell (sin Git ni Python ni archivos `.exe` sin firmar):
 
-*(Para compilar ese instalador desde este repositorio, ejecuta `powershell -ExecutionPolicy Bypass -File scripts\empaquetar_windows.ps1`.)*
+```powershell
+irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
+```
+
+O descarga **`PixelZenWorlds-Windows.zip`** desde [GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest), descomprímelo y abre `Instalar.bat`.
+
+*(También se incluye `PixelZenWorlds-Setup.exe` en Releases, pero al no tener firma digital comercial Windows 11 con **Control inteligente de aplicaciones** lo bloquea.)*
+
+Instala todo limpio en `%LOCALAPPDATA%\PixelZenWorlds\app` y crea el acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio.
+
+*(Para empaquetar desde este repositorio, ejecuta `powershell -ExecutionPolicy Bypass -File scripts\empaquetar_windows.ps1`.)*
 
 ---
 

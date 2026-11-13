@@ -967,7 +967,9 @@ $el.BtnBuscarUpdate.Add_Click({
             $el.TxtEstado.Text = "✅ Ya tienes la última versión (v$VersionActual)."
             return
         }
-        $asset = $rel.assets | Where-Object { $_.name -eq 'PixelZenWorlds-Setup.exe' } | Select-Object -First 1
+        $assetZip = $rel.assets | Where-Object { $_.name -eq 'PixelZenWorlds-Windows.zip' } | Select-Object -First 1
+        $assetExe = $rel.assets | Where-Object { $_.name -eq 'PixelZenWorlds-Setup.exe' } | Select-Object -First 1
+        $asset = if ($assetZip) { $assetZip } else { $assetExe }
         if (-not $asset) {
             $el.TxtEstado.Text = "✨ Nueva versión v$remTag disponible en GitHub Releases."
             Start-Process ([string]$rel.html_url)
@@ -983,9 +985,20 @@ $el.BtnBuscarUpdate.Add_Click({
             $el.TxtEstado.Text = "Actualización pospuesta (disponible v$remTag)."
             return
         }
-        $tmpSetup = Join-Path $env:TEMP 'PixelZenWorlds-Setup.exe'
-        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $tmpSetup -UseBasicParsing
-        Start-Process -FilePath $tmpSetup
+        if ($assetZip) {
+            $updDir = Join-Path $env:TEMP ('pz_upd_' + [Guid]::NewGuid().ToString('N'))
+            New-Item -Path $updDir -ItemType Directory -Force | Out-Null
+            $tmpZip = Join-Path $updDir 'PixelZenWorlds-Windows.zip'
+            Invoke-WebRequest -Uri $assetZip.browser_download_url -OutFile $tmpZip -UseBasicParsing
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::ExtractToDirectory($tmpZip, $updDir)
+            $instPs = Join-Path $updDir 'Instalar.ps1'
+            Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$instPs`""
+        } else {
+            $tmpSetup = Join-Path $env:TEMP 'PixelZenWorlds-Setup.exe'
+            Invoke-WebRequest -Uri $assetExe.browser_download_url -OutFile $tmpSetup -UseBasicParsing
+            Start-Process -FilePath $tmpSetup
+        }
         $script:realClose = $true
         $win.Close()
     } catch {

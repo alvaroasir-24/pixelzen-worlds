@@ -37,7 +37,7 @@ jobs:
       - name: Validar sintaxis PowerShell
         shell: pwsh
         run: |
-          foreach ($ps in @('windows/PixelZenMenu.ps1','windows/PixelZenHud.ps1','windows/PixelZenCiclo.ps1','windows/installer/Desinstalar.ps1','scripts/empaquetar_windows.ps1')) {
+          foreach ($ps in @('windows/PixelZenMenu.ps1','windows/PixelZenHud.ps1','windows/PixelZenCiclo.ps1','windows/installer/Desinstalar.ps1','scripts/empaquetar_windows.ps1','scripts/instalar.ps1')) {
             $errs = $null; $toks = $null
             $null = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $ps), [ref]$toks, [ref]$errs)
             if ($errs.Count -gt 0) { throw "Errores en ${ps}: $($errs | Out-String)" }
@@ -58,7 +58,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installer-windows
-          path: ${{ runner.temp }}/dist/PixelZenWorlds-Setup.exe
+          path: |
+            ${{ runner.temp }}/dist/PixelZenWorlds-Windows.zip
+            ${{ runner.temp }}/dist/PixelZenWorlds-Setup.exe
 
   build-linux:
     needs: verificar
@@ -103,10 +105,16 @@ jobs:
           name: PixelZen Worlds ${{ steps.tag.outputs.name }}
           generate_release_notes: true
           body: |
-            ### Descarga directa (un solo archivo para el usuario final)
+            ### Descarga e instalación (sin carpetas de desarrollo)
 
-            - **Windows 10 / 11**: descarga **`PixelZenWorlds-Setup.exe`** y haz doble clic. No requiere Python ni carpetas visibles.
+            - **Windows 11 (con Control inteligente de aplicaciones · recomendado, sin `.exe`)**: abre **PowerShell** y ejecuta:
+              ```powershell
+              irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
+              ```
+              También puedes descargar **`PixelZenWorlds-Windows.zip`** y ejecutar `Instalar.bat`.
+            - **Windows 10 / 11 (instalador `.exe` clásico)**: descarga **`PixelZenWorlds-Setup.exe`** *(sin firma digital comercial; Windows 11 con Control inteligente activado lo bloqueará, usa el comando de arriba)*.
             - **Linux (Ubuntu 24.04+ / GNOME 46+)**: descarga **`PixelZenWorlds-Linux-Setup.run`** y ejecútalo (`chmod +x PixelZenWorlds-Linux-Setup.run && ./PixelZenWorlds-Linux-Setup.run`) para instalar la extensión y la app visual en tu menú de aplicaciones.
           files: |
+            artifacts/installer-windows/PixelZenWorlds-Windows.zip
             artifacts/installer-windows/PixelZenWorlds-Setup.exe
             artifacts/installer-linux/PixelZenWorlds-Linux-Setup.run

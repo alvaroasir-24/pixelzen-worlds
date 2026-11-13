@@ -15,9 +15,14 @@ Aplicación de escritorio y motor modular de fondos pixel art animados en **640�
 No necesitas clonar el repositorio, ver carpetas técnicas ni instalar Python. Descarga el instalador de tu sistema desde **[GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)**:
 
 ### Windows 10 / 11
-1. Descarga **`PixelZenWorlds-Setup.exe`**.
-2. Haz doble clic y pulsa **Instalar y abrir**.
-3. Instala todo de forma limpia en `%LOCALAPPDATA%\PixelZenWorlds\`, crea el acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio, y se desinstala desde *Configuración → Aplicaciones*.
+- **Recomendado en Windows 11 (compatible con *Control inteligente de aplicaciones*, sin `.exe`)**: abre **PowerShell** y ejecuta un único comando (no requiere Git ni Python):
+  ```powershell
+  irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
+  ```
+  También puedes descargar **`PixelZenWorlds-Windows.zip`** desde Releases, descomprimirlo y ejecutar `Instalar.bat`.
+- **Alternativa clásica (`.exe` sin firma comercial)**: descarga **`PixelZenWorlds-Setup.exe`** *(si Windows 11 tiene activado el Control inteligente de aplicaciones lo bloqueará al no tener firma digital de pago; usa el método de PowerShell de arriba)*.
+
+En ambos casos instala la aplicación limpia en `%LOCALAPPDATA%\PixelZenWorlds\app`, crea el acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio, y se desinstala desde *Configuración → Aplicaciones*.
 
 ### Linux (Ubuntu 24.04+ / GNOME Shell 46+)
 1. Descarga **`PixelZenWorlds-Linux-Setup.run`**.

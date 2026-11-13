@@ -55,6 +55,18 @@ try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [System.IO.Compression.ZipFile]::CreateFromDirectory($AppStage, $PayloadZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 
+    $PkgZip = Join-Path $OutDir 'PixelZenWorlds-Windows.zip'
+    if (Test-Path $PkgZip) { Remove-Item $PkgZip -Force }
+    $ZipStage = Join-Path $Stage 'zip_dist'
+    New-Item -Path $ZipStage -ItemType Directory -Force | Out-Null
+    Copy-Item -Path $AppStage -Destination (Join-Path $ZipStage 'app') -Recurse -Force
+    Copy-Item -Path (Join-Path $Raiz 'scripts\instalar.ps1') -Destination (Join-Path $ZipStage 'Instalar.ps1') -Force
+    $BatTxt = "@echo off`r`npowershell.exe -NoProfile -ExecutionPolicy Bypass -File `"%~dp0Instalar.ps1`"`r`nif errorlevel 1 pause`r`n"
+    Set-Content -Path (Join-Path $ZipStage 'Instalar.bat') -Value $BatTxt -Encoding ASCII
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($ZipStage, $PkgZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    $zipMb = [math]::Round((Get-Item $PkgZip).Length / 1MB, 2)
+    Write-Host "✅ Paquete sin .exe generado: $PkgZip ($zipMb MB)"
+
     $SetupExe = Join-Path $OutDir 'PixelZenWorlds-Setup.exe'
     if (Test-Path $SetupExe) { Remove-Item $SetupExe -Force }
 
