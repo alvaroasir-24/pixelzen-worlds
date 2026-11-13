@@ -1,0 +1,29 @@
+{
+  "id": "mi-tema",
+  "nombre": "Mi Nuevo Paisaje",
+  "subtitulo": "K415 · Región Personalizada",
+  "descripcion": "Plantilla base para crear un nuevo fondo dinámico en PixelZen.",
+  "cielo_fondo": "#0a0c24",
+  "modo_pajaros": "grullas",
+  "color_pajaros": "#120c26",
+  "modo_particulas": "hojas_mana",
+  "colores_hojas": ["#a4d86c", "#6ec05a", "#d8b45c", "#5cf2e4"],
+  "color_mana_halo": "#5cf2e4",
+  "color_mana_centro": "#b8fff6",
+  "color_fuegos_halo": ["#f0cf68", "#40e4dc"],
+  "color_fuegos_centro": ["#fff2b0", "#b2fff6"],
+  "color_ventanas": "#f4bc68",
+  "color_faroles_halo": "#f4bc68",
+  "color_faroles_centro": "#fff0c0",
+  "color_runas_halo": "#4bece2",
+  "color_runas_centro": "#9efcf4",
+  "color_humo_dia": "#e6ecf2",
+  "color_humo_noche": "#9aaec4",
+  "color_olas": ["#9cd4d8", "#5882b0"],
+  "color_reflejo_sol": "#ffe6a0",
+  "color_reflejo_luna": "#f4ead2",
+  "color_destello": "#fff6e2",
+  "citas": [
+    {"sub": "Mi Mundo", "es": "«Escribe aquí una cita para el HUD.»", "au": "Autor"}
+  ]
+}

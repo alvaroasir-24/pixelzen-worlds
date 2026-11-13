@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelZen · Fondos Pixel Art Dinámicos (Linux &amp; Windows)</title>
+  <meta name="description" content="Fondos pixel art animados de Mushoku Tensei, Hunter x Hunter, Black Clover y Spider-Man Miles Morales con ciclo solar real o de 90 minutos para GNOME y Windows." />
+  <link rel="icon" type="image/png" href="previews/fittoa/dia.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="#top" class="brand">
+        <span class="brand-glyph">✦</span>
+        <span class="brand-name">PIXELZEN</span>
+        <span class="brand-tag">640×400 PIXEL ENGINE</span>
+      </a>
+      <nav class="nav">
+        <a href="#visor">Demo en vivo</a>
+        <a href="#mundos">Mundos</a>
+        <a href="#arquitectura">Motor</a>
+        <a href="#instalar">Instalar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO + VISOR INTERACTIVO EN VIVO -->
+    <section class="hero" id="visor">
+      <div class="container">
+        <div class="hero-intro">
+          <div class="badge-row">
+            <span class="badge badge-cyan">GNOME Shell 46–50+</span>
+            <span class="badge badge-gold">Windows · Lively &amp; Python</span>
+            <span class="badge">Python puro · 0 deps gráficas</span>
+          </div>
+          <h1>Paisajes pixel art vivos que siguen al sol</h1>
+          <p class="lead">
+            Motor modular de fondos animados en <strong>640×400</strong> con interpolación astronómica entre día, atardecer dorado y noche estrellada — en tiempo real o en un <strong>ciclo completo de 24 horas en 90 minutos</strong>.
+          </p>
+        </div>
+
+        <div class="stage-shell" id="stage-shell">
+          <div class="stage-bar">
+            <div class="theme-pills" role="tablist" aria-label="Seleccionar fondo">
+              <button class="pill is-active" data-tema="fittoa">Fittoa</button>
+              <button class="pill" data-tema="continente-demoniaco">Continente Demoníaco</button>
+              <button class="pill" data-tema="hunter-x-hunter">Hunter × Hunter</button>
+              <button class="pill" data-tema="black-clover">Black Clover</button>
+              <button class="pill" data-tema="spiderman-miles-morales">Miles Morales</button>
+            </div>
+            <div class="stage-actions">
+              <button class="btn-mini" id="btn-hud" title="Mostrar u ocultar tarjeta HUD">HUD: ON</button>
+              <button class="btn-mini" id="btn-fullscreen" title="Ver en pantalla completa">Pantalla completa</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="lienzo" width="640" height="400"></canvas>
+            <div class="canvas-loading" id="canvas-loading">Cargando capas del mundo...</div>
+
+            <aside class="hud" id="hud">
+              <div class="hud-card">
+                <div class="hud-head"><span>✦ TIEMPO</span><span id="hud-modo">FIJA</span></div>
+                <div class="hud-clock"><span id="hud-hm">18:45</span><small id="hud-s">00</small></div>
+                <div class="hud-date" id="hud-fecha"></div>
+                <div class="hud-sub" id="hud-tema">Región de Fittoa</div>
+              </div>
+              <div class="hud-card">
+                <div class="hud-head"><span>✧ GRIMORIO</span><span id="hud-au">Rudeus</span></div>
+                <div class="hud-sub" id="hud-qsub">K407 · Aldea de Buena</div>
+                <div class="hud-quote" id="hud-qtxt"></div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="time-controls">
+            <div class="mode-buttons">
+              <button class="btn-mode" data-modo="90m">Ciclo 90m</button>
+              <button class="btn-mode" data-modo="demo">Demo 90s</button>
+              <button class="btn-mode" data-modo="real">Hora real</button>
+              <span class="divider"></span>
+              <button class="btn-phase" data-hora="13.5">Día</button>
+              <button class="btn-phase is-active" data-hora="18.75">Atardecer</button>
+              <button class="btn-phase" data-hora="23.0">Noche</button>
+            </div>
+            <label class="scrubber">
+              <span>Hora simulada: <strong id="hora-label">18:45</strong></span>
+              <input type="range" id="hora-slider" min="0" max="23.95" step="0.05" value="18.75" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GALERIA DE LOS 5 MUNDOS -->
+    <section class="section" id="mundos">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">ESCENAS INCLUIDAS</span>
+          <h2>Cinco mundos con arquitectura, fauna y partículas propias</h2>
+          <p>Cada escena se compila en capas RGBA independientes (cielo, sol, luna, nubes, paisaje y mapa de luces) para animarse en tiempo real.</p>
+        </div>
+
+        <div class="worlds-grid" id="worlds-grid">
+          <article class="world-card" data-world="fittoa">
+            <div class="world-media">
+              <img src="previews/fittoa/dorado.png" alt="Región de Fittoa en PixelZen" loading="lazy" />
+              <div class="phase-switch">
+                <button data-fase="dia">Día</button>
+                <button class="is-active" data-fase="dorado">Dorado</button>
+                <button data-fase="noche">Noche</button>
+              </div>
+            </div>
+            <div class="world-body">
+              <div class="world-top">
+                <h3>Región de Fittoa</h3>
+                <code>fittoa</code>
+              </div>
+              <p>Aldea de Buena con la Mansión Greyrat, noria, torre de mago, cascada lejana, barca con farol, arco rúnico sobre el lago y Gran Roble con búho nocturno.</p>
+              <div class="world-meta">
+                <span>Grullas</span>
+                <span>Hojas + Maná</span>
+                <span>Mushoku Tensei</span>
+              </div>
+              <button class="btn-try" data-try="fittoa">Probar en el visor ↑</button>
+            </div>
+          </article>
+
+          <article class="world-card" data-world="continente-demoniaco">
+            <div class="world-media">
+              <img src="previews/continente-demoniaco/dorado.png" alt="Continente Demoníaco en PixelZen" loading="lazy" />
+              <div class="phase-switch">
+                <button data-fase="dia">Día</button>
+                <button class="is-active" data-fase="dorado">Dorado</button>
+                <button data-fase="noche">Noche</button>
+              </div>
+            </div>
+            <div class="world-body">
+              <div class="world-top">
+                <h3>Continente Demoníaco</h3>
+                <code>continente-demoniaco</code>
+              </div>
+              <p>Ciudadela escalonada de Rikarisu sobre acantilados de basalto, zigurats con cúpulas con cuernos, aguja de obsidiana, portal fracturado, cristales gigantes y hongos bioluminiscentes.</p>
+              <div class="world-meta">
+                <span>Wyverns</span>
+                <span>Brasas de maná</span>
+                <span>Mushoku Tensei</span>
+              </div>
+              <button class="btn-try" data-try="continente-demoniaco">Probar en el visor ↑</button>
+            </div>
+          </article>
+
+          <article class="world-card" data-world="hunter-x-hunter">
+            <div class="world-media">
+              <img src="previews/hunter-x-hunter/dia.png" alt="Hunter x Hunter Isla Ballena en PixelZen" loading="lazy" />
+              <div class="phase-switch">
+                <button class="is-active" data-fase="dia">Día</button>
+                <button data-fase="dorado">Dorado</button>
+                <button data-fase="noche">Noche</button>
+              </div>
+            </div>
+            <div class="world-body">
+              <div class="world-top">
+                <h3>Hunter × Hunter · Isla Ballena</h3>
+                <code>hunter-x-hunter</code>
+              </div>
+              <p>Costa verde con molino, cabaña de Mito-san, monolito del Cazador, muelle largo con velero y Gon pescando, roca aleta de ballena, dirigible y el colosal Árbol del Mundo.</p>
+              <div class="world-meta">
+                <span>Aves costeras</span>
+                <span>Aura Nen</span>
+                <span>Hunter × Hunter</span>
+              </div>
+              <button class="btn-try" data-try="hunter-x-hunter">Probar en el visor ↑</button>
+            </div>
+          </article>
+
+          <article class="world-card" data-world="black-clover">
+            <div class="world-media">
+              <img src="previews/black-clover/dorado.png" alt="Black Clover Aldea de Hage en PixelZen" loading="lazy" />
+              <div class="phase-switch">
+                <button data-fase="dia">Día</button>
+                <button class="is-active" data-fase="dorado">Dorado</button>
+                <button data-fase="noche">Noche</button>
+              </div>
+            </div>
+            <div class="world-body">
+              <div class="world-top">
+                <h3>Black Clover · Aldea de Hage</h3>
+                <code>black-clover</code>
+              </div>
+              <p>Iglesia gótica de Hage, Torre de Grimorios con hiedra, Cráneo Gigante del Demonio con la estatua del Primer Rey Mago, Castillo Real lejano y espada Matademonios con grimorio flotante.</p>
+              <div class="world-meta">
+                <span>Anti-aves</span>
+                <span>Antimagia</span>
+                <span>Black Clover</span>
+              </div>
+              <button class="btn-try" data-try="black-clover">Probar en el visor ↑</button>
+            </div>
+          </article>
+
+          <article class="world-card world-card-wide" data-world="spiderman-miles-morales">
+            <div class="world-media">
+              <img src="previews/spiderman-miles-morales/noche.png" alt="Spider-Man Miles Morales Brooklyn en PixelZen" loading="lazy" />
+              <div class="phase-switch">
+                <button data-fase="dia">Día</button>
+                <button data-fase="dorado">Dorado</button>
+                <button class="is-active" data-fase="noche">Noche</button>
+              </div>
+            </div>
+            <div class="world-body">
+              <div class="world-top">
+                <h3>Spider-Man · Miles Morales</h3>
+                <code>spiderman-miles-morales</code>
+              </div>
+              <p>Edificios de ladrillo de Brooklyn con escaleras de incendios y depósitos de agua, cartel neón Spider-Verse, Puente de Brooklyn, rascacielos de Manhattan reflejados en el East River y Miles Morales balanceándose con su telaraña.</p>
+              <div class="world-meta">
+                <span>Palomas urbanas</span>
+                <span>Chispas Venom</span>
+                <span>Spider-Verse</span>
+              </div>
+              <button class="btn-try" data-try="spiderman-miles-morales">Probar en el visor ↑</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARQUITECTURA Y CARACTERÍSTICAS -->
+    <section class="section section-alt" id="arquitectura">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">MOTOR Y ARQUITECTURA</span>
+          <h2>Diseñado desde cero en Python puro + JS nativo</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feat-card">
+            <div class="feat-icon">☀</div>
+            <h3>Posición solar real o ciclo 90m</h3>
+            <p>Calcula elevación y acimut solar/lunar según tu latitud, o recorre las 24 horas en 90 minutos mediante <code>systemd</code> en Linux y temporizador en Windows.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">▦</div>
+            <h3>Pixel art puro sin dependencias</h3>
+            <p><code>src/pz_lib.py</code> genera cada píxel con tramado Bayer 4×4, ruido fractal y recorte alfa exacto (matte blanco/negro) sin requerir Pillow ni editores externos al compilar.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">◈</div>
+            <h3>Extensión nativa GNOME 46–50+</h3>
+            <p>Renderiza en <code>Main.layoutManager._backgroundGroup</code> con escalado <code>NEAREST</code>, pausa automática en pantalla completa y tarjeta HUD con métricas reales del sistema.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">❖</div>
+            <h3>100% modular y extensible</h3>
+            <p>Copia <code>escenas/_plantilla</code>, edita <code>tema.json</code> y <code>generar.py</code>, y ejecuta <code>python3 src/construir.py</code> para compilar paquetes para Linux y Windows a la vez.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSTALACIÓN -->
+    <section class="section" id="instalar">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">GUÍA RÁPIDA</span>
+          <h2>Instala y cambia de mundo en segundos</h2>
+        </div>
+
+        <div class="install-panel">
+          <div class="os-tabs" role="tablist">
+            <button class="os-tab is-active" data-os="linux">Linux (GNOME Shell)</button>
+            <button class="os-tab" data-os="windows">Windows (Lively / Python)</button>
+            <button class="os-tab" data-os="dev">Crear tu propio fondo</button>
+          </div>
+
+          <div class="os-pane is-active" data-pane="linux">
+            <div class="code-box">
+              <button class="copy-btn" data-copy="cd linux && ./instalar.sh --90m">Copiar</button>
+              <pre><code># 1. Instalar la extensión con ciclo de 24h en 90 minutos
+cd linux
+./instalar.sh --90m
+
+# 2. Cambiar entre los 5 fondos disponibles
+./tema.sh --listar
+./tema.sh spiderman-miles-morales
+./tema.sh hunter-x-hunter
+./tema.sh black-clover
+./tema.sh continente-demoniaco
+./tema.sh fittoa
+
+# 3. Controlar la hora del cielo
+./hora.sh 90m      # Ciclo de 24h en 90 minutos
+./hora.sh real     # Hora real del reloj
+./hora.sh demo     # Demo rápida (24h en 90s)
+./hora.sh 21:30    # Congela una hora fija</code></pre>
+            </div>
+          </div>
+
+          <div class="os-pane" data-pane="windows">
+            <div class="code-box">
+              <button class="copy-btn" data-copy="python windows/pixelzen_win.py --tema spiderman-miles-morales --90m">Copiar</button>
+              <pre><code># Opción A: Lively Wallpaper (animado completo + HUD)
+# Abre windows/lively/index.html desde Lively Wallpaper y elige el tema en Personalizar.
+
+# Opción B: Selector interactivo o Python standalone
+windows\ejecutar.bat
+python windows/pixelzen_win.py --listar
+python windows/pixelzen_win.py --tema spiderman-miles-morales --90m
+python windows/pixelzen_win.py --tema black-clover --real</code></pre>
+            </div>
+          </div>
+
+          <div class="os-pane" data-pane="dev">
+            <div class="code-box">
+              <button class="copy-btn" data-copy="cp -r escenas/_plantilla escenas/mi-mundo && python3 src/construir.py mi-mundo">Copiar</button>
+              <pre><code># 1. Duplica la plantilla base
+cp -r escenas/_plantilla escenas/mi-mundo
+
+# 2. Personaliza colores, citas y paisaje 640x400
+#    escenas/mi-mundo/tema.json
+#    escenas/mi-mundo/generar.py
+
+# 3. Compila las capas para Linux y Windows
+python3 src/construir.py mi-mundo</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>PixelZen</strong> · Proyecto open source bajo licencia <strong>GPL-3.0-or-later</strong>.
+      </div>
+      <div class="footer-meta">
+        Fuentes pixel: <code>Departure Mono</code> &amp; <code>Pixelify Sans</code> (OFL) · Basado en <a href="https://github.com/mosqui1988/pixelzen" target="_blank" rel="noopener">mosqui1988/pixelzen</a>.
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

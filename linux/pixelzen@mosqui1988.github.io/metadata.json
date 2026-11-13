@@ -1,0 +1,9 @@
+{
+  "uuid": "pixelzen@mosqui1988.github.io",
+  "name": "PixelZen Mushoku",
+  "description": "Fondo pixel art animado estilo Mushoku Tensei que sigue al sol de tu ciudad y panel de datos (HUD). Adaptado para GNOME Shell 46-50.",
+  "shell-version": ["46", "47", "48", "49", "50"],
+  "url": "https://github.com/mosqui1988/pixelzen",
+  "settings-schema": "org.gnome.shell.extensions.pixelzen",
+  "version": 2
+}
