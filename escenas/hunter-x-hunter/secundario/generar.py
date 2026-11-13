@@ -172,27 +172,26 @@ for y in range(114, H):
             c = mix(PAL['mont'][0], c, (y - 113) / 33.0)
         put(x, y, c)
 
-# Arroyo serpenteante, puente de madera, estanques y arboledas de Greed Island en la izquierda
-for y in range(154, 268):
-    t_s = (y - 154) / 114.0
-    cx_stream = 14 + 92 * (t_s ** 0.85) + 14 * math.sin(t_s * math.pi * 1.6)
-    if y > 236:
-        cx_stream -= (y - 236) * 2.2
-    hw_s = int(6 + 10 * t_s)
+# Arroyo serpenteante desde la bruma del horizonte hasta salir por el borde izquierdo, con puente de madera
+for y in range(117, 290):
+    if y <= 218:
+        u_s = (y - 117) / 101.0
+        cx_stream = 18.0 + 66.0 * (0.5 - 0.5 * math.cos(u_s * math.pi))
+    else:
+        u_s = (y - 218) / 72.0
+        cx_stream = 84.0 - 114.0 * (0.5 - 0.5 * math.cos(u_s * math.pi))
+    hw_s = max(1, int(round(1.2 + (y - 117) * 0.092)))
     for dx in range(-hw_s - 2, hw_s + 3):
         px_s = int(round(cx_stream + dx))
         if 0 <= px_s < W:
             if abs(dx) >= hw_s:
-                put(px_s, y, PAL['dirt'][1] if (px_s + y) % 3 else PAL['grass_sh'])
+                c_w = PAL['dirt'][1] if (px_s + y) % 3 else PAL['grass_sh']
             else:
-                shimmer = ((px_s + y * 2) % 9 == 0) and abs(dx) < hw_s * 0.6
-                put(px_s, y, PAL['pond'][1] if shimmer else PAL['pond'][0])
-
-for px, py, pw in ((22, 160, 14),):
-    for dy in range(-2, 3):
-        span = int(pw * math.sqrt(max(0.0, 1.0 - (dy / 2.6) ** 2)))
-        for dx in range(-span, span + 1):
-            put(px + dx, py + dy, PAL['pond'][1] if (abs(dx) < span * 0.55 and dy == 0) else PAL['pond'][0])
+                shimmer = hw_s >= 3 and ((px_s + y * 2) % 9 == 0) and abs(dx) < hw_s * 0.6
+                c_w = PAL['pond'][1] if shimmer else PAL['pond'][0]
+            if y < 146:
+                c_w = mix(PAL['mont'][0], c_w, (y - 113) / 33.0)
+            put(px_s, y, c_w)
 
 # Camino sinuoso de tierra y losas desde el primer plano izquierdo hasta la torre de Eta y Elena
 for step_p in range(180):
@@ -253,8 +252,8 @@ def pinta_arbol_pradera(tx, by_t, trunk_h, rad):
                 put(tx + dx, cy_c + dy, col_t)
 
 for tx, ty, th, tr in (
-    (16, 150, 4, 5), (29, 152, 4, 4), (58, 156, 3, 4),
-    (152, 168, 6, 7), (170, 174, 5, 6), (28, 224, 9, 10), (48, 240, 8, 9),
+    (12, 148, 4, 5), (48, 150, 4, 4), (62, 156, 3, 4),
+    (152, 168, 6, 7), (170, 174, 5, 6), (26, 212, 9, 10), (42, 232, 8, 9),
     (618, 280, 9, 10), (632, 294, 7, 8),
 ):
     pinta_arbol_pradera(tx, ty, th, tr)
