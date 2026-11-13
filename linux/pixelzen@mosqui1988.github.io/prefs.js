@@ -99,7 +99,25 @@ export default class PixelZenPreferences extends ExtensionPreferences {
             title: 'Modo de tiempo',
             model: listaModos,
         });
+        const servicio90Activo = () => {
+            try {
+                const [ok, , , status] = GLib.spawn_command_line_sync('systemctl --user is-active --quiet pixelzen-ciclo90.service');
+                return ok && status === 0;
+            } catch (_e) {
+                return false;
+            }
+        };
+        const paraServicio90 = () => {
+            try {
+                Gio.Subprocess.new(
+                    ['systemctl', '--user', 'disable', '--now', 'pixelzen-ciclo90.service'],
+                    Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE
+                );
+            } catch (_e) { /* systemd no disponible */ }
+        };
+
         const leeModoIdx = () => {
+            if (servicio90Activo()) return 1;
             if (settings.get_boolean('ciclo-rapido'))
                 return settings.get_int('ciclo-duracion') >= 3600 ? 1 : 2;
             return settings.get_double('hora-simulada') >= 0 ? 3 : 0;
@@ -122,6 +140,7 @@ export default class PixelZenPreferences extends ExtensionPreferences {
 
         comboModo.connect('notify::selected', () => {
             const idx = comboModo.get_selected();
+            paraServicio90();
             if (idx === 0) {
                 settings.set_boolean('ciclo-rapido', false);
                 settings.set_double('hora-simulada', -1);
