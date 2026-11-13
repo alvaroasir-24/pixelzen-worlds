@@ -4,14 +4,25 @@ param(
     [ValidateSet('real', '90m', 'demo', 'fija')]
     [string]$Modo = '90m',
     [double]$Hora = 21.5,
-    [int]$Fps = 8
+    [int]$Fps = 8,
+    [string]$FondoPrincipal = 'principal',
+    [string]$FondoSecundario = 'secundaria'
 )
 
-$ErrorActionPreference = 'SilentlyContinue'
+$ErrorActionPreference = 'Continue'
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
 
 $Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Raiz = Split-Path -Parent $Aqui
+$LogFile = Join-Path $env:TEMP 'pixelzen_motor.log'
+
+function Write-MotorLog([string]$msg) {
+    try {
+        $ts = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+        Add-Content -Path $LogFile -Value "[$ts] $msg" -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch {}
+}
+Set-Content -Path $LogFile -Value "=== PixelZenMotor inicio (PID=$PID) ===" -Encoding UTF8 -ErrorAction SilentlyContinue
 
 $PidFile = Join-Path $env:TEMP 'pixelzen_motor.pid'
 if (Test-Path $PidFile) {
@@ -557,6 +568,8 @@ public class PzmWallForm : Form {
     public Bitmap FrameRef;
     public Rectangle ScreenBounds { get; set; }
 
+    [DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
     public PzmWallForm(Rectangle bounds) {
         ScreenBounds = bounds;
         FormBorderStyle = FormBorderStyle.None;
@@ -574,9 +587,15 @@ public class PzmWallForm : Form {
     protected override CreateParams CreateParams {
         get {
             var cp = base.CreateParams;
-            cp.ExStyle |= 0x08000000 | 0x00000080; // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+            // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW | WS_EX_LAYERED (requerido bajo Progman con WS_EX_NOREDIRECTIONBITMAP en Win11 24H2/26H2)
+            cp.ExStyle |= 0x08000000 | 0x00000080 | 0x00080000;
             return cp;
         }
+    }
+
+    protected override void OnHandleCreated(EventArgs e) {
+        base.OnHandleCreated(e);
+        try { SetLayeredWindowAttributes(this.Handle, 0, 255, 0x02); } catch {}
     }
 
     protected override void WndProc(ref Message m) {
@@ -619,6 +638,8 @@ public static class PzmDesktopHost {
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
     [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+    [DllImport("user32.dll")] public static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
     [DllImport("user32.dll")] public static extern IntPtr SetProcessDpiAwarenessContext(IntPtr value);
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
 
@@ -630,14 +651,18 @@ public static class PzmDesktopHost {
         try { SetProcessDPIAware(); } catch {}
     }
 
-    public static bool ResolveParent(out IntPtr targetParent, out IntPtr insertAfter) {
+    public static bool ResolveParent(out IntPtr targetParent, out IntPtr insertAfter, out IntPtr workerBelow, out string modeDesc) {
         targetParent = IntPtr.Zero;
         insertAfter = IntPtr.Zero;
+        workerBelow = IntPtr.Zero;
+        modeDesc = "none";
+
         IntPtr progman = FindWindowW("Progman", null);
         if (progman == IntPtr.Zero) progman = FindWindowW("Progman", "Program Manager");
         if (progman == IntPtr.Zero) return false;
 
         IntPtr res;
+        // 0x052C con wParam=0xD,lParam=0x1 prepara WorkerW en Win10 y Win11 Raised Desktop; fallback classic 0,0
         SendMessageTimeoutW(progman, 0x052C, new IntPtr(0xD), new IntPtr(0x1), 0x0002, 1000, out res);
 
         IntPtr defOwner = IntPtr.Zero;
@@ -656,39 +681,52 @@ public static class PzmDesktopHost {
             IntPtr behind = FindWindowExW(IntPtr.Zero, defOwner, "WorkerW", null);
             if (behind != IntPtr.Zero) {
                 targetParent = behind;
+                modeDesc = "split-workerw";
                 return true;
             }
         }
 
+        // Win11 24H2/26H2 Raised desktop with layered ShellView:
+        // SHELLDLL_DefView vive dentro de Progman junto a un WorkerW hijo (fondo estatico).
+        // Debemos colgar los formularios WS_EX_LAYERED directamente de Progman justo debajo de SHELLDLL_DefView
+        // y empujar ese WorkerW hijo debajo de nuestros formularios.
         IntPtr workerChild = FindWindowExW(progman, IntPtr.Zero, "WorkerW", null);
-        if (workerChild != IntPtr.Zero) {
-            RECT pr; GetWindowRect(progman, out pr);
-            Rectangle vs = SystemInformation.VirtualScreen;
-            IntPtr afterChild = shellView != IntPtr.Zero ? shellView : IntPtr.Zero;
-            SetWindowPos(workerChild, afterChild, vs.Left - pr.Left, vs.Top - pr.Top, vs.Width, vs.Height, 0x0010 | 0x0040);
-            targetParent = workerChild;
-            return true;
-        }
-
         targetParent = progman;
         insertAfter = shellView;
+        workerBelow = workerChild;
+        modeDesc = (workerChild != IntPtr.Zero) ? "raised-progman-layered" : "progman-direct";
         return true;
     }
 
     public static bool AttachForm(PzmWallForm form, IntPtr targetParent, IntPtr insertAfter) {
         if (form == null || targetParent == IntPtr.Zero || !IsWindow(targetParent)) return false;
-        if (!form.IsHandleCreated) { var h = form.Handle; }
+        if (!form.Visible) form.Show();
         int style = GetWindowLong(form.Handle, -16);
-        style = (style & ~unchecked((int)0x80000000)) | 0x40000000; // WS_CHILD
+        style = (style & ~unchecked((int)0x80000000)) | 0x40000000 | 0x10000000; // WS_CHILD | WS_VISIBLE
         SetWindowLong(form.Handle, -16, style);
+
+        int exStyle = GetWindowLong(form.Handle, -20);
+        exStyle = (exStyle & ~0x00040000) | 0x08000000 | 0x00000080 | 0x00080000; // -WS_EX_APPWINDOW + NOACTIVATE|TOOLWINDOW|LAYERED
+        SetWindowLong(form.Handle, -20, exStyle);
+
         SetParent(form.Handle, targetParent);
+        SetLayeredWindowAttributes(form.Handle, 0, 255, 0x02);
+
         RECT pr; GetWindowRect(targetParent, out pr);
         Rectangle sb = form.ScreenBounds;
         int lx = sb.Left - pr.Left;
         int ly = sb.Top - pr.Top;
-        SetWindowPos(form.Handle, insertAfter, lx, ly, sb.Width, sb.Height, 0x0010 | 0x0040);
-        form.Visible = true;
+        SetWindowPos(form.Handle, insertAfter, lx, ly, sb.Width, sb.Height, 0x0010 | 0x0040 | 0x0020);
+        ShowWindow(form.Handle, 8); // SW_SHOWNA
         return true;
+    }
+
+    public static void PushWorkerBelow(IntPtr progman, IntPtr workerChild, IntPtr insertAfterForm) {
+        if (progman == IntPtr.Zero || workerChild == IntPtr.Zero || insertAfterForm == IntPtr.Zero) return;
+        if (!IsWindow(workerChild) || !IsWindow(insertAfterForm)) return;
+        RECT pr; GetWindowRect(progman, out pr);
+        Rectangle vs = SystemInformation.VirtualScreen;
+        SetWindowPos(workerChild, insertAfterForm, vs.Left - pr.Left, vs.Top - pr.Top, vs.Width, vs.Height, 0x0010 | 0x0040 | 0x0001);
     }
 }
 '@
@@ -704,7 +742,12 @@ $refAsms = [System.AppDomain]::CurrentDomain.GetAssemblies() |
         )
     } |
     Select-Object -ExpandProperty Location -Unique
-Add-Type -TypeDefinition $csCode -ReferencedAssemblies $refAsms
+try {
+    Add-Type -TypeDefinition $csCode -ReferencedAssemblies $refAsms -ErrorAction Stop
+} catch {
+    Write-MotorLog "ERROR Add-Type: $($_.Exception.Message)"
+    exit 1
+}
 [PzmDesktopHost]::InitDpi()
 
 function Cargar-SceneData([string]$dir, [bool]$conAstro) {
@@ -797,16 +840,35 @@ function Cargar-SceneData([string]$dir, [bool]$conAstro) {
     return $sd
 }
 
+function Resolver-RutaVariante([string]$temaDir, [string]$variante) {
+    $sub = switch ($variante) {
+        'secundaria' { 'secundario' }
+        'bloqueo'    { 'bloqueo' }
+        default      { '' }
+    }
+    $cand = if ($sub) { Join-Path $temaDir $sub } else { $temaDir }
+    if (Test-Path (Join-Path $cand 'images')) {
+        return @{ Dir = $cand; ConAstro = ($variante -ne 'secundaria') }
+    }
+    return @{ Dir = $temaDir; ConAstro = $true }
+}
+
 $script:desktopParent = [IntPtr]::Zero
 $script:desktopAfter = [IntPtr]::Zero
-if (-not [PzmDesktopHost]::ResolveParent([ref]$script:desktopParent, [ref]$script:desktopAfter)) {
+$script:desktopWorkerBelow = [IntPtr]::Zero
+$script:desktopMode = 'none'
+if (-not [PzmDesktopHost]::ResolveParent([ref]$script:desktopParent, [ref]$script:desktopAfter, [ref]$script:desktopWorkerBelow, [ref]$script:desktopMode)) {
+    Write-MotorLog "ResolveParent fallo: no hay Progman visible en esta sesion"
     exit 0
 }
+Write-MotorLog "ResolveParent OK: modo=$($script:desktopMode) parent=$($script:desktopParent) after=$($script:desktopAfter) workerBelow=$($script:desktopWorkerBelow)"
 
 $script:temaAct = $Tema
 $script:modoAct = $Modo
 $script:horaAct = $Hora
 $script:monAct = $Monitores
+$script:fondoPrimAct = if ($FondoPrincipal) { $FondoPrincipal } else { 'principal' }
+$script:fondoSecAct = if ($FondoSecundario) { $FondoSecundario } else { 'secundaria' }
 
 $script:rendPrim = New-Object PzmRenderer
 $script:rendSec = New-Object PzmRenderer
@@ -816,17 +878,23 @@ $script:forms = @()
 
 function Recargar-Escenas {
     $tDir = Join-Path $TemasBase $script:temaAct
-    if (-not (Test-Path (Join-Path $tDir 'images'))) { return }
+    if (-not (Test-Path (Join-Path $tDir 'images'))) {
+        Write-MotorLog "Recargar-Escenas: tema inexistente $tDir"
+        return
+    }
     if ($script:scenePrim) { $script:scenePrim.DisposeImages() }
     if ($script:sceneSec) { $script:sceneSec.DisposeImages() }
-    $script:scenePrim = Cargar-SceneData $tDir $true
-    $secDir = Join-Path $tDir 'secundario'
-    $usarSec = ($script:monAct -ge 2) -and (Test-Path (Join-Path $secDir 'images'))
-    if ($usarSec) {
-        $script:sceneSec = Cargar-SceneData $secDir $false
+
+    $rPrim = Resolver-RutaVariante $tDir $script:fondoPrimAct
+    $script:scenePrim = Cargar-SceneData $rPrim.Dir $rPrim.ConAstro
+
+    if ($script:monAct -ge 2) {
+        $rSec = Resolver-RutaVariante $tDir $script:fondoSecAct
+        $script:sceneSec = Cargar-SceneData $rSec.Dir $rSec.ConAstro
     } else {
         $script:sceneSec = $null
     }
+
     foreach ($fItem in $script:forms) {
         if ($fItem.EsSecundario -and $script:sceneSec) {
             $fItem.Form.FrameRef = $script:rendSec.Frame
@@ -834,15 +902,24 @@ function Recargar-Escenas {
             $fItem.Form.FrameRef = $script:rendPrim.Frame
         }
     }
+    Write-MotorLog "Escenas cargadas: tema=$($script:temaAct) mon=$($script:monAct) prim=$($script:fondoPrimAct) sec=$($script:fondoSecAct)"
 }
 
+$curAfter = $script:desktopAfter
 foreach ($scr in [System.Windows.Forms.Screen]::AllScreens) {
     $form = New-Object PzmWallForm($scr.Bounds)
-    $null = [PzmDesktopHost]::AttachForm($form, $script:desktopParent, $script:desktopAfter)
+    $okAttach = [PzmDesktopHost]::AttachForm($form, $script:desktopParent, $curAfter)
+    if ($curAfter -ne [IntPtr]::Zero -or $script:desktopMode -ne 'split-workerw') {
+        $curAfter = $form.Handle
+    }
+    Write-MotorLog "Monitor Primary=$($scr.Primary) Bounds=$($scr.Bounds) hwnd=$($form.Handle) attach=$okAttach"
     $script:forms += [pscustomobject]@{
         Form = $form
         EsSecundario = (-not $scr.Primary)
     }
+}
+if ($script:desktopWorkerBelow -ne [IntPtr]::Zero -and $script:forms.Count -gt 0) {
+    [PzmDesktopHost]::PushWorkerBelow($script:desktopParent, $script:desktopWorkerBelow, $script:forms[-1].Form.Handle)
 }
 
 Recargar-Escenas
@@ -853,47 +930,7 @@ $script:horaIni = $script:ahoraIni.Hour + ($script:ahoraIni.Minute / 60.0) + ($s
 $script:sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:lastCfgWrite = if (Test-Path $ConfigPath) { (Get-Item $ConfigPath).LastWriteTimeUtc } else { [DateTime]::MinValue }
 
-$timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = [Math]::Max(42, [int](1000 / [Math]::Max(2, [Math]::Min(24, $Fps))))
-
-$timer.Add_Tick({
-    $script:tick++
-    $t = $script:tick
-
-    if (($t % 8) -eq 0 -and (Test-Path $ConfigPath)) {
-        try {
-            $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
-            if ($wt -ne $script:lastCfgWrite) {
-                $script:lastCfgWrite = $wt
-                $nc = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-                if ($nc) {
-                    $cambio = ($nc.tema -ne $script:temaAct) -or ([int]$nc.monitores -ne $script:monAct)
-                    if ($nc.tema) { $script:temaAct = [string]$nc.tema }
-                    if ($nc.monitores) { $script:monAct = [int]$nc.monitores }
-                    if ($nc.modo -and $nc.modo -ne $script:modoAct) {
-                        $script:modoAct = [string]$nc.modo
-                        $script:ahoraIni = Get-Date
-                        $script:horaIni = $script:ahoraIni.Hour + ($script:ahoraIni.Minute / 60.0) + ($script:ahoraIni.Second / 3600.0)
-                        $script:sw.Restart()
-                    }
-                    if ($null -ne $nc.horaFija) { $script:horaAct = [double]$nc.horaFija }
-                    if ($cambio) { Recargar-Escenas }
-                }
-            }
-        } catch {}
-    }
-
-    if (($t % 40) -eq 0) {
-        $f0 = $script:forms[0].Form
-        if ((-not [PzmDesktopHost]::IsWindow($script:desktopParent)) -or ([PzmDesktopHost]::GetParent($f0.Handle) -ne $script:desktopParent)) {
-            if ([PzmDesktopHost]::ResolveParent([ref]$script:desktopParent, [ref]$script:desktopAfter)) {
-                foreach ($fItem in $script:forms) {
-                    $null = [PzmDesktopHost]::AttachForm($fItem.Form, $script:desktopParent, $script:desktopAfter)
-                }
-            }
-        }
-    }
-
+function Render-MotorFrame([int]$t) {
     $elapsed = $script:sw.Elapsed.TotalSeconds
     $d = Get-Date
     if ($script:modoAct -eq 'fija') {
@@ -917,13 +954,69 @@ $timer.Add_Tick({
         $d = [DateTime]::new($d.Year, $d.Month, $d.Day, $hh, $mm, [Math]::Min(59, $ss))
     }
 
-    $script:rendPrim.Render($script:scenePrim, $d, $t)
-    if ($script:sceneSec) {
-        $script:rendSec.Render($script:sceneSec, $d, $t)
-    }
+    if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t) }
+    if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t) }
     foreach ($fItem in $script:forms) {
         $fItem.Form.Invalidate()
     }
+}
+
+Render-MotorFrame 0
+foreach ($fItem in $script:forms) { $fItem.Form.Update() }
+
+$timer = New-Object System.Windows.Forms.Timer
+$timer.Interval = [Math]::Max(42, [int](1000 / [Math]::Max(2, [Math]::Min(24, $Fps))))
+
+$timer.Add_Tick({
+    $script:tick++
+    $t = $script:tick
+
+    if (($t % 8) -eq 0 -and (Test-Path $ConfigPath)) {
+        try {
+            $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
+            if ($wt -ne $script:lastCfgWrite) {
+                $script:lastCfgWrite = $wt
+                $nc = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                if ($nc) {
+                    $fp = if ($nc.fondoPrincipal) { [string]$nc.fondoPrincipal } else { $script:fondoPrimAct }
+                    $fs = if ($nc.fondoSecundario) { [string]$nc.fondoSecundario } else { $script:fondoSecAct }
+                    $cambio = ($nc.tema -ne $script:temaAct) -or ([int]$nc.monitores -ne $script:monAct) -or ($fp -ne $script:fondoPrimAct) -or ($fs -ne $script:fondoSecAct)
+                    if ($nc.tema) { $script:temaAct = [string]$nc.tema }
+                    if ($nc.monitores) { $script:monAct = [int]$nc.monitores }
+                    $script:fondoPrimAct = $fp
+                    $script:fondoSecAct = $fs
+                    if ($nc.modo -and $nc.modo -ne $script:modoAct) {
+                        $script:modoAct = [string]$nc.modo
+                        $script:ahoraIni = Get-Date
+                        $script:horaIni = $script:ahoraIni.Hour + ($script:ahoraIni.Minute / 60.0) + ($script:ahoraIni.Second / 3600.0)
+                        $script:sw.Restart()
+                    }
+                    if ($null -ne $nc.horaFija) { $script:horaAct = [double]$nc.horaFija }
+                    if ($cambio) { Recargar-Escenas }
+                }
+            }
+        } catch {}
+    }
+
+    if (($t % 40) -eq 0 -and $script:forms.Count -gt 0) {
+        $f0 = $script:forms[0].Form
+        if ((-not [PzmDesktopHost]::IsWindow($script:desktopParent)) -or ([PzmDesktopHost]::GetParent($f0.Handle) -ne $script:desktopParent)) {
+            if ([PzmDesktopHost]::ResolveParent([ref]$script:desktopParent, [ref]$script:desktopAfter, [ref]$script:desktopWorkerBelow, [ref]$script:desktopMode)) {
+                $curA = $script:desktopAfter
+                foreach ($fItem in $script:forms) {
+                    $null = [PzmDesktopHost]::AttachForm($fItem.Form, $script:desktopParent, $curA)
+                    if ($curA -ne [IntPtr]::Zero -or $script:desktopMode -ne 'split-workerw') {
+                        $curA = $fItem.Form.Handle
+                    }
+                }
+            }
+        }
+        if ($script:desktopWorkerBelow -ne [IntPtr]::Zero) {
+            [PzmDesktopHost]::PushWorkerBelow($script:desktopParent, $script:desktopWorkerBelow, $script:forms[-1].Form.Handle)
+        }
+    }
+
+    Render-MotorFrame $t
 })
 
 $timer.Start()

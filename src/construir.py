@@ -49,10 +49,11 @@ def main():
         shutil.rmtree(pack_dir, ignore_errors=True)
         with tempfile.TemporaryDirectory() as tmp:
             capas.construir_tema(tema_dir, pack_dir, tmp, SRC_DIR)
-            sec_dir = os.path.join(tema_dir, 'secundario')
-            if os.path.isfile(os.path.join(sec_dir, 'generar.py')):
-                with tempfile.TemporaryDirectory() as tmp_sec:
-                    capas.construir_tema(sec_dir, os.path.join(pack_dir, 'secundario'), tmp_sec, SRC_DIR)
+            for sub_name in ('secundario', 'bloqueo'):
+                sub_dir = os.path.join(tema_dir, sub_name)
+                if os.path.isfile(os.path.join(sub_dir, 'generar.py')):
+                    with tempfile.TemporaryDirectory() as tmp_sub:
+                        capas.construir_tema(sub_dir, os.path.join(pack_dir, sub_name), tmp_sub, SRC_DIR)
 
         win_dst = os.path.join(WIN_TEMAS_DIR, nombre)
         shutil.rmtree(win_dst, ignore_errors=True)
@@ -67,9 +68,10 @@ def main():
             os.makedirs(doc_prev, exist_ok=True)
             for fase in ('dia', 'dorado', 'noche'):
                 shutil.copy(os.path.join(tema_dir, 'preview', fase, 'v3.png'), os.path.join(doc_prev, f'{fase}.png'))
-                sec_prev = os.path.join(tema_dir, 'secundario', 'preview', fase, 'v3.png')
-                if os.path.isfile(sec_prev):
-                    shutil.copy(sec_prev, os.path.join(doc_prev, f'm2-{fase}.png'))
+                for sub_name, pref in (('secundario', 'm2'), ('bloqueo', 'm3')):
+                    sub_prev = os.path.join(tema_dir, sub_name, 'preview', fase, 'v3.png')
+                    if os.path.isfile(sub_prev):
+                        shutil.copy(sub_prev, os.path.join(doc_prev, f'{pref}-{fase}.png'))
             print(f'  [{nombre}] sincronizado con docs/temas y docs/previews', flush=True)
 
 

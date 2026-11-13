@@ -3,7 +3,9 @@ param(
     [int]$Monitores = 2,
     [ValidateSet('real', '90m', 'demo', 'fija')]
     [string]$Modo = '90m',
-    [double]$Hora = 21.5
+    [double]$Hora = 21.5,
+    [string]$FondoPrincipal = 'principal',
+    [string]$FondoSecundario = 'secundaria'
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -246,8 +248,27 @@ function Leer-Nubes([string]$dir) {
     }
 }
 
-$nubesPrim = Leer-Nubes $TemaDir
-$SecDir = Join-Path $TemaDir 'secundario'
+function Resolver-CicloVariante([string]$variante) {
+    $sub = switch ($variante) {
+        'secundaria' { 'secundario' }
+        'bloqueo'    { 'bloqueo' }
+        default      { '' }
+    }
+    $cand = if ($sub) { Join-Path $TemaDir $sub } else { $TemaDir }
+    if (Test-Path (Join-Path $cand 'images')) {
+        return @{ Dir = $cand; ConAstro = ($variante -ne 'secundaria') }
+    }
+    return @{ Dir = $TemaDir; ConAstro = $true }
+}
+
+$rPrim = Resolver-CicloVariante $FondoPrincipal
+$PrimDir = $rPrim.Dir
+$PrimAstro = $rPrim.ConAstro
+$nubesPrim = Leer-Nubes $PrimDir
+
+$rSec = Resolver-CicloVariante $FondoSecundario
+$SecDir = $rSec.Dir
+$SecAstro = $rSec.ConAstro
 $TieneSec = ($Monitores -ge 2) -and (Test-Path (Join-Path $SecDir 'images'))
 $nubesSec = if ($TieneSec) { Leer-Nubes $SecDir } else { ,@() }
 
@@ -286,9 +307,9 @@ while ($true) {
     $TmpPrim = Join-Path $env:TEMP "pixelzen_${Tema}_m1_${suf}.png"
     $TmpSec = Join-Path $env:TEMP "pixelzen_${Tema}_m2_${suf}.png"
 
-    [PzcRenderer]::RenderFrame($TemaDir, $d, $elapsed, $TmpPrim, $nubesPrim, $true)
+    [PzcRenderer]::RenderFrame($PrimDir, $d, $elapsed, $TmpPrim, $nubesPrim, $PrimAstro)
     if ($TieneSec) {
-        [PzcRenderer]::RenderFrame($SecDir, $d, $elapsed, $TmpSec, $nubesSec, $false)
+        [PzcRenderer]::RenderFrame($SecDir, $d, $elapsed, $TmpSec, $nubesSec, $SecAstro)
         [PzcRenderer]::ApplyWallpapers($TmpPrim, $TmpSec, $false)
     } else {
         [PzcRenderer]::ApplyWallpapers($TmpPrim, $TmpPrim, $true)

@@ -40,7 +40,7 @@ try {
     # Copiar previews dia/dorado/noche (principal y secundario) dentro de cada tema instalado
     foreach ($temaDir in Get-ChildItem -Path $TemasDst -Directory) {
         $tid = $temaDir.Name
-        foreach ($sub in @('', 'secundario')) {
+        foreach ($sub in @('', 'secundario', 'bloqueo')) {
             $prevSrc = if ($sub) { Join-Path $Raiz "escenas\$tid\$sub\preview" } else { Join-Path $Raiz "escenas\$tid\preview" }
             if (Test-Path $prevSrc) {
                 $prevDst = if ($sub) { Join-Path $temaDir.FullName "$sub\preview" } else { Join-Path $temaDir.FullName 'preview' }

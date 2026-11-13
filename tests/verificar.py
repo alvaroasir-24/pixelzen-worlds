@@ -111,7 +111,7 @@ def check_js_sync():
 def check_temas_y_packs():
     campos_req = ('id', 'nombre', 'citas', 'modo_pajaros', 'modo_particulas')
     for tema in TEMAS:
-        for sub in ((), ('secundario',)):
+        for sub in ((), ('secundario',), ('bloqueo',)):
             tjson = os.path.join(ROOT, 'escenas', tema, *sub, 'tema.json')
             with open(tjson, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -132,12 +132,13 @@ def check_temas_y_packs():
             assert os.path.isfile(p2), f'Falta {p2}'
             assert filecmp.cmp(p1, p2, shallow=False), f'Preview desincronizada: {p2}'
 
-            s1 = os.path.join(ROOT, 'escenas', tema, 'secundario', 'preview', fase, 'v3.png')
-            s2 = os.path.join(ROOT, 'docs', 'previews', tema, f'm2-{fase}.png')
-            assert os.path.isfile(s1), f'Falta {s1}'
-            assert os.path.isfile(s2), f'Falta {s2}'
-            assert filecmp.cmp(s1, s2, shallow=False), f'Preview M2 desincronizada: {s2}'
-    print(f'[OK] Esquema y paridad de {len(TEMAS)} temas (principal y secundario)')
+            for sub_name, pref in (('secundario', 'm2'), ('bloqueo', 'm3')):
+                s1 = os.path.join(ROOT, 'escenas', tema, sub_name, 'preview', fase, 'v3.png')
+                s2 = os.path.join(ROOT, 'docs', 'previews', tema, f'{pref}-{fase}.png')
+                assert os.path.isfile(s1), f'Falta {s1}'
+                assert os.path.isfile(s2), f'Falta {s2}'
+                assert filecmp.cmp(s1, s2, shallow=False), f'Preview {pref.upper()} desincronizada: {s2}'
+    print(f'[OK] Esquema y paridad de {len(TEMAS)} temas (principal, secundario y bloqueo)')
 
 
 def check_windows_renderer():

@@ -25,8 +25,13 @@ $VbsPath = Join-Path $Aqui 'PixelZenApp.vbs'
 $AutoRegPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $AutoRegName = 'PixelZenWorlds'
 
-function Resolver-Preview([string]$temaId, [string]$fase, [bool]$secundario = $false) {
-    $sub = if ($secundario) { 'secundario' } else { '' }
+function Resolver-Preview([string]$temaId, [string]$fase, [string]$variante = 'principal') {
+    $sub = switch ($variante) {
+        'secundaria' { 'secundario' }
+        'True'       { 'secundario' }
+        'bloqueo'    { 'bloqueo' }
+        default      { '' }
+    }
     $cands = @(
         (Join-Path $TemasDir "$temaId\$sub\preview\$fase\v3.png"),
         (Join-Path $Raiz "escenas\$temaId\$sub\preview\$fase\v3.png"),
@@ -61,6 +66,10 @@ function Cargar-Config {
         fps = 8
         hud = $true
         trayAlCerrar = $true
+        usarBloqueo = $true
+        fondoPrincipal = 'principal'
+        fondoSecundario = 'secundaria'
+        fondoBloqueo = 'bloqueo'
         stats = [ordered]@{
             tiempo = $true
             sistema = $true
@@ -72,7 +81,7 @@ function Cargar-Config {
     if (Test-Path $ConfigPath) {
         try {
             $raw = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-            foreach ($k in 'tema','monitores','modo','horaFija','fps','hud','trayAlCerrar') {
+            foreach ($k in 'tema','monitores','modo','horaFija','fps','hud','trayAlCerrar','usarBloqueo','fondoPrincipal','fondoSecundario','fondoBloqueo') {
                 if ($null -ne $raw.$k) { $def[$k] = $raw.$k }
             }
             if ($raw.stats) {
@@ -96,9 +105,9 @@ function Detectar-Fase($modo, $horaFija) {
     return 'noche'
 }
 
-function Aplicar-Fondos-Windows($tema, $numMonitores, $fase) {
-    $p1 = Resolver-Preview $tema $fase $false
-    $p2 = Resolver-Preview $tema $fase $true
+function Aplicar-Fondos-Windows($tema, $numMonitores, $fase, $fondoPrincipal = 'principal', $fondoSecundario = 'secundaria') {
+    $p1 = Resolver-Preview $tema $fase $fondoPrincipal
+    $p2 = Resolver-Preview $tema $fase $fondoSecundario
     if (-not $p2) { $p2 = $p1 }
 
     Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers' -Name 'BackgroundType' -Value 0 -Type DWord -ErrorAction SilentlyContinue
@@ -188,23 +197,89 @@ function Motor-NativoActivo {
     return $false
 }
 
+function Aplicar-Bloqueo-Windows($tema, $variante, $fase) {
+    $src = Resolver-Preview $tema $fase $variante
+    if (-not $src -or -not (Test-Path $src)) { return $false }
+    $lockA = Join-Path $DataDir 'lockscreen_a.png'
+    $lockB = Join-Path $DataDir 'lockscreen_b.png'
+    $curImg = ''
+    try {
+        Add-Type -AssemblyName System.Runtime.WindowsRuntime
+        $null = [Windows.Storage.StorageFile, Windows.Storage, ContentType = WindowsRuntime]
+        $null = [Windows.System.UserProfile.LockScreen, Windows.System.UserProfile, ContentType = WindowsRuntime]
+        $curImg = [Windows.System.UserProfile.LockScreen]::OriginalImageFile.AbsolutePath
+    } catch { return $false }
+    $outPath = if ($curImg -and ($curImg -match 'lockscreen_a\.png$')) { $lockB } else { $lockA }
+
+    try {
+        $bmpIn = [System.Drawing.Bitmap]::new($src)
+        try {
+            $dstW = 1920; $dstH = 1080
+            $bmpOut = [System.Drawing.Bitmap]::new($dstW, $dstH, [System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
+            try {
+                $g = [System.Drawing.Graphics]::FromImage($bmpOut)
+                try {
+                    $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+                    $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
+                    $scale = [Math]::Max($dstW / [double]$bmpIn.Width, $dstH / [double]$bmpIn.Height)
+                    $srcW = [float]($dstW / $scale)
+                    $srcH = [float]($dstH / $scale)
+                    $srcX = [float](($bmpIn.Width - $srcW) * 0.5)
+                    $srcY = [float][Math]::Max(0, [Math]::Min($bmpIn.Height - $srcH, [Math]::Round(($bmpIn.Height - $srcH) * 0.55)))
+                    $g.DrawImage($bmpIn, [System.Drawing.Rectangle]::new(0, 0, $dstW, $dstH), $srcX, $srcY, $srcW, $srcH, [System.Drawing.GraphicsUnit]::Pixel)
+                } finally { $g.Dispose() }
+                $bmpOut.Save($outPath, [System.Drawing.Imaging.ImageFormat]::Png)
+            } finally { $bmpOut.Dispose() }
+        } finally { $bmpIn.Dispose() }
+
+        $null = [Windows.Foundation.IAsyncAction, Windows.Foundation, ContentType = WindowsRuntime]
+        $asTaskGen = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+            $_.Name -eq 'AsTask' -and $_.IsGenericMethodDefinition -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -like 'IAsyncOperation*'
+        }) | Select-Object -First 1
+        $asTaskAct = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+            $_.Name -eq 'AsTask' -and (-not $_.IsGenericMethodDefinition) -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncAction'
+        }) | Select-Object -First 1
+        $opFile = [Windows.Storage.StorageFile]::GetFileFromPathAsync($outPath)
+        $tFile = $asTaskGen.MakeGenericMethod([Windows.Storage.StorageFile]).Invoke($null, @($opFile))
+        $null = $tFile.Wait(-1)
+        $sf = $tFile.Result
+        $act = [Windows.System.UserProfile.LockScreen]::SetImageFileAsync($sf)
+        $tSet = $asTaskAct.Invoke($null, @($act))
+        $null = $tSet.Wait(-1)
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 $script:modoMotor = 'nativo'
+$script:bloqueoOk = $false
 
 function Aplicar-Todo($c) {
     Guardar-Config $c
     Limpiar-RestosLively
     $fase = Detectar-Fase $c.modo $c.horaFija
-    Aplicar-Fondos-Windows $c.tema $c.monitores $fase
+    $fp = if ($c.fondoPrincipal) { $c.fondoPrincipal } else { 'principal' }
+    $fs = if ($c.fondoSecundario) { $c.fondoSecundario } else { 'secundaria' }
+    $fb = if ($c.fondoBloqueo) { $c.fondoBloqueo } else { 'bloqueo' }
+    Aplicar-Fondos-Windows $c.tema $c.monitores $fase $fp $fs
+    if ($c.usarBloqueo) {
+        $script:bloqueoOk = Aplicar-Bloqueo-Windows $c.tema $fb $fase
+    } else {
+        $script:bloqueoOk = $false
+    }
     Detener-CiclosPrevios
 
     $motorPath = Join-Path $Aqui 'PixelZenMotor.ps1'
     if (Test-Path $motorPath) {
         $script:modoMotor = 'nativo'
-        if (-not (Motor-NativoActivo)) {
-            $motorPidFile = Join-Path $env:TEMP 'pixelzen_motor.pid'
-            $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$motorPath`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija) -Fps 8" -WindowStyle Hidden -PassThru
-            if ($proc) { Set-Content -Path $motorPidFile -Value $proc.Id -Encoding ASCII }
+        $motorPidFile = Join-Path $env:TEMP 'pixelzen_motor.pid'
+        if (Test-Path $motorPidFile) {
+            $oldM = Get-Content $motorPidFile -ErrorAction SilentlyContinue
+            if ($oldM) { Stop-Process -Id ([int]$oldM) -Force -ErrorAction SilentlyContinue }
         }
+        $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$motorPath`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija) -Fps 8 -FondoPrincipal $fp -FondoSecundario $fs" -WindowStyle Hidden -PassThru
+        if ($proc) { Set-Content -Path $motorPidFile -Value $proc.Id -Encoding ASCII }
     } else {
         $script:modoMotor = 'estatico'
         $pyPidFile = Join-Path $env:TEMP 'pixelzen_win.pid'
@@ -221,7 +296,7 @@ function Aplicar-Todo($c) {
             $proc = Start-Process -FilePath $py -ArgumentList "`"$(Join-Path $Aqui 'pixelzen_win.py')`" --tema $($c.tema) --monitores $($c.monitores) $flag" -WindowStyle Hidden -PassThru
             if ($proc) { Set-Content -Path $pyPidFile -Value $proc.Id -Encoding ASCII }
         } elseif ($c.modo -ne 'fija' -and (Test-Path (Join-Path $Aqui 'PixelZenCiclo.ps1'))) {
-            $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $Aqui 'PixelZenCiclo.ps1')`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija)" -WindowStyle Hidden -PassThru
+            $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$(Join-Path $Aqui 'PixelZenCiclo.ps1')`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija) -FondoPrincipal $fp -FondoSecundario $fs" -WindowStyle Hidden -PassThru
             if ($proc) { Set-Content -Path $pyPidFile -Value $proc.Id -Encoding ASCII }
         }
     }
@@ -338,11 +413,20 @@ function Cargar-Temas {
                     elseif ($sraw.subtitulo) { $m2 = [string]$sraw.subtitulo }
                 } catch {}
             }
-            $lista += @{ id = $id; anime = $anime; titulo = $titulo; m1 = $m1; m2 = $m2 }
+            $m3 = 'Pantalla de bloqueo'
+            $bj = Join-Path $d.FullName 'bloqueo\tema.json'
+            if (Test-Path $bj) {
+                try {
+                    $braw = Get-Content $bj -Raw -Encoding UTF8 | ConvertFrom-Json
+                    if ($braw.nombre) { $m3 = [string]$braw.nombre }
+                    elseif ($braw.subtitulo) { $m3 = [string]$braw.subtitulo }
+                } catch {}
+            }
+            $lista += @{ id = $id; anime = $anime; titulo = $titulo; m1 = $m1; m2 = $m2; m3 = $m3 }
         }
     }
     if ($lista.Count -eq 0) {
-        return @(@{ id = 'fittoa'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena'; m2 = 'Reino de Asura' })
+        return @(@{ id = 'fittoa'; anime = 'Mushoku Tensei'; titulo = 'Región de Fittoa'; m1 = 'Aldea de Buena'; m2 = 'Reino de Asura'; m3 = 'Santuario del Teletransporte' })
     }
     return $lista
 }
@@ -499,10 +583,42 @@ $xaml = @"
                 </StackPanel>
               </Border>
 
-              <Border x:Name="CardMon2" Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,16" Cursor="Hand">
+              <Border x:Name="CardMon2" Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14" Cursor="Hand">
                 <StackPanel>
                   <RadioButton x:Name="RbMon2" GroupName="Mon" Content="2 Pantallas (Principal + Historia extendida)" FontWeight="SemiBold"/>
                   <TextBlock x:Name="TxtMon2Detalle" Text="Detectando pantallas..." Foreground="#54DED4" FontSize="11" Margin="22,2,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+
+              <TextBlock Text="¿Qué escena del grupo quieres en cada pantalla?" Foreground="#F3EAD6" FontSize="15" FontWeight="Bold" Margin="0,2,0,2"/>
+              <TextBlock Text="Cada mundo incluye 3 escenas distintas (Principal, Secundaria y Bloqueo). Puedes combinarlas libremente." Foreground="#8FA2C2" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+              <Border Background="#101832" BorderBrush="#2A3C64" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,16">
+                <StackPanel>
+                  <TextBlock Text="🖥️ Pantalla Principal" Foreground="#54DED4" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                  <ComboBox x:Name="CmbFondoPrincipal" FontSize="12" Height="32" Padding="8,4" Margin="0,0,0,10">
+                    <ComboBoxItem Content="Principal" Tag="principal"/>
+                    <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                    <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                  </ComboBox>
+
+                  <StackPanel x:Name="PanelComboSec">
+                    <TextBlock Text="🖥️ Pantalla Secundaria" Foreground="#E6B45A" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="CmbFondoSecundaria" FontSize="12" Height="32" Padding="8,4" Margin="0,0,0,10">
+                      <ComboBoxItem Content="Principal" Tag="principal"/>
+                      <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                      <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                    </ComboBox>
+                  </StackPanel>
+
+                  <CheckBox x:Name="ChkBloqueo" Content="🔒 Aplicar también fondo a la Pantalla de Bloqueo de Windows" FontWeight="SemiBold" Margin="0,2,0,6"/>
+                  <StackPanel x:Name="PanelComboBloq">
+                    <ComboBox x:Name="CmbFondoBloqueo" FontSize="12" Height="32" Padding="8,4" Margin="22,0,0,0">
+                      <ComboBoxItem Content="Principal" Tag="principal"/>
+                      <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
+                      <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
+                    </ComboBox>
+                  </StackPanel>
                 </StackPanel>
               </Border>
 
@@ -664,10 +780,24 @@ $xaml = @"
 
             <StackPanel x:Name="PanelPrev2">
               <TextBlock x:Name="TxtPrev2Title" Text="PANTALLA 2 · CONTINUACIÓN DE LA HISTORIA" Foreground="#E6B45A" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-              <Border BorderBrush="#7D6540" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="215" ClipToBounds="True">
+              <Border BorderBrush="#7D6540" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="175" ClipToBounds="True">
                 <Image x:Name="ImgPrev2" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
               </Border>
-              <TextBlock x:Name="TxtM2Sub" Text="" Foreground="#A8B8CF" FontSize="11" Margin="0,5,0,0" TextWrapping="Wrap"/>
+              <TextBlock x:Name="TxtM2Sub" Text="" Foreground="#A8B8CF" FontSize="11" Margin="0,4,0,8" TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <StackPanel x:Name="PanelPrevBloqueo">
+              <TextBlock x:Name="TxtPrevBloqTitle" Text="🔒 PANTALLA DE BLOQUEO" Foreground="#88C8FF" FontSize="11" FontWeight="Bold" Margin="0,2,0,4"/>
+              <Border BorderBrush="#4C6FA8" BorderThickness="1.5" CornerRadius="6" Background="#050812" Height="115" ClipToBounds="True">
+                <Grid>
+                  <Image x:Name="ImgPrevBloqueo" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                  <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,12,0,0">
+                    <TextBlock Text="21:34" Foreground="#F6F4EA" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Windows Lock Screen" Foreground="#C8D6EA" FontSize="9" HorizontalAlignment="Center"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <TextBlock x:Name="TxtBloqSub" Text="" Foreground="#A8B8CF" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
 
             <Border Background="#101833" BorderBrush="#263A60" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,12,0,0">
@@ -710,7 +840,7 @@ if (Test-Path $IconPath) {
 }
 
 $el = @{}
-foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -807,9 +937,16 @@ foreach ($t in $temas) {
     $lblM2.FontSize = 11
     $lblM2.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
 
+    $lblM3 = New-Object System.Windows.Controls.TextBlock
+    $lblM3.Text = "🔒 $($t.m3)"
+    $lblM3.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#88C8FF')
+    $lblM3.FontSize = 10.5
+    $lblM3.TextTrimming = [System.Windows.TextTrimming]::CharacterEllipsis
+
     $null = $info.Children.Add($topRow)
     $null = $info.Children.Add($lblM1)
     $null = $info.Children.Add($lblM2)
+    $null = $info.Children.Add($lblM3)
     [System.Windows.Controls.Grid]::SetColumn($info, 2)
     $null = $g.Children.Add($info)
 
@@ -843,6 +980,19 @@ for ($i = 0; $i -lt $el.CmbModo.Items.Count; $i++) {
 }
 if ($el.CmbModo.SelectedIndex -lt 0) { $el.CmbModo.SelectedIndex = 0 }
 
+function Set-ComboByTag($cmb, [string]$tag, [int]$defIdx = 0) {
+    $found = -1
+    for ($i = 0; $i -lt $cmb.Items.Count; $i++) {
+        if ($cmb.Items[$i].Tag -eq $tag) { $found = $i; break }
+    }
+    $cmb.SelectedIndex = if ($found -ge 0) { $found } else { $defIdx }
+}
+
+$el.ChkBloqueo.IsChecked = [bool]$cfg.usarBloqueo
+Set-ComboByTag $el.CmbFondoPrincipal ([string]$cfg.fondoPrincipal) 0
+Set-ComboByTag $el.CmbFondoSecundaria ([string]$cfg.fondoSecundario) 1
+Set-ComboByTag $el.CmbFondoBloqueo ([string]$cfg.fondoBloqueo) 2
+
 # Diagnóstico sencillo
 $pyPath = Resolver-Python
 $pyMsg = if ($pyPath) { "✅ Animación solar automática y vista web listas (Python detectado)." } else { "✅ Animación solar nativa activa (no requiere Python)." }
@@ -851,6 +1001,9 @@ $lnkMsg = if (Test-Path $deskLnk) { "✅ Acceso directo ya creado en tu Escritor
 $el.TxtDiag.Text = "ℹ️ Versión instalada: v$VersionActual`n✅ $($screens.Count) pantalla(s) detectadas.`n✅ $($temas.Count) mundos con continuación de historia listos.`n$pyMsg`n$lnkMsg"
 
 function Lee-FormConfig {
+    $fp = if ($el.CmbFondoPrincipal.SelectedItem) { [string]$el.CmbFondoPrincipal.SelectedItem.Tag } else { 'principal' }
+    $fs = if ($el.CmbFondoSecundaria.SelectedItem) { [string]$el.CmbFondoSecundaria.SelectedItem.Tag } else { 'secundaria' }
+    $fb = if ($el.CmbFondoBloqueo.SelectedItem) { [string]$el.CmbFondoBloqueo.SelectedItem.Tag } else { 'bloqueo' }
     return [ordered]@{
         tema = $script:selectedTema
         monitores = if ($el.RbMon2.IsChecked) { 2 } else { 1 }
@@ -859,6 +1012,10 @@ function Lee-FormConfig {
         fps = 8
         hud = [bool]$el.ChkHudMaster.IsChecked
         trayAlCerrar = [bool]$el.ChkTrayCerrar.IsChecked
+        usarBloqueo = [bool]$el.ChkBloqueo.IsChecked
+        fondoPrincipal = $fp
+        fondoSecundario = $fs
+        fondoBloqueo = $fb
         stats = [ordered]@{
             tiempo = [bool]$el.ChkTiempo.IsChecked
             sistema = [bool]$el.ChkSistema.IsChecked
@@ -911,13 +1068,46 @@ function Actualiza-Vista {
     $el.CardMon1.BorderBrush = $bc.ConvertFromString($(if (-not $dosMon) { '#54DED4' } else { '#2A3C64' }))
     $el.CardMon2.BorderBrush = $bc.ConvertFromString($(if ($dosMon) { '#54DED4' } else { '#2A3C64' }))
 
-    # Imágenes de vista previa M1 y M2
-    $p1 = Resolver-Preview $tid $script:previewFase $false
-    $p2 = Resolver-Preview $tid $script:previewFase $true
+    # Nombres de escenas del mundo en los selectores por pantalla
+    $script:syncingCombos = $true
+    foreach ($cmb in @($el.CmbFondoPrincipal, $el.CmbFondoSecundaria, $el.CmbFondoBloqueo)) {
+        foreach ($item in $cmb.Items) {
+            switch ([string]$item.Tag) {
+                'principal'  { $item.Content = "Principal · $($tmeta.m1)" }
+                'secundaria' { $item.Content = "Secundaria · $($tmeta.m2)" }
+                'bloqueo'    { $item.Content = "Bloqueo · $($tmeta.m3)" }
+            }
+        }
+    }
+    $script:syncingCombos = $false
+
+    $fpTag = if ($el.CmbFondoPrincipal.SelectedItem) { [string]$el.CmbFondoPrincipal.SelectedItem.Tag } else { 'principal' }
+    $fsTag = if ($el.CmbFondoSecundaria.SelectedItem) { [string]$el.CmbFondoSecundaria.SelectedItem.Tag } else { 'secundaria' }
+    $fbTag = if ($el.CmbFondoBloqueo.SelectedItem) { [string]$el.CmbFondoBloqueo.SelectedItem.Tag } else { 'bloqueo' }
+    $el.PanelComboSec.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
+    $usarBloq = [bool]$el.ChkBloqueo.IsChecked
+    $el.PanelComboBloq.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
+
+    function Nombre-EscenaVariante([string]$tag) {
+        switch ($tag) {
+            'secundaria' { return $tmeta.m2 }
+            'bloqueo'    { return $tmeta.m3 }
+            default      { return $tmeta.m1 }
+        }
+    }
+
+    # Imágenes de vista previa M1, M2 y Bloqueo
+    $p1 = Resolver-Preview $tid $script:previewFase $fpTag
+    $p2 = Resolver-Preview $tid $script:previewFase $fsTag
+    $pb = Resolver-Preview $tid $script:previewFase $fbTag
     $el.ImgPrev1.Source = Cargar-Bitmap $p1
     $el.ImgPrev2.Source = Cargar-Bitmap $p2
+    $el.ImgPrevBloqueo.Source = Cargar-Bitmap $pb
+    $el.TxtPrev1Title.Text = "PANTALLA 1 · $(Nombre-EscenaVariante $fpTag)"
     $el.PanelPrev2.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
-    $el.TxtM2Sub.Text = "En tu 2.º monitor: $($tmeta.m2)"
+    $el.TxtM2Sub.Text = "En tu 2.º monitor: $(Nombre-EscenaVariante $fsTag)"
+    $el.PanelPrevBloqueo.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
+    $el.TxtBloqSub.Text = "Bloqueo de Windows: $(Nombre-EscenaVariante $fbTag)"
 
     # Modo horario
     $modo = $el.CmbModo.SelectedItem.Tag
@@ -954,7 +1144,8 @@ function Actualiza-Vista {
     $modoTxt = switch ($modo) { 'real' { 'Hora real' } 'demo' { 'Pase rápido 90s' } 'fija' { "Fija $($el.TxtHoraVal.Text)" } default { 'Suave 90m' } }
     $nStats = @($el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio | Where-Object { $_.IsChecked }).Count
     $hudTxt = if ($hudOn) { "$nStats cajitas activas" } else { 'HUD desactivado' }
-    $el.TxtResumen.Text = "Mundo: $($tmeta.titulo)`nPantallas: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nLuz: $modoTxt`nInfo: $hudTxt"
+    $bloqTxt = if ($usarBloq) { 'Activa' } else { 'Sin cambio' }
+    $el.TxtResumen.Text = "Mundo: $($tmeta.titulo)`nPantallas: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nInfo: $hudTxt"
 }
 
 # Eventos de navegación y controles
@@ -967,6 +1158,11 @@ $el.CardMon1.Add_MouseLeftButtonUp({ $el.RbMon1.IsChecked = $true; Actualiza-Vis
 $el.CardMon2.Add_MouseLeftButtonUp({ $el.RbMon2.IsChecked = $true; Actualiza-Vista })
 $el.RbMon1.Add_Checked({ Actualiza-Vista })
 $el.RbMon2.Add_Checked({ Actualiza-Vista })
+foreach ($cmbV in $el.CmbFondoPrincipal, $el.CmbFondoSecundaria, $el.CmbFondoBloqueo) {
+    $cmbV.Add_SelectionChanged({ if (-not $script:syncingCombos) { Actualiza-Vista } })
+}
+$el.ChkBloqueo.Add_Checked({ Actualiza-Vista })
+$el.ChkBloqueo.Add_Unchecked({ Actualiza-Vista })
 $el.CmbModo.Add_SelectionChanged({
     if ($el.CmbModo.SelectedItem.Tag -eq 'fija') {
         $script:previewFase = Detectar-Fase 'fija' $el.SldHora.Value
@@ -1066,6 +1262,10 @@ $el.BtnBuscarUpdate.Add_Click({
 $el.BtnRestaurar.Add_Click({
     $script:selectedTema = 'fittoa'
     $el.RbMon2.IsChecked = $true
+    $el.ChkBloqueo.IsChecked = $true
+    Set-ComboByTag $el.CmbFondoPrincipal 'principal' 0
+    Set-ComboByTag $el.CmbFondoSecundaria 'secundaria' 1
+    Set-ComboByTag $el.CmbFondoBloqueo 'bloqueo' 2
     $el.CmbModo.SelectedIndex = 0
     $el.ChkHudMaster.IsChecked = $true
     foreach ($cb in $el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio) { $cb.IsChecked = $true }
@@ -1102,10 +1302,11 @@ $el.BtnAplicar.Add_Click({
     Start-Sleep -Milliseconds 250
     Actualiza-Vista
     $tmeta = $temas | Where-Object { $_.id -eq $c.tema } | Select-Object -First 1
+    $bloqSuf = if ($c.usarBloqueo -and $script:bloqueoOk) { ' + bloqueo' } else { '' }
     if ($script:modoMotor -eq 'nativo') {
-        $el.TxtEstado.Text = "✨ ¡Listo! '$($tmeta.titulo)' animado en vivo de forma nativa ($($c.monitores) pantalla(s))."
+        $el.TxtEstado.Text = "✨ ¡Listo! '$($tmeta.titulo)' animado en vivo de forma nativa ($($c.monitores) pantalla(s)$bloqSuf)."
     } else {
-        $el.TxtEstado.Text = "✅ ¡Listo! Aplicado '$($tmeta.titulo)' en $($c.monitores) pantalla(s) (fase $fase)."
+        $el.TxtEstado.Text = "✅ ¡Listo! Aplicado '$($tmeta.titulo)' en $($c.monitores) pantalla(s)$bloqSuf (fase $fase)."
     }
 })
 
