@@ -37,6 +37,10 @@ cp -a "$PACK/images" "$EXT/images"
 cp "$PACK/datos.json" "$EXT/datos.json"
 cp "$PACK/tema.json" "$EXT/tema.json"
 cp "$PACK/fondo.png" "$EXT/fondo.png"
+if [ -d "$EXT/temas" ]; then
+  mkdir -p "$EXT/temas/$TEMA"
+  cp -a "$PACK/." "$EXT/temas/$TEMA/"
+fi
 mkdir -p "$HOME/.local/share/backgrounds"
 cp "$PACK/fondo.png" "$HOME/.local/share/backgrounds/pixelzen.png"
 

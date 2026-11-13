@@ -1,0 +1,196 @@
+// Preferencias gráficas de PixelZen Worlds para GNOME Shell 46-50+.
+import Adw from 'gi://Adw';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import Gtk from 'gi://Gtk';
+import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
+
+const TEMAS_BASE = [
+    {id: 'fittoa', nombre: 'Región de Fittoa'},
+    {id: 'continente-demoniaco', nombre: 'Continente Demoníaco'},
+    {id: 'hunter-x-hunter', nombre: 'Hunter × Hunter · Isla Ballena'},
+    {id: 'black-clover', nombre: 'Black Clover · Aldea de Hage'},
+    {id: 'spiderman-miles-morales', nombre: 'Spider-Man · Miles Morales'},
+];
+
+export default class PixelZenPreferences extends ExtensionPreferences {
+    _listarTemas() {
+        const temasDir = `${this.path}/temas`;
+        if (!GLib.file_test(temasDir, GLib.FileTest.IS_DIR))
+            return TEMAS_BASE;
+
+        const encontrados = [];
+        try {
+            const dir = Gio.File.new_for_path(temasDir);
+            const it = dir.enumerate_children('standard::name,standard::type', Gio.FileQueryInfoFlags.NONE, null);
+            let info;
+            while ((info = it.next_file(null)) !== null) {
+                if (info.get_file_type() !== Gio.FileType.DIRECTORY) continue;
+                const id = info.get_name();
+                let nombre = id;
+                const tj = `${temasDir}/${id}/tema.json`;
+                if (GLib.file_test(tj, GLib.FileTest.EXISTS)) {
+                    try {
+                        const raw = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(tj)[1]));
+                        if (raw.nombre) nombre = raw.nombre;
+                    } catch (_e) { /* usar id */ }
+                }
+                encontrados.push({id, nombre});
+            }
+        } catch (_e) {
+            return TEMAS_BASE;
+        }
+        return encontrados.length ? encontrados.sort((a, b) => a.nombre.localeCompare(b.nombre)) : TEMAS_BASE;
+    }
+
+    fillPreferencesWindow(window) {
+        const settings = this.getSettings();
+        window.set_title('PixelZen Worlds · Preferencias');
+        window.set_default_size(560, 620);
+
+        const page = new Adw.PreferencesPage({
+            title: 'Paisaje y ciclo',
+            icon_name: 'preferences-desktop-wallpaper-symbolic',
+        });
+        window.add(page);
+
+        // Grupo 1: Mundo activo
+        const grupoTema = new Adw.PreferencesGroup({
+            title: 'Mundo activo',
+            description: 'Cambia el paisaje animado y las citas del grimorio al instante.',
+        });
+        page.add(grupoTema);
+
+        const temas = this._listarTemas();
+        const listaTemas = new Gtk.StringList();
+        temas.forEach(t => listaTemas.append(`${t.nombre} (${t.id})`));
+
+        const comboTema = new Adw.ComboRow({
+            title: 'Escena / Paisaje',
+            model: listaTemas,
+        });
+        const actualTema = settings.get_string('tema');
+        const idxTema = Math.max(0, temas.findIndex(t => t.id === actualTema));
+        comboTema.set_selected(idxTema);
+        comboTema.connect('notify::selected', () => {
+            const sel = temas[comboTema.get_selected()];
+            if (sel && sel.id !== settings.get_string('tema')) {
+                settings.set_string('tema', sel.id);
+                settings.set_int('tema-revision', settings.get_int('tema-revision') + 1);
+            }
+        });
+        grupoTema.add(comboTema);
+
+        // Grupo 2: Tiempo y animación
+        const grupoTiempo = new Adw.PreferencesGroup({
+            title: 'Ciclo solar y animación',
+        });
+        page.add(grupoTiempo);
+
+        const modos = [
+            {id: 'real', label: 'Hora real del sistema'},
+            {id: '90m', label: 'Ciclo completo (24h en 90 min)'},
+            {id: 'demo', label: 'Demo rápida (24h en 90 s)'},
+            {id: 'fija', label: 'Hora fija manual'},
+        ];
+        const listaModos = new Gtk.StringList();
+        modos.forEach(m => listaModos.append(m.label));
+        const comboModo = new Adw.ComboRow({
+            title: 'Modo de tiempo',
+            model: listaModos,
+        });
+        const leeModoIdx = () => {
+            if (settings.get_boolean('ciclo-rapido'))
+                return settings.get_int('ciclo-duracion') >= 3600 ? 1 : 2;
+            return settings.get_double('hora-simulada') >= 0 ? 3 : 0;
+        };
+        comboModo.set_selected(leeModoIdx());
+
+        const rowHora = new Adw.SpinRow({
+            title: 'Hora fija (formato 24h)',
+            subtitle: 'Ejemplo: 18.75 = 18:45 (atardecer), 22.0 = 22:00 (noche)',
+            adjustment: new Gtk.Adjustment({
+                lower: 0,
+                upper: 23.75,
+                step_increment: 0.25,
+                page_increment: 1.0,
+                value: Math.max(0, settings.get_double('hora-simulada') >= 0 ? settings.get_double('hora-simulada') : 18.75),
+            }),
+            digits: 2,
+        });
+        rowHora.set_sensitive(comboModo.get_selected() === 3);
+
+        comboModo.connect('notify::selected', () => {
+            const idx = comboModo.get_selected();
+            if (idx === 0) {
+                settings.set_boolean('ciclo-rapido', false);
+                settings.set_double('hora-simulada', -1);
+            } else if (idx === 1) {
+                settings.set_int('ciclo-duracion', 5400);
+                settings.set_boolean('ciclo-rapido', true);
+                settings.set_double('hora-simulada', -1);
+            } else if (idx === 2) {
+                settings.set_int('ciclo-duracion', 90);
+                settings.set_boolean('ciclo-rapido', true);
+                settings.set_double('hora-simulada', -1);
+            } else {
+                settings.set_boolean('ciclo-rapido', false);
+                settings.set_double('hora-simulada', rowHora.get_value());
+            }
+            rowHora.set_sensitive(idx === 3);
+        });
+        rowHora.connect('notify::value', () => {
+            if (comboModo.get_selected() === 3)
+                settings.set_double('hora-simulada', rowHora.get_value());
+        });
+        grupoTiempo.add(comboModo);
+        grupoTiempo.add(rowHora);
+
+        const rowAnimar = new Adw.SwitchRow({
+            title: 'Animar paisaje y partículas',
+            subtitle: 'Nubes, agua, aves, ferry/Miles Morales y luces nocturnas',
+        });
+        settings.bind('animar', rowAnimar, 'active', Gio.SettingsBindFlags.DEFAULT);
+        grupoTiempo.add(rowAnimar);
+
+        const rowFps = new Adw.SpinRow({
+            title: 'Cuadros por segundo (FPS)',
+            adjustment: new Gtk.Adjustment({lower: 2, upper: 24, step_increment: 1, page_increment: 2, value: settings.get_int('fps')}),
+            digits: 0,
+        });
+        settings.bind('fps', rowFps, 'value', Gio.SettingsBindFlags.DEFAULT);
+        grupoTiempo.add(rowFps);
+
+        // Grupo 3: HUD y monitores
+        const grupoHud = new Adw.PreferencesGroup({
+            title: 'Panel HUD y pantallas',
+        });
+        page.add(grupoHud);
+
+        const rowHud = new Adw.SwitchRow({
+            title: 'Mostrar panel de datos (HUD)',
+            subtitle: 'Reloj, métricas del sistema y grimorio del mundo activo',
+        });
+        settings.bind('hud', rowHud, 'active', Gio.SettingsBindFlags.DEFAULT);
+        grupoHud.add(rowHud);
+
+        const rowMonitores = new Adw.SwitchRow({
+            title: 'Animar en todos los monitores',
+            subtitle: 'Desactívalo para ahorrar batería o GPU en configuraciones multimonitor',
+        });
+        settings.bind('todos-monitores', rowMonitores, 'active', Gio.SettingsBindFlags.DEFAULT);
+        grupoHud.add(rowMonitores);
+
+        // Grupo 4: Créditos
+        const grupoCreditos = new Adw.PreferencesGroup({
+            title: 'Créditos',
+        });
+        page.add(grupoCreditos);
+
+        const rowOrig = new Adw.ActionRow({
+            title: 'Basado en PixelZen de mosqui1988',
+            subtitle: 'https://github.com/mosqui1988/pixelzen · Licencia GPL-3.0-or-later',
+        });
+        grupoCreditos.add(rowOrig);
+    }
+}

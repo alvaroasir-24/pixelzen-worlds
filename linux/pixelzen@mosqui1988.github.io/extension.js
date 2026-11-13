@@ -65,7 +65,7 @@ export default class PixelZenExtension extends Extension {
 
         const quiereHud = this._settings.get_boolean('hud');
         if (quiereHud && !this._hud) {
-            this._hud = new Hud(this.path);
+            this._hud = new Hud(this.path, this._settings);
             this._raiz.add_child(this._hud.actor);
         } else if (!quiereHud && this._hud) {
             this._hud.destroy();

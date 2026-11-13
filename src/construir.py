@@ -26,9 +26,19 @@ def listar_temas():
     return res
 
 
+def sincroniza_canvas_js():
+    src_js = os.path.join(SRC_DIR, 'pixelzen-canvas.js')
+    if not os.path.isfile(src_js):
+        return
+    for dst_dir in (os.path.join(ROOT_DIR, 'windows', 'lively'), DOCS_DIR):
+        if os.path.isdir(dst_dir):
+            shutil.copy2(src_js, os.path.join(dst_dir, 'pixelzen-canvas.js'))
+
+
 def main():
     objetivos = sys.argv[1:] or listar_temas()
     os.makedirs(WIN_TEMAS_DIR, exist_ok=True)
+    sincroniza_canvas_js()
 
     for nombre in objetivos:
         tema_dir = os.path.join(ESCENAS_DIR, nombre)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PixelZen Mushoku para Windows (standalone).
+"""PixelZen Worlds para Windows (standalone).
 Soporta:
   - Modo fondo de escritorio Windows (SystemParametersInfoW) con transición suave cada pocos segundos
     (requiere Pillow para mezclar capas en tiempo real; sin Pillow alterna entre día/dorado/noche).
@@ -7,8 +7,8 @@ Soporta:
 
 Uso:
   python pixelzen_win.py --tema fittoa --90m
-  python pixelzen_win.py --tema continente-demoniaco --real
-  python pixelzen_win.py --tema continente-demoniaco --demo --animado
+  python pixelzen_win.py --tema spiderman-miles-morales --real
+  python pixelzen_win.py --tema continente-demoniaco --demo
 """
 import argparse
 import ctypes
@@ -39,7 +39,7 @@ def elevacion_solar(fecha, lat=40.4, lon=-3.7):
     lam = (L + 1.915 * math.sin(g) + 0.020 * math.sin(2 * g)) * rad
     eps = (23.439 - 0.0000004 * n) * rad
     ra = math.atan2(math.cos(eps) * math.sin(lam), math.cos(lam))
-    dec = math.asin(math.sin(eps) * Math.sin(lam))
+    dec = math.asin(math.sin(eps) * math.sin(lam))
     gmst = (18.697374558 + 24.06570982441908 * n) % 24.0
     Hh = (gmst * 15.0 + lon) * rad - ra
     Hh = math.atan2(math.sin(Hh), math.cos(Hh))
@@ -110,9 +110,34 @@ def render_frame_pillow(tema_dir, fecha, out_path, scale=3):
             luna_im.putalpha(a)
         base.alpha_composite(luna_im, (int(lunaX - 104), int(lunaY - 104)))
 
+    datos_path = os.path.join(tema_dir, 'datos.json')
+    if os.path.isfile(datos_path):
+        with open(datos_path, 'r', encoding='utf-8') as f:
+            nubes_meta = json.load(f).get('nubes', [])
+        noche = s['e'] < 0
+        op_nub = (1.0 - wA if noche else 0.0, wA if noche else 1.0 - wB, wB)
+        fases_n = ('nubes-noche.png', 'nubes-dorado.png', 'nubes-dia.png')
+        hojas_n = [Image.open(os.path.join(img_dir, fn)).convert('RGBA') if op > 0.01 else None
+                   for fn, op in zip(fases_n, op_nub)]
+        for nb in nubes_meta:
+            x_n, y_n, w_n, h_n, ys_n = int(nb[0]), int(nb[1]), int(nb[2]), int(nb[3]), int(nb[4])
+            box = (0, ys_n, w_n, ys_n + h_n)
+            for hoja, op in zip(hojas_n, op_nub):
+                if hoja is None or op <= 0.01:
+                    continue
+                crop = hoja.crop(box)
+                if op < 0.99:
+                    a = crop.split()[3].point(lambda p, f=op: int(p * f))
+                    crop.putalpha(a)
+                base.alpha_composite(crop, (x_n, y_n))
+
     escena = blend_3('escena')
     base.alpha_composite(escena)
-    out_im = base.resize((640 * scale, 400 * scale), Image.Resampling.NEAREST).convert('RGB')
+    rgb = base.convert('RGB')
+    try:
+        out_im = rgb.resize((640 * scale, 400 * scale), Image.Resampling.NEAREST)
+    except SystemError:
+        out_im = rgb.resize((640 * scale, 400 * scale), Image.Resampling.BOX)
     out_im.save(out_path, 'PNG')
 
 
@@ -158,7 +183,7 @@ def modo_wallpaper(args, tema_dir):
 
 
 def main():
-    p = argparse.ArgumentParser(description='PixelZen Mushoku para Windows')
+    p = argparse.ArgumentParser(description='PixelZen Worlds para Windows')
     p.add_argument('--tema', default='fittoa', help='Tema a usar (fittoa | continente-demoniaco | hunter-x-hunter | black-clover | spiderman-miles-morales)')
     p.add_argument('--90m', dest='c90', action='store_true', help='Ciclo completo de 24 horas en 90 minutos')
     p.add_argument('--demo', action='store_true', help='Demo rápida de 24 horas en 90 segundos')

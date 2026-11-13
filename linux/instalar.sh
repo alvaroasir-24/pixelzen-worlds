@@ -42,6 +42,16 @@ cp "$RAIZ/src/ubicacion.py" "$EXT/code/"
 cp "$RAIZ/src/datos.py" "$EXT/code/"
 cp "$RAIZ/LICENSE" "$EXT/"
 cp -a "$RAIZ/escenas/$TEMA/pack/." "$EXT/"
+if [ -d "$RAIZ/windows/lively/temas" ]; then
+  rm -rf "$EXT/temas"
+  cp -a "$RAIZ/windows/lively/temas" "$EXT/temas"
+fi
+for d in "$RAIZ/escenas"/*/pack; do
+  [ -d "$d/images" ] || continue
+  id="$(basename "$(dirname "$d")")"
+  mkdir -p "$EXT/temas/$id"
+  cp -a "$d/." "$EXT/temas/$id/"
+done
 glib-compile-schemas "$EXT/schemas"
 gsettings --schemadir "$EXT/schemas" set org.gnome.shell.extensions.pixelzen tema "$TEMA"
 

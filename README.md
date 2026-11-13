@@ -33,7 +33,53 @@ pixelzen-worlds/
 └── licencias/                  # Licencias GPL-3.0, MIT y OFL
 ```
 
+## Descarga e instalación automática
+
+> **Nota sobre visibilidad:** mientras el repositorio sea **privado**, necesitas tener sesión iniciada en GitHub (`gh auth login` o tu clave SSH configurada).
+
+### Linux (GNOME Shell 46–50+)
+
+Descarga el repositorio, compila/instala los 5 mundos y activa el ciclo completo de 24 horas en 90 minutos:
+
+```bash
+bash -c '
+set -e
+DEST="${PIXELZEN_DIR:-$HOME/pixelzen-worlds}"
+TEMA="${PIXELZEN_TEMA:-spiderman-miles-morales}"
+if [ -d "$DEST/.git" ]; then
+  git -C "$DEST" pull -4 --ff-only
+elif command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh repo clone davidlpizano/pixelzen-worlds "$DEST"
+else
+  git clone git@github.com:davidlpizano/pixelzen-worlds.git "$DEST"
+fi
+cd "$DEST/linux"
+./instalar.sh --tema="$TEMA" --90m
+echo "Instalado. Abre Extensiones -> PixelZen Worlds para cambiar tema o ciclo con GUI."
+'
+```
+
+*(Puedes elegir otro tema inicial cambiando `PIXELZEN_TEMA=fittoa`, `continente-demoniaco`, `hunter-x-hunter` o `black-clover`).*
+
+### Windows (PowerShell + Lively Wallpaper o Python)
+
+```powershell
+$dest = "$env:USERPROFILE\pixelzen-worlds"
+if (Test-Path "$dest\.git") {
+  git -C $dest pull --ff-only
+} elseif (Get-Command gh -ErrorAction SilentlyContinue) {
+  gh repo clone davidlpizano/pixelzen-worlds $dest
+} else {
+  git clone https://github.com/davidlpizano/pixelzen-worlds.git $dest
+}
+# Abre la carpeta para arrastrar lively\index.html a Lively Wallpaper, o ejecuta ejecutar.bat:
+explorer "$dest\windows"
+```
+
 ## Uso en Linux (GNOME Shell)
+
+- **Desde interfaz gráfica**: abre la app **Extensiones** (o `gnome-extensions prefs pixelzen@mosqui1988.github.io`) para elegir el paisaje, modo horario (`Real`, `90m`, `Demo 90s`, `Hora fija`), FPS y HUD.
+- **Desde terminal**:
 
 ```bash
 cd linux
@@ -67,6 +113,14 @@ Consulta [windows/LEEME.md](windows/LEEME.md) para más detalles.
    ```
 
 Consulta [escenas/README.md](escenas/README.md).
+
+## Verificación automática
+
+```bash
+python3 tests/verificar.py
+```
+
+Comprueba compilación Python (`py_compile`), sintaxis shell (`bash -n`), sincronización del motor JS (`src/pixelzen-canvas.js`), esquema y paridad de los 5 temas y renderizado en `windows/pixelzen_win.py`.
 
 ## Créditos y atribución
 

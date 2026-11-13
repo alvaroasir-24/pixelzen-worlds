@@ -36,8 +36,9 @@ function rgb(hex) {
 }
 
 export class Hud {
-    constructor(dir) {
+    constructor(dir, settings = null) {
         this._dir = dir;
+        this._settings = settings;
         this._script = `${dir}/code/datos.py`;
         this.d = {cpu: 0, ram: {pct: 0, usado: 0, total: 0}, temp: 0, bat: null, net: {vpn: {}}, load: [0, 0, 0], up: 0, disco: 0, top: [], nuc: 0};
         this.s = {puertos: [], repos: [], tc: {}, tools: {}, fallos: 0, errores: 0, est: 0, vecinos: 0};
@@ -65,8 +66,11 @@ export class Hud {
 
     recargaTema() {
         try {
+            const id = this._settings?.get_string('tema') || '';
+            const sub = id ? `${this._dir}/temas/${id}/tema.json` : '';
+            const ruta = (sub && GLib.file_test(sub, GLib.FileTest.EXISTS)) ? sub : `${this._dir}/tema.json`;
             const raw = JSON.parse(new TextDecoder().decode(
-                GLib.file_get_contents(`${this._dir}/tema.json`)[1]));
+                GLib.file_get_contents(ruta)[1]));
             this.citas = (raw.citas && raw.citas.length) ? raw.citas : CITAS_DEFECTO;
             this.eraSub = raw.nombre ?? 'Era del Dragón Acorazado';
             this.hk = this.hk % this.citas.length;

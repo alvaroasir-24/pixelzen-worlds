@@ -256,19 +256,27 @@ export class Escena {
         this.recalcula();
     }
 
+    _rutaTema() {
+        const id = this._settings?.get_string('tema') || '';
+        const sub = id ? `${this._dir}/temas/${id}` : '';
+        if (sub && GLib.file_test(`${sub}/datos.json`, GLib.FileTest.EXISTS)) return sub;
+        return this._dir;
+    }
+
     _cargaDatosYTexturas() {
+        const dir = this._rutaTema();
         this.D = JSON.parse(new TextDecoder().decode(
-            GLib.file_get_contents(`${this._dir}/datos.json`)[1]));
+            GLib.file_get_contents(`${dir}/datos.json`)[1]));
         this.brillantes = this.D.estrellas.filter(e => e[3] === 1);
         try {
             const raw = JSON.parse(new TextDecoder().decode(
-                GLib.file_get_contents(`${this._dir}/tema.json`)[1]));
+                GLib.file_get_contents(`${dir}/tema.json`)[1]));
             this.T = {...TEMA_DEFECTO, ...raw};
         } catch (e) {
             this.T = {...TEMA_DEFECTO};
         }
 
-        const img = f => GdkPixbuf.Pixbuf.new_from_file(`${this._dir}/images/${f}.png`);
+        const img = f => GdkPixbuf.Pixbuf.new_from_file(`${dir}/images/${f}.png`);
         this.tex = {};
         for (const f of ['cielo-noche', 'cielo-dorado', 'cielo-dia', 'escena-noche', 'escena-dorado', 'escena-dia', 'sol', 'luna'])
             this.tex[f] = contenido(img(f));
