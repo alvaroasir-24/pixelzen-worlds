@@ -43,24 +43,12 @@ Los instaladores viven en [`scripts/instalar.sh`](scripts/instalar.sh) (Linux) y
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.sh)"
 ```
 
-Si el repositorio está en **privado**, ejecuta el mismo script autenticándote con `gh`:
-
-```bash
-bash -c "$(gh api repos/davidlpizano/pixelzen-worlds/contents/scripts/instalar.sh -H 'Accept: application/vnd.github.raw')"
-```
-
 *(Puedes elegir el tema inicial con `PIXELZEN_TEMA=fittoa` — u otro de los 5 temas — antes de ejecutar el comando).*
 
 ### Windows (PowerShell + Lively Wallpaper o Python)
 
 ```powershell
 irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
-```
-
-Si el repositorio está en **privado**, usando `gh`:
-
-```powershell
-gh api repos/davidlpizano/pixelzen-worlds/contents/scripts/instalar.ps1 -H "Accept: application/vnd.github.raw" | Out-String | iex
 ```
 
 ## Uso en Linux (GNOME Shell)
