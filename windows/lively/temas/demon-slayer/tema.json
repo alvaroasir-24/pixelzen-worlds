@@ -6,6 +6,7 @@
   "descripcion": "Claro nocturno junto al Tren Infinito descarrilado donde Kyojuro Rengoku desata la Respiración de la Llama frente a Akaza y su Brújula Destructiva.",
   "sin_lago": true,
   "cielo_fondo": "#060818",
+  "modo_heroe": "demon_rengoku",
   "modo_pajaros": "grullas",
   "color_pajaros": "#0d0c18",
   "modo_particulas": "brasas_mana",

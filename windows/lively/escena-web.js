@@ -1,5 +1,5 @@
 (() => {
-  const TEMAS_DISPONIBLES = ['fittoa', 'continente-demoniaco', 'hunter-x-hunter', 'black-clover', 'spiderman-miles-morales', 'solo-leveling', 'demon-slayer', 'stranger-things', 'harry-potter'];
+  const TEMAS_DISPONIBLES = ['fittoa', 'continente-demoniaco', 'hunter-x-hunter', 'black-clover', 'spiderman-miles-morales', 'solo-leveling', 'demon-slayer', 'stranger-things', 'harry-potter', 'naruto', 'jujutsu-kaisen'];
   const params = new URLSearchParams(window.location.search);
   const canvas = document.getElementById('lienzo');
   const d = new Date();
@@ -71,6 +71,9 @@
       }
     }
     if (cfg.hud !== undefined) state.mostrarHud = !!cfg.hud;
+    if (cfg.clima !== undefined) state.clima = String(cfg.clima || 'normal');
+    if (cfg.compactoHud !== undefined) state.hudCompacto = !!cfg.compactoHud;
+    if (cfg.audioReactivo !== undefined) state.audioReactivo = !!cfg.audioReactivo;
     if (cfg.stats && typeof cfg.stats === 'object') {
       for (const k of STAT_KEYS) {
         if (cfg.stats[k] !== undefined) state.hudStats[k] = !!cfg.stats[k];
@@ -154,6 +157,31 @@
     else if (name === 'hudGrimorio') state.hudStats.grimorio = !!val;
     renderer.render();
   };
+
+  window.livelyAudioListener = audioArray => {
+    if (!audioArray || !audioArray.length) return;
+    let sum = 0;
+    const n = Math.min(24, audioArray.length);
+    for (let i = 0; i < n; i++) sum += Math.abs(audioArray[i] || 0);
+    renderer.audioCtrl.setExternalEnergy(Math.min(1, (sum / n) * 2.2));
+  };
+
+  window.addEventListener('pointermove', e => {
+    if (!state.parallax) return;
+    state.parallaxX = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+    state.parallaxY = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+  });
+
+  const wireBtn = (id, fn) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', ev => { ev.stopPropagation(); fn(); renderer.render(); });
+  };
+  wireBtn('btn-audio-play', () => renderer.audioCtrl.toggleSynth());
+  wireBtn('btn-audio-prev', () => renderer.audioCtrl.prevTrack());
+  wireBtn('btn-audio-next', () => renderer.audioCtrl.nextTrack());
+  wireBtn('btn-foco-toggle', () => renderer.toggleFoco());
+  wireBtn('btn-foco-reset', () => renderer.resetFoco());
+  wireBtn('btn-foco-mode', () => renderer.setFocoModo(!state.foco.descanso));
 
   sincronizaEstado().finally(() => {
     const yaCargado = state.D && state.T;

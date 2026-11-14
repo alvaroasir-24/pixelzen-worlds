@@ -7,6 +7,7 @@
   "descripcion": "Santuario bajo cascadas de glicinias púrpuras que ahuyentan a los demonios, con faroles de piedra y la katana Nichirin de la Llama sobre el altar.",
   "sin_lago": true,
   "cielo_fondo": "#0b071a",
+  "modo_heroe": "demon_glicinias",
   "modo_pajaros": "grullas",
   "color_pajaros": "#130b20",
   "modo_particulas": "hojas_mana",

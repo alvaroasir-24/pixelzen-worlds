@@ -11,6 +11,18 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUT_ROOT = os.path.abspath(os.environ['PZ_OUT_ROOT']) if os.environ.get('PZ_OUT_ROOT') else ROOT
+
+
+def _resuelve_rel(rel_path):
+    p_root = os.path.join(ROOT, rel_path)
+    if os.path.isfile(p_root):
+        return p_root
+    if OUT_ROOT != ROOT:
+        p_out = os.path.join(OUT_ROOT, rel_path)
+        if os.path.isfile(p_out):
+            return p_out
+    return p_root
 
 
 def descubrir_temas():
@@ -120,23 +132,30 @@ def check_temas_y_packs():
 
             for base_rel in (os.path.join('windows', 'lively', 'temas', tema, *sub), os.path.join('docs', 'temas', tema, *sub)):
                 bdir = os.path.join(ROOT, base_rel)
-                for req in ('datos.json', 'tema.json', 'fondo.png'):
+                for req in ('datos.json', 'tema.json'):
                     assert os.path.isfile(os.path.join(bdir, req)), f'Falta {base_rel}/{req}'
+                f_png = _resuelve_rel(os.path.join(base_rel, 'fondo.png'))
+                assert os.path.isfile(f_png), f'Falta {base_rel}/fondo.png'
                 for img in IMAGENES_REQUERIDAS:
-                    assert os.path.isfile(os.path.join(bdir, 'images', img)), f'Falta {base_rel}/images/{img}'
+                    i_png = _resuelve_rel(os.path.join(base_rel, 'images', img))
+                    assert os.path.isfile(i_png), f'Falta {base_rel}/images/{img}'
 
         for fase in ('dia', 'dorado', 'noche'):
-            p1 = os.path.join(ROOT, 'escenas', tema, 'preview', fase, 'v3.png')
-            p2 = os.path.join(ROOT, 'docs', 'previews', tema, f'{fase}.png')
-            assert os.path.isfile(p1), f'Falta {p1}'
-            assert os.path.isfile(p2), f'Falta {p2}'
+            p1_rel = os.path.join('escenas', tema, 'preview', fase, 'v3.png')
+            p2_rel = os.path.join('docs', 'previews', tema, f'{fase}.png')
+            p1 = _resuelve_rel(p1_rel)
+            p2 = _resuelve_rel(p2_rel)
+            assert os.path.isfile(p1), f'Falta {p1_rel}'
+            assert os.path.isfile(p2), f'Falta {p2_rel}'
             assert filecmp.cmp(p1, p2, shallow=False), f'Preview desincronizada: {p2}'
 
             for sub_name, pref in (('secundario', 'm2'), ('bloqueo', 'm3')):
-                s1 = os.path.join(ROOT, 'escenas', tema, sub_name, 'preview', fase, 'v3.png')
-                s2 = os.path.join(ROOT, 'docs', 'previews', tema, f'{pref}-{fase}.png')
-                assert os.path.isfile(s1), f'Falta {s1}'
-                assert os.path.isfile(s2), f'Falta {s2}'
+                s1_rel = os.path.join('escenas', tema, sub_name, 'preview', fase, 'v3.png')
+                s2_rel = os.path.join('docs', 'previews', tema, f'{pref}-{fase}.png')
+                s1 = _resuelve_rel(s1_rel)
+                s2 = _resuelve_rel(s2_rel)
+                assert os.path.isfile(s1), f'Falta {s1_rel}'
+                assert os.path.isfile(s2), f'Falta {s2_rel}'
                 assert filecmp.cmp(s1, s2, shallow=False), f'Preview {pref.upper()} desincronizada: {s2}'
     print(f'[OK] Esquema y paridad de {len(TEMAS)} temas (principal, secundario y bloqueo)')
 

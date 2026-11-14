@@ -45,6 +45,9 @@ function Normaliza-Config($c) {
         tiempo = $true; clima = $true; sistema = $true; gpu = $true
         red = $true; audio = $true; dev = $true; foco = $true; grimorio = $true
     }
+    if ($null -eq $c.fps) {
+        $c | Add-Member -NotePropertyName fps -NotePropertyValue 8 -Force
+    }
     if (-not $c.stats) {
         $c | Add-Member -NotePropertyName stats -NotePropertyValue ([pscustomobject]$defStats) -Force
     } else {
@@ -78,169 +81,161 @@ $xaml = @"
         Topmost="False"
         ResizeMode="NoResize"
         SizeToContent="WidthAndHeight"
-        MinWidth="290">
+        Width="298"
+        MinWidth="292">
   <Window.Resources>
     <Style TargetType="Border" x:Key="CardStyle">
       <Setter Property="Background" Value="#D60B1020"/>
       <Setter Property="BorderBrush" Value="#7D6540"/>
       <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="Margin" Value="0,0,0,7"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="Margin" Value="0,0,0,5"/>
     </Style>
   </Window.Resources>
-  <Grid x:Name="RootPanel" Margin="0">
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="Auto"/>
-      <ColumnDefinition Width="Auto"/>
-    </Grid.ColumnDefinitions>
-
-    <StackPanel x:Name="ColExtra" Grid.Column="0" Width="268" Margin="0,0,8,0" VerticalAlignment="Top">
-      <Border x:Name="CardClima" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="☀ ÓRBITA &amp; CLIMA" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtClimaMeta" Text="DÍA" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <DockPanel Margin="0,1">
-            <TextBlock x:Name="TxtClimaElev" Text="SOL --°" Foreground="#E6C06E" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtClimaAz" Text="AZ --°" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <ProgressBar x:Name="BarClima" Height="6" Minimum="0" Maximum="100" Value="50" Foreground="#E6B45A" Background="#1C2844" BorderBrush="#2F4266" Margin="0,5,0,4"/>
-          <TextBlock x:Name="TxtClimaLuz" Text="CIELO DESPEJADO" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10"/>
+  <StackPanel x:Name="RootPanel" Width="292" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0">
+    <Border x:Name="CardTiempo" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="✦ TIEMPO" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtModo" Text="REAL" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+          <TextBlock x:Name="TxtHora" Text="--:--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="26" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtSeg" Text="--" Foreground="#54DED4" FontFamily="Consolas" FontSize="12" FontWeight="Bold" Margin="6,0,0,4" VerticalAlignment="Bottom"/>
         </StackPanel>
-      </Border>
+        <TextBlock x:Name="TxtFecha" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Margin="0,1,0,0"/>
+        <TextBlock x:Name="TxtTema" Text="" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardGpu" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="▣ GPU &amp; MOTOR" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtGpuMeta" Text="8 FPS" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <TextBlock x:Name="TxtGpuNombre" Text="GPU" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10.5" TextTrimming="CharacterEllipsis" Margin="0,0,0,4"/>
-          <DockPanel Margin="0,1">
-            <TextBlock Text="CARGA" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Width="40"/>
-            <TextBlock x:Name="TxtGpuUso" Text="--%" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10.5" DockPanel.Dock="Right" Width="42" TextAlignment="Right"/>
-            <ProgressBar x:Name="BarGpu" Height="6" Minimum="0" Maximum="100" Foreground="#66DCE0" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
-          </DockPanel>
-          <TextBlock x:Name="TxtGpuRes" Text="640×400 PIXEL" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Margin="0,4,0,0"/>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardClima" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="☀ ÓRBITA &amp; CLIMA" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtClimaMeta" Text="DÍA" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock x:Name="TxtClimaElev" Text="SOL --°" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtClimaAz" Text="AZ --°" Foreground="#54DED4" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <ProgressBar x:Name="BarClima" Height="4" Minimum="0" Maximum="100" Value="50" Foreground="#E6B45A" Background="#1C2844" BorderBrush="#2F4266" Margin="0,1,0,3"/>
+        <TextBlock x:Name="TxtClimaLuz" Text="CIELO DESPEJADO" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" TextTrimming="CharacterEllipsis"/>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardAudio" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="♪ BSO MUNDO" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtAudioMeta" Text="AMBIENTE" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <TextBlock x:Name="TxtAudioTrack" Text="--" Foreground="#E6C06E" FontFamily="Consolas" FontSize="11" TextTrimming="CharacterEllipsis"/>
-          <TextBlock x:Name="TxtAudioBpm" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Margin="0,3,0,4"/>
-          <ProgressBar x:Name="BarAudio" Height="6" Minimum="0" Maximum="100" Value="65" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266"/>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardSistema" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="❖ SISTEMA" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtUp" Text="WIN" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,2">
+          <TextBlock Text="CPU" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Width="32"/>
+          <TextBlock x:Name="TxtCpu" Text="--%" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10" DockPanel.Dock="Right" Width="44" TextAlignment="Right"/>
+          <ProgressBar x:Name="BarCpu" Height="5" Minimum="0" Maximum="100" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
+        </DockPanel>
+        <DockPanel Margin="0,2,0,2">
+          <TextBlock Text="RAM" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Width="32"/>
+          <TextBlock x:Name="TxtRam" Text="--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10" DockPanel.Dock="Right" Width="68" TextAlignment="Right"/>
+          <ProgressBar x:Name="BarRam" Height="5" Minimum="0" Maximum="100" Foreground="#E6B45A" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
+        </DockPanel>
+        <DockPanel Margin="0,2,0,0">
+          <TextBlock x:Name="TxtDisco" Text="DISCO --" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10"/>
+          <TextBlock x:Name="TxtBat" Text="BAT --" Foreground="#72C48C" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardFoco" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="⧖ FOCO ZEN" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtFocoMeta" Text="CICLO 1" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <DockPanel Margin="0,0,0,4">
-            <TextBlock x:Name="TxtFocoTimer" Text="25:00" Foreground="#E6C06E" FontFamily="Consolas" FontSize="16" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtFocoSesion" Text="0m 00s" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10.5" VerticalAlignment="Center" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <ProgressBar x:Name="BarFoco" Height="6" Minimum="0" Maximum="100" Value="10" Foreground="#54DED4" Background="#1C2844" BorderBrush="#2F4266"/>
-        </StackPanel>
-      </Border>
-    </StackPanel>
+    <Border x:Name="CardGpu" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="▣ GPU &amp; MOTOR" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtGpuMeta" Text="8 FPS" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <TextBlock x:Name="TxtGpuNombre" Text="GPU" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,0,0,3"/>
+        <DockPanel Margin="0,0,0,2">
+          <TextBlock Text="CARGA" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Width="38"/>
+          <TextBlock x:Name="TxtGpuUso" Text="--%" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10" DockPanel.Dock="Right" Width="40" TextAlignment="Right"/>
+          <ProgressBar x:Name="BarGpu" Height="4" Minimum="0" Maximum="100" Foreground="#66DCE0" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
+        </DockPanel>
+        <TextBlock x:Name="TxtGpuRes" Text="2560×1440" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+      </StackPanel>
+    </Border>
 
-    <StackPanel x:Name="ColMain" Grid.Column="1" Width="288" VerticalAlignment="Top">
-      <Border x:Name="CardTiempo" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="✦ TIEMPO" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtModo" Text="REAL" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-            <TextBlock x:Name="TxtHora" Text="--:--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="32" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtSeg" Text="--" Foreground="#54DED4" FontFamily="Consolas" FontSize="14" FontWeight="Bold" Margin="6,0,0,5" VerticalAlignment="Bottom"/>
-          </StackPanel>
-          <TextBlock x:Name="TxtFecha" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11" Margin="0,2,0,0"/>
-          <TextBlock x:Name="TxtTema" Text="" Foreground="#E6C06E" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,3,0,0" TextWrapping="Wrap"/>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardRed" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="◈ RED ACTIVA" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtIface" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <DockPanel>
+          <TextBlock Text="IP" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10"/>
+          <TextBlock x:Name="TxtIp" Text="--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10" FontWeight="Bold" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <DockPanel Margin="0,2,0,0">
+          <TextBlock x:Name="TxtRx" Text="↓ --" Foreground="#66DCE0" FontFamily="Consolas" FontSize="10"/>
+          <TextBlock x:Name="TxtTx" Text="↑ --" Foreground="#54DED4" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardSistema" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="❖ SISTEMA" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtUp" Text="WIN" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <DockPanel Margin="0,1">
-            <TextBlock Text="CPU" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11" Width="36"/>
-            <TextBlock x:Name="TxtCpu" Text="--%" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="11" DockPanel.Dock="Right" Width="48" TextAlignment="Right"/>
-            <ProgressBar x:Name="BarCpu" Height="7" Minimum="0" Maximum="100" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
-          </DockPanel>
-          <DockPanel Margin="0,4,0,1">
-            <TextBlock Text="RAM" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11" Width="36"/>
-            <TextBlock x:Name="TxtRam" Text="--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="11" DockPanel.Dock="Right" Width="74" TextAlignment="Right"/>
-            <ProgressBar x:Name="BarRam" Height="7" Minimum="0" Maximum="100" Foreground="#E6B45A" Background="#1C2844" BorderBrush="#2F4266" Margin="4,0"/>
-          </DockPanel>
-          <DockPanel Margin="0,5,0,0">
-            <TextBlock x:Name="TxtDisco" Text="DISCO --" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11"/>
-            <TextBlock x:Name="TxtBat" Text="BAT --" Foreground="#72C48C" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardAudio" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="♪ MÚSICA &amp; SPOTIFY" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtAudioMeta" Text="AMBIENTE" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <TextBlock x:Name="TxtAudioTrack" Text="--" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="TxtAudioBpm" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Margin="0,1,0,3" TextTrimming="CharacterEllipsis"/>
+        <ProgressBar x:Name="BarAudio" Height="4" Minimum="0" Maximum="100" Value="65" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266"/>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardRed" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="◈ RED" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtIface" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <DockPanel>
-            <TextBlock Text="IP" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11"/>
-            <TextBlock x:Name="TxtIp" Text="--" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <DockPanel Margin="0,4,0,0">
-            <TextBlock x:Name="TxtRx" Text="↓ --" Foreground="#66DCE0" FontFamily="Consolas" FontSize="11"/>
-            <TextBlock x:Name="TxtTx" Text="↑ --" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardDev" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="⚔ DEV" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtHost" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <TextBlock x:Name="TxtRepo" Text="--" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="TxtTc" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardDev" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="⚔ DEV" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtHost" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <TextBlock x:Name="TxtRepo" Text="--" Foreground="#E6C06E" FontFamily="Consolas" FontSize="11" TextTrimming="CharacterEllipsis"/>
-          <TextBlock x:Name="TxtTc" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Margin="0,3,0,0" TextWrapping="Wrap"/>
-        </StackPanel>
-      </Border>
+    <Border x:Name="CardFoco" Style="{StaticResource CardStyle}">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="⧖ FOCO ZEN" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtFocoMeta" Text="CICLO 1" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock x:Name="TxtFocoTimer" Text="25:00" Foreground="#E6C06E" FontFamily="Consolas" FontSize="14" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtFocoSesion" Text="0m 00s" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <ProgressBar x:Name="BarFoco" Height="4" Minimum="0" Maximum="100" Value="10" Foreground="#54DED4" Background="#1C2844" BorderBrush="#2F4266"/>
+      </StackPanel>
+    </Border>
 
-      <Border x:Name="CardGrimorio" Style="{StaticResource CardStyle}">
-        <StackPanel>
-          <DockPanel Margin="0,0,0,5">
-            <TextBlock Text="✧ GRIMORIO" Foreground="#54DED4" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
-            <TextBlock x:Name="TxtAu" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
-          </DockPanel>
-          <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,6"/>
-          <TextBlock x:Name="TxtQSub" Text="" Foreground="#E6C06E" FontFamily="Consolas" FontSize="11"/>
-          <TextBlock x:Name="TxtQTxt" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
-        </StackPanel>
-      </Border>
-    </StackPanel>
-  </Grid>
+    <Border x:Name="CardGrimorio" Style="{StaticResource CardStyle}" Margin="0">
+      <StackPanel>
+        <DockPanel Margin="0,0,0,3">
+          <TextBlock Text="✧ GRIMORIO" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtAu" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+        </DockPanel>
+        <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
+        <TextBlock x:Name="TxtQSub" Text="" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="TxtQTxt" Text="" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="10" Margin="0,2,0,0" TextWrapping="Wrap"/>
+      </StackPanel>
+    </Border>
+  </StackPanel>
 </Window>
 "@
 
@@ -251,10 +246,43 @@ $win = [System.Windows.Markup.XamlReader]::Load($reader)
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 public class PzWinStyle {
     [DllImport("user32.dll")] public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
     [DllImport("user32.dll")] public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
     [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+    [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+    public static string FindSpotifyTitle() {
+        var pids = new System.Collections.Generic.HashSet<uint>();
+        foreach (var p in System.Diagnostics.Process.GetProcessesByName("Spotify")) {
+            pids.Add((uint)p.Id);
+        }
+        if (pids.Count == 0) return "";
+        string found = "";
+        EnumWindows((hWnd, lParam) => {
+            uint pid;
+            GetWindowThreadProcessId(hWnd, out pid);
+            if (!pids.Contains(pid)) return true;
+            var cls = new StringBuilder(64);
+            GetClassName(hWnd, cls, cls.Capacity);
+            string c = cls.ToString();
+            if (c != "Chrome_WidgetWin_0" && c != "Chrome_WidgetWin_1") return true;
+            var sb = new StringBuilder(512);
+            GetWindowText(hWnd, sb, sb.Capacity);
+            string t = sb.ToString().Trim();
+            if (!string.IsNullOrEmpty(t) && t != "Spotify" && t != "Spotify Free" && t != "Spotify Premium" && t != "AngleHiddenWindow") {
+                found = t;
+                return false;
+            }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
 }
 "@
 
@@ -265,13 +293,14 @@ $win.Add_SourceInitialized({
     [PzWinStyle]::SetWindowPos($hwnd, [IntPtr]::new(1), 0, 0, 0, 0, 0x0013) | Out-Null
 })
 
-# Posicionar arriba a la derecha del area de trabajo del monitor principal
+# Posicionar todas las tarjetas en una unica columna en la parte derecha del monitor principal
 $primary = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-$win.Left = $primary.Right - 564 - 22
-$win.Top = $primary.Top + 22
+$win.Width = 296
+$win.Left = $primary.Right - 296 - 18
+$win.Top = $primary.Top + 14
 
 $el = @{}
-foreach ($n in 'ColExtra','ColMain','CardTiempo','CardClima','CardSistema','CardGpu','CardRed','CardAudio','CardDev','CardFoco','CardGrimorio','TxtModo','TxtHora','TxtSeg','TxtFecha','TxtTema','TxtClimaMeta','TxtClimaElev','TxtClimaAz','BarClima','TxtClimaLuz','TxtUp','TxtCpu','BarCpu','TxtRam','BarRam','TxtDisco','TxtBat','TxtGpuMeta','TxtGpuNombre','TxtGpuUso','BarGpu','TxtGpuRes','TxtIface','TxtIp','TxtRx','TxtTx','TxtAudioMeta','TxtAudioTrack','TxtAudioBpm','BarAudio','TxtHost','TxtRepo','TxtTc','TxtFocoMeta','TxtFocoTimer','TxtFocoSesion','BarFoco','TxtAu','TxtQSub','TxtQTxt') {
+foreach ($n in 'RootPanel','CardTiempo','CardClima','CardSistema','CardGpu','CardRed','CardAudio','CardDev','CardFoco','CardGrimorio','TxtModo','TxtHora','TxtSeg','TxtFecha','TxtTema','TxtClimaMeta','TxtClimaElev','TxtClimaAz','BarClima','TxtClimaLuz','TxtUp','TxtCpu','BarCpu','TxtRam','BarRam','TxtDisco','TxtBat','TxtGpuMeta','TxtGpuNombre','TxtGpuUso','BarGpu','TxtGpuRes','TxtIface','TxtIp','TxtRx','TxtTx','TxtAudioMeta','TxtAudioTrack','TxtAudioBpm','BarAudio','TxtHost','TxtRepo','TxtTc','TxtFocoMeta','TxtFocoTimer','TxtFocoSesion','BarFoco','TxtAu','TxtQSub','TxtQTxt') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -287,18 +316,63 @@ function Aplica-Visibilidad($c) {
     $el.CardFoco.Visibility     = if ($st.foco)     { 'Visible' } else { 'Collapsed' }
     $el.CardGrimorio.Visibility = if ($st.grimorio) { 'Visible' } else { 'Collapsed' }
 
-    $hayExtra = [bool]($st.clima -or $st.gpu -or $st.audio -or $st.foco)
-    $hayMain  = [bool]($st.tiempo -or $st.sistema -or $st.red -or $st.dev -or $st.grimorio)
-    $el.ColExtra.Visibility = if ($hayExtra) { 'Visible' } else { 'Collapsed' }
-    $el.ColMain.Visibility  = if ($hayMain)  { 'Visible' } else { 'Collapsed' }
-    $el.ColExtra.Margin = if ($hayExtra -and $hayMain) { [System.Windows.Thickness]::new(0,0,8,0) } else { [System.Windows.Thickness]::new(0) }
-    $w = if ($hayExtra -and $hayMain) { 564 } elseif ($hayExtra) { 268 } else { 288 }
-    $win.Left = $primary.Right - $w - 22
+    $win.Width = 296
+    $win.Left = $primary.Right - 296 - 18
+    Apply-WorldTheme $c.tema ([bool]$c.compactoHud)
+}
+
+$script:bc = New-Object System.Windows.Media.BrushConverter
+$script:lastThemeApplied = ''
+$script:lastCompactApplied = $null
+$script:worldThemes = @{
+    'fittoa'                  = @('#7D6540', '#E6C06E', '#54DED4')
+    'continente-demoniaco'    = @('#7F3F2B', '#FF7854', '#F4A261')
+    'hunter-x-hunter'         = @('#3A6F4F', '#72C48C', '#F3C65F')
+    'black-clover'            = @('#61448A', '#B888FF', '#EF4444')
+    'spiderman-miles-morales' = @('#8B2240', '#F43F5E', '#38BDF8')
+    'solo-leveling'           = @('#602C94', '#A855F7', '#38BDF8')
+    'demon-slayer'            = @('#8A4A22', '#FB923C', '#22D3EE')
+    'stranger-things'         = @('#8A2424', '#EF4444', '#A855F7')
+    'harry-potter'            = @('#7B6020', '#EAB308', '#38BDF8')
+    'naruto'                  = @('#8E5120', '#FF9B38', '#38BDF8')
+    'jujutsu-kaisen'          = @('#881337', '#E11D48', '#C084FC')
+}
+
+function Apply-WorldTheme([string]$temaId, [bool]$compacto) {
+    if ($temaId -eq $script:lastThemeApplied -and $compacto -eq $script:lastCompactApplied) { return }
+    $script:lastThemeApplied = $temaId
+    $script:lastCompactApplied = $compacto
+    $pal = $script:worldThemes[$temaId]
+    if (-not $pal) { $pal = $script:worldThemes['fittoa'] }
+    try {
+        $bBorder = $script:bc.ConvertFromString($pal[0])
+        $bAcc1 = $script:bc.ConvertFromString($pal[1])
+        $bAcc2 = $script:bc.ConvertFromString($pal[2])
+        $pad = if ($compacto) { [System.Windows.Thickness]::new(8, 3, 8, 3) } else { [System.Windows.Thickness]::new(10, 6, 10, 6) }
+        $mgn = if ($compacto) { [System.Windows.Thickness]::new(0, 0, 0, 3) } else { [System.Windows.Thickness]::new(0, 0, 0, 5) }
+        foreach ($cn in 'CardTiempo','CardClima','CardSistema','CardGpu','CardRed','CardAudio','CardDev','CardFoco','CardGrimorio') {
+            $card = $el[$cn]
+            if ($card) {
+                $card.BorderBrush = $bBorder
+                $card.Padding = $pad
+                $card.Margin = $mgn
+            }
+        }
+        if ($el.TxtTema) { $el.TxtTema.Foreground = $bAcc1 }
+        if ($el.TxtSeg) { $el.TxtSeg.Foreground = $bAcc2 }
+        if ($el.TxtFocoTimer) { $el.TxtFocoTimer.Foreground = $bAcc1 }
+        if ($el.BarClima) { $el.BarClima.Foreground = $bAcc1 }
+        if ($el.BarAudio) { $el.BarAudio.Foreground = $bAcc2 }
+        if ($el.BarFoco) { $el.BarFoco.Foreground = $bAcc1 }
+    } catch {}
 }
 
 $script:prevNet = $null
 $script:sessionStart = Get-Date
 $script:gpuNombre = $null
+$script:gpuMetaCache = $null
+$script:mediaRs = $null
+$script:mediaCache = @{ t = [datetime]::MinValue; ok = $false; app = ''; playing = $false; title = ''; artist = '' }
 $script:worldAudio = @{
     'fittoa'                  = @('Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI')
     'continente-demoniaco'    = @('Rikarisu Wasteland · OST', '92 BPM · SYNTH AMBIENT')
@@ -309,10 +383,159 @@ $script:worldAudio = @{
     'demon-slayer'            = @('Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI')
     'stranger-things'         = @("Kids / Synthwave '83", '104 BPM · ANALÓGICO')
     'harry-potter'            = @("Hedwig's Theme · Celesta", '88 BPM · CELESTA')
+    'naruto'                  = @('Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN')
+    'jujutsu-kaisen'          = @('Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH')
 }
 $script:cpuCounter = New-Object System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total")
 $null = $script:cpuCounter.NextValue()
 $script:lastSlow = [datetime]::MinValue
+
+function Limpia-AppAudio($raw) {
+    if (-not $raw) { return 'MEDIA' }
+    if ($raw -match 'Spotify') { return 'SPOTIFY' }
+    if ($raw -match 'Brave')   { return 'BRAVE' }
+    if ($raw -match 'Chrome')  { return 'CHROME' }
+    if ($raw -match 'msedge|Edge') { return 'EDGE' }
+    if ($raw -match 'Firefox') { return 'FIREFOX' }
+    if ($raw -match 'vlc')     { return 'VLC' }
+    $clean = ($raw -replace '\.exe$','') -replace '.*!',''
+    if ($clean.Length -gt 12) { $clean = $clean.Substring(0, 12) }
+    return $clean.ToUpper()
+}
+
+function Elige-MejorSesion($sessions) {
+    $res = @{ ok = $false; app = ''; playing = $false; title = ''; artist = '' }
+    if (-not $sessions) { return $res }
+    $conTitulo = @($sessions | Where-Object { $_.Title -and $_.Title.Trim().Length -gt 0 })
+    if ($conTitulo.Count -eq 0) { return $res }
+
+    $pick = $conTitulo | Where-Object { $_.App -match 'Spotify' -and $_.Status -eq 'Playing' } | Select-Object -First 1
+    if (-not $pick) { $pick = $conTitulo | Where-Object { $_.Status -eq 'Playing' } | Select-Object -First 1 }
+    if (-not $pick) { $pick = $conTitulo | Where-Object { $_.App -match 'Spotify' } | Select-Object -First 1 }
+    if (-not $pick) { $pick = $conTitulo | Select-Object -First 1 }
+
+    if ($pick) {
+        $res.ok = $true
+        $res.app = Limpia-AppAudio $pick.App
+        $res.playing = ($pick.Status -eq 'Playing')
+        $res.title = $pick.Title.Trim()
+        $res.artist = if ($pick.Artist) { $pick.Artist.Trim() } else { '' }
+    }
+    return $res
+}
+
+function Obtener-MediaActual {
+    $ahora = Get-Date
+    if (($ahora - $script:mediaCache.t).TotalSeconds -lt 2.5) {
+        return $script:mediaCache
+    }
+    $res = @{ t = $ahora; ok = $false; app = ''; playing = $false; title = ''; artist = '' }
+    try {
+        $sessions = @()
+        if ($PSVersionTable.PSVersion.Major -eq 5) {
+            if (-not $script:mediaRs) {
+                $rs = [runspacefactory]::CreateRunspace()
+                $rs.ApartmentState = 'MTA'
+                $rs.ThreadOptions = 'ReuseThread'
+                $rs.Open()
+                $script:mediaRs = $rs
+            }
+            $ps = [powershell]::Create()
+            $ps.Runspace = $script:mediaRs
+            $null = $ps.AddScript({
+                [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+                Add-Type -AssemblyName System.Runtime.WindowsRuntime
+                $asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
+                $opMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+                $tMgr = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]).Invoke($null, @($opMgr))
+                if (-not $tMgr.Wait(900)) { return @() }
+                $mgr = $tMgr.Result
+                $out = @()
+                foreach ($s in $mgr.GetSessions()) {
+                    $opInfo = $s.TryGetMediaPropertiesAsync()
+                    $tInfo = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties]).Invoke($null, @($opInfo))
+                    if (-not $tInfo.Wait(700)) { continue }
+                    $info = $tInfo.Result
+                    $pb = $s.GetPlaybackInfo()
+                    $out += [pscustomobject]@{
+                        App    = [string]$s.SourceAppUserModelId
+                        Status = [string]$pb.PlaybackStatus
+                        Title  = [string]$info.Title
+                        Artist = [string]$info.Artist
+                    }
+                }
+                return $out
+            })
+            $sessions = @($ps.Invoke())
+            $ps.Dispose()
+        } else {
+            $helper = @'
+[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
+$opMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+$tMgr = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]).Invoke($null, @($opMgr))
+if ($tMgr.Wait(900)) {
+    $out = @()
+    foreach ($s in $tMgr.Result.GetSessions()) {
+        $opInfo = $s.TryGetMediaPropertiesAsync()
+        $tInfo = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties]).Invoke($null, @($opInfo))
+        if ($tInfo.Wait(700)) {
+            $info = $tInfo.Result
+            $pb = $s.GetPlaybackInfo()
+            $out += [pscustomobject]@{ App = [string]$s.SourceAppUserModelId; Status = [string]$pb.PlaybackStatus; Title = [string]$info.Title; Artist = [string]$info.Artist }
+        }
+    }
+    $out | ConvertTo-Json -Compress
+}
+'@
+            $enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($helper))
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = 'powershell.exe'
+            $psi.Arguments = "-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $enc"
+            $psi.UseShellExecute = $false
+            $psi.CreateNoWindow = $true
+            $psi.RedirectStandardOutput = $true
+            $psi.StandardOutputEncoding = [Text.Encoding]::UTF8
+            $proc = [System.Diagnostics.Process]::Start($psi)
+            $jsonOut = $proc.StandardOutput.ReadToEnd()
+            $null = $proc.WaitForExit(2000)
+            if ($jsonOut -and $jsonOut.Trim().StartsWith('{') -or ($jsonOut -and $jsonOut.Trim().StartsWith('['))) {
+                $parsed = $jsonOut | ConvertFrom-Json
+                if ($parsed -is [array]) { $sessions = $parsed } elseif ($parsed) { $sessions = @($parsed) }
+            }
+        }
+
+        $pick = Elige-MejorSesion $sessions
+        if ($pick.ok) {
+            $res.ok = $true
+            $res.app = $pick.app
+            $res.playing = $pick.playing
+            $res.title = $pick.title
+            $res.artist = $pick.artist
+        }
+    } catch {}
+
+    if (-not $res.ok) {
+        try {
+            $spTitle = [PzWinStyle]::FindSpotifyTitle()
+            if ($spTitle) {
+                $res.ok = $true
+                $res.app = 'SPOTIFY'
+                $res.playing = $true
+                if ($spTitle -match '^(.+?)\s+-\s+(.+)$') {
+                    $res.artist = $Matches[1].Trim()
+                    $res.title  = $Matches[2].Trim()
+                } else {
+                    $res.title = $spTitle
+                }
+            }
+        } catch {}
+    }
+
+    $script:mediaCache = $res
+    return $res
+}
 
 function Calc-Sol($fecha, $lat = 40.4, $lon = -3.7) {
     $rad = [math]::PI / 180.0
@@ -382,21 +605,28 @@ function Refresca-Hud {
         $elev = $s.e
         $az = $s.az
         $faseTxt = if ($elev -lt -6) { 'NOCHE' } elseif ($elev -lt 4) { 'DORADA' } else { 'DÍA' }
-        $luzTxt = if ($elev -lt -6) { 'ESTRELLAS Y LUNA ACTIVAS' } elseif ($elev -lt 4) { 'SOL RASANTE · HORA DORADA' } else { 'CIELO DESPEJADO · LUZ PLENA' }
-        $el.TxtClimaMeta.Text = $faseTxt
+        $clMode = if ($script:cfg.clima) { [string]$script:cfg.clima } else { 'normal' }
+        $clTag = if ($clMode -and $clMode -ne 'normal') { " · " + $clMode.ToUpper() } else { '' }
+        $luzTxt = (if ($elev -lt -6) { 'ESTRELLAS Y LUNA' } elseif ($elev -lt 4) { 'SOL RASANTE · DORADA' } else { 'CIELO DESPEJADO' }) + $clTag
+        $el.TxtClimaMeta.Text = $faseTxt + $clTag
         $el.TxtClimaElev.Text = "SOL {0:+0.0;-0.0;0.0}°" -f $elev
         $el.TxtClimaAz.Text = "AZ {0}°" -f [math]::Round($az)
         $el.TxtClimaLuz.Text = $luzTxt
         $el.BarClima.Value = [math]::Max(4, [math]::Min(100, (($elev + 18.0) / 68.0) * 100.0))
     }
 
-    if ($st.audio) {
+    if ($st.audio -and $script:mediaCache.ok) {
+        if ($script:mediaCache.playing) {
+            $el.BarAudio.Value = 58 + [math]::Round(36 * [math]::Abs([math]::Sin($now.Second * 0.45)))
+        } else {
+            $el.BarAudio.Value = 18
+        }
+    } elseif ($st.audio) {
         $info = $script:worldAudio[$script:cfg.tema]
         if (-not $info) { $info = @('Ambient Pixel · OST', '90 BPM · STEREO') }
         $el.TxtAudioTrack.Text = $info[0]
         $el.TxtAudioBpm.Text = $info[1]
-        $pulse = 52 + [math]::Round(36 * [math]::Abs([math]::Sin($now.Second * 0.45)))
-        $el.BarAudio.Value = $pulse
+        $el.BarAudio.Value = 52 + [math]::Round(36 * [math]::Abs([math]::Sin($now.Second * 0.45)))
     }
 
     if ($st.grimorio -and $script:temaData -and $script:temaData.citas.Count -gt 0) {
@@ -411,24 +641,50 @@ function Refresca-Hud {
         $script:lastSlow = $now
         if ($st.audio) {
             try {
-                $appAudio = Get-Process -Name 'Spotify','vlc','wmplayer','Music.UI' -ErrorAction SilentlyContinue | Select-Object -First 1
-                $el.TxtAudioMeta.Text = if ($appAudio) { "$($appAudio.ProcessName.ToUpper()) ACTIVO" } else { 'AMBIENTE BSO' }
+                $media = Obtener-MediaActual
+                if ($media.ok) {
+                    $el.TxtAudioMeta.Text = if ($media.playing) { "$($media.app) · EN VIVO" } else { "$($media.app) · PAUSA" }
+                    $el.TxtAudioTrack.Text = $media.title
+                    $el.TxtAudioBpm.Text = if ($media.artist) { $media.artist } else { "$($media.app) · AUDIO ACTIVO" }
+                } else {
+                    $info = $script:worldAudio[$script:cfg.tema]
+                    if (-not $info) { $info = @('Ambient Pixel · OST', '90 BPM · STEREO') }
+                    $el.TxtAudioMeta.Text = 'AMBIENTE BSO'
+                    $el.TxtAudioTrack.Text = $info[0]
+                    $el.TxtAudioBpm.Text = $info[1]
+                }
             } catch {}
         }
         if ($st.gpu) {
             try {
-                if (-not $script:gpuNombre) {
-                    $vc = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -notmatch 'Basic' } | Select-Object -First 1
-                    $script:gpuNombre = if ($vc -and $vc.Name) { $vc.Name } else { 'MOTOR GDI+ WIN' }
-                }
-                $el.TxtGpuNombre.Text = $script:gpuNombre
-                $el.TxtGpuMeta.Text = "$($script:cfg.fps) FPS"
                 $sb = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-                $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · MOTOR C#"
-                $cpuCur = [math]::Round($script:cpuCounter.NextValue())
-                $gpuEst = [math]::Max(4, [math]::Min(95, [math]::Round($cpuCur * 0.65 + 6)))
-                $el.TxtGpuUso.Text = "$gpuEst%"
-                $el.BarGpu.Value = $gpuEst
+                $nvOut = $null
+                try { $nvOut = & nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>$null } catch {}
+                if ($nvOut -and $nvOut.Trim()) {
+                    $line = ($nvOut -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 1)
+                    $p = $line.Split(',') | ForEach-Object { $_.Trim() }
+                    if ($p.Count -ge 5) {
+                        $script:gpuNombre = $p[0]
+                        $gpuUso = [math]::Max(0, [math]::Min(100, [int]$p[1]))
+                        $el.TxtGpuNombre.Text = $script:gpuNombre
+                        $el.TxtGpuMeta.Text = "$($p[2])°C · $($script:cfg.fps) FPS"
+                        $el.TxtGpuUso.Text = "$gpuUso%"
+                        $el.BarGpu.Value = $gpuUso
+                        $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · VRAM $($p[3])/$($p[4]) MB"
+                    }
+                } else {
+                    if (-not $script:gpuNombre) {
+                        $vc = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -notmatch 'Basic|spacedesk|Virtual|Parsec' } | Select-Object -First 1
+                        $script:gpuNombre = if ($vc -and $vc.Name) { $vc.Name } else { 'MOTOR GDI+ WIN' }
+                    }
+                    $el.TxtGpuNombre.Text = $script:gpuNombre
+                    $el.TxtGpuMeta.Text = "$($script:cfg.fps) FPS"
+                    $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · MOTOR C#"
+                    $gpuSum = (Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'engtype_3D' } | Measure-Object -Property UtilizationPercentage -Sum).Sum
+                    $gpuEst = if ($null -ne $gpuSum) { [math]::Max(0, [math]::Min(100, [int][math]::Round($gpuSum))) } else { [math]::Max(2, [math]::Min(95, [math]::Round($script:cpuCounter.NextValue() * 0.55 + 4))) }
+                    $el.TxtGpuUso.Text = "$gpuEst%"
+                    $el.BarGpu.Value = $gpuEst
+                }
             } catch {}
         }
         if ($st.sistema) {
@@ -453,10 +709,46 @@ function Refresca-Hud {
         }
         if ($st.red) {
             try {
-                $nic = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch 'Loopback' -and $_.IPAddress -ne '127.0.0.1' } | Select-Object -First 1
-                $el.TxtIface.Text = if ($nic) { $nic.InterfaceAlias } else { 'RED' }
+                $defRoute = Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Sort-Object { $_.RouteMetric + $_.InterfaceMetric } | Select-Object -First 1
+                $nic = $null
+                if ($defRoute) {
+                    $nic = Get-NetIPAddress -InterfaceIndex $defRoute.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                        Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1
+                }
+                if (-not $nic) {
+                    try {
+                        $udp = New-Object System.Net.Sockets.UdpClient
+                        $udp.Connect('8.8.8.8', 80)
+                        $localIp = $udp.Client.LocalEndPoint.Address.ToString()
+                        $udp.Close()
+                        if ($localIp) {
+                            $nic = Get-NetIPAddress -AddressFamily IPv4 -IPAddress $localIp -ErrorAction SilentlyContinue | Select-Object -First 1
+                            if (-not $nic) { $nic = [pscustomobject]@{ InterfaceAlias = 'RED ACTIVA'; IPAddress = $localIp } }
+                        }
+                    } catch {}
+                }
+                if (-not $nic) {
+                    $nic = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                        Where-Object { $_.InterfaceAlias -notmatch 'Loopback|VirtualBox|vEthernet|VMware' -and $_.IPAddress -notlike '169.254.*' -and $_.IPAddress -ne '127.0.0.1' } |
+                        Select-Object -First 1
+                }
+                $ifaceTxt = if ($nic -and $nic.InterfaceAlias) { $nic.InterfaceAlias.ToUpper() } else { 'RED' }
+                if ($ifaceTxt -match 'WI-?FI|WLAN|WIRELESS') {
+                    try {
+                        $wlan = (netsh wlan show interfaces 2>$null | Select-String '^\s*SSID\s*:\s*(.+)$' | Select-Object -First 1)
+                        if ($wlan -and $wlan.Matches[0].Groups[1].Value.Trim()) {
+                            $ifaceTxt = "WIFI · $($wlan.Matches[0].Groups[1].Value.Trim())"
+                        }
+                    } catch {}
+                }
+                $el.TxtIface.Text = $ifaceTxt
                 $el.TxtIp.Text = if ($nic) { $nic.IPAddress } else { '--' }
-                $stats = Get-NetAdapterStatistics | Where-Object { $_.ReceivedBytes -gt 0 } | Sort-Object ReceivedBytes -Descending | Select-Object -First 1
+                $stats = if ($nic -and $nic.InterfaceAlias) {
+                    Get-NetAdapterStatistics -Name $nic.InterfaceAlias -ErrorAction SilentlyContinue | Select-Object -First 1
+                } else { $null }
+                if (-not $stats) {
+                    $stats = Get-NetAdapterStatistics -ErrorAction SilentlyContinue | Where-Object { $_.ReceivedBytes -gt 0 -and $_.Name -notmatch 'VirtualBox|Loopback' } | Sort-Object ReceivedBytes -Descending | Select-Object -First 1
+                }
                 if ($stats) {
                     $tNow = [DateTime]::UtcNow
                     if ($script:prevNet) {
@@ -493,5 +785,12 @@ $timer = New-Object System.Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromSeconds(1)
 $timer.Add_Tick({ Refresca-Hud })
 $timer.Start()
+
+$win.Add_Closed({
+    try { $timer.Stop() } catch {}
+    if ($script:mediaRs) {
+        try { $script:mediaRs.Close(); $script:mediaRs.Dispose() } catch {}
+    }
+})
 
 $null = $win.ShowDialog()

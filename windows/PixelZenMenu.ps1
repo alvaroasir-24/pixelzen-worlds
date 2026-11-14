@@ -36,11 +36,20 @@ function Resolver-Preview([string]$temaId, [string]$fase, [string]$variante = 'p
     $temaDirEsc = Join-Path $Raiz "escenas\$temaId"
     $baseLocal = if ($sub) { Join-Path $temaDirLocal $sub } else { $temaDirLocal }
     $baseEsc = if ($sub) { Join-Path $temaDirEsc $sub } else { $temaDirEsc }
+    $fbRoot = 'C:\Users\david\.gemini\antigravity-cli\brain\8747b389-799a-4632-897a-f7f55a4233c0\scratch\out_root'
+    $pref = switch ($sub) {
+        'secundario' { 'm2-' }
+        'bloqueo'    { 'm3-' }
+        default      { '' }
+    }
+    $fbTema = if ($sub) { Join-Path $fbRoot "windows\lively\temas\$temaId\$sub" } else { Join-Path $fbRoot "windows\lively\temas\$temaId" }
     $cands = @(
         (Join-Path $baseLocal "preview\$fase\v3.png"),
         (Join-Path $baseEsc "preview\$fase\v3.png"),
         (Join-Path $baseLocal 'fondo.png'),
-        (Join-Path $temaDirLocal 'fondo.png')
+        (Join-Path $temaDirLocal 'fondo.png'),
+        (Join-Path $fbRoot "docs\previews\$temaId\${pref}$fase.png"),
+        (Join-Path $fbTema "images\escena-$fase.png")
     )
     foreach ($p in $cands) {
         if ($p -and (Test-Path $p)) { return ([System.IO.Path]::GetFullPath($p)) }
@@ -64,11 +73,20 @@ function Resolver-Python {
 function Cargar-Config {
     $def = [ordered]@{
         tema = 'fittoa'
+        temaSecundario = 'igual'
         monitores = 2
         modo = '90m'
         horaFija = 21.5
         fps = 8
         hud = $true
+        compactoHud = $false
+        clima = 'normal'
+        rotacionMinutos = 0
+        pausaJuego = $true
+        audioReactivo = $true
+        hotkeys = $true
+        eventoSeq = 0
+        eventoTipo = ''
         trayAlCerrar = $true
         usarBloqueo = $true
         fondoPrincipal = 'principal'
@@ -89,7 +107,7 @@ function Cargar-Config {
     if (Test-Path $ConfigPath) {
         try {
             $raw = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
-            foreach ($k in 'tema','monitores','modo','horaFija','fps','hud','trayAlCerrar','usarBloqueo','fondoPrincipal','fondoSecundario','fondoBloqueo') {
+            foreach ($k in 'tema','temaSecundario','monitores','modo','horaFija','fps','hud','compactoHud','clima','rotacionMinutos','pausaJuego','audioReactivo','hotkeys','eventoSeq','eventoTipo','trayAlCerrar','usarBloqueo','fondoPrincipal','fondoSecundario','fondoBloqueo') {
                 if ($null -ne $raw.$k) { $def[$k] = $raw.$k }
             }
             if ($raw.stats) {
@@ -113,9 +131,10 @@ function Detectar-Fase($modo, $horaFija) {
     return 'noche'
 }
 
-function Aplicar-Fondos-Windows($tema, $numMonitores, $fase, $fondoPrincipal = 'principal', $fondoSecundario = 'secundaria') {
+function Aplicar-Fondos-Windows($tema, $numMonitores, $fase, $fondoPrincipal = 'principal', $fondoSecundario = 'secundaria', $temaSecundario = 'igual') {
     $p1 = Resolver-Preview $tema $fase $fondoPrincipal
-    $p2 = Resolver-Preview $tema $fase $fondoSecundario
+    $tSec = if ($temaSecundario -and $temaSecundario -ne 'igual') { $temaSecundario } else { $tema }
+    $p2 = Resolver-Preview $tSec $fase $fondoSecundario
     if (-not $p2) { $p2 = $p1 }
 
     Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers' -Name 'BackgroundType' -Value 0 -Type DWord -ErrorAction SilentlyContinue
@@ -274,7 +293,13 @@ function Aplicar-Todo($c) {
     $fp = if ($c.fondoPrincipal) { $c.fondoPrincipal } else { 'principal' }
     $fs = if ($c.fondoSecundario) { $c.fondoSecundario } else { 'secundaria' }
     $fb = if ($c.fondoBloqueo) { $c.fondoBloqueo } else { 'bloqueo' }
-    Aplicar-Fondos-Windows $c.tema $c.monitores $fase $fp $fs
+    $ts = if ($c.temaSecundario) { $c.temaSecundario } else { 'igual' }
+    $cl = if ($c.clima) { $c.clima } else { 'normal' }
+    $rot = if ($null -ne $c.rotacionMinutos) { [int]$c.rotacionMinutos } else { 0 }
+    $pj = if ($null -ne $c.pausaJuego) { [bool]$c.pausaJuego } else { $true }
+    $ar = if ($null -ne $c.audioReactivo) { [bool]$c.audioReactivo } else { $true }
+    $hk = if ($null -ne $c.hotkeys) { [bool]$c.hotkeys } else { $true }
+    Aplicar-Fondos-Windows $c.tema $c.monitores $fase $fp $fs $ts
     if ($c.usarBloqueo) {
         $script:bloqueoOk = Aplicar-Bloqueo-Windows $c.tema $fb $fase
     } else {
@@ -290,7 +315,7 @@ function Aplicar-Todo($c) {
             $oldM = Get-Content $motorPidFile -ErrorAction SilentlyContinue
             if ($oldM) { Stop-Process -Id ([int]$oldM) -Force -ErrorAction SilentlyContinue }
         }
-        $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$motorPath`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija) -Fps 8 -FondoPrincipal $fp -FondoSecundario $fs" -WindowStyle Hidden -PassThru
+        $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File `"$motorPath`" -Tema $($c.tema) -Monitores $($c.monitores) -Modo $($c.modo) -Hora $($c.horaFija) -Fps 8 -FondoPrincipal $fp -FondoSecundario $fs -Clima $cl -TemaSecundario $ts -RotacionMinutos $rot -PausaJuego `$$pj -AudioReactivo `$$ar -Hotkeys `$$hk" -WindowStyle Hidden -PassThru
         if ($proc) { Set-Content -Path $motorPidFile -Value $proc.Id -Encoding ASCII }
     } else {
         $script:modoMotor = 'estatico'
@@ -402,6 +427,8 @@ function Cargar-Temas {
         'demon-slayer'            = @{ serie = 'Demon Slayer'; titulo = 'Tren Infinito' }
         'stranger-things'         = @{ serie = 'Stranger Things'; titulo = 'Hawkins y el Revés' }
         'harry-potter'            = @{ serie = 'Harry Potter'; titulo = 'Castillo de Hogwarts' }
+        'naruto'                  = @{ serie = 'Naruto'; titulo = 'Konoha & Modo Baryon' }
+        'jujutsu-kaisen'          = @{ serie = 'Jujutsu Kaisen'; titulo = 'Expansión de Dominio' }
     }
     $lista = @()
     if (Test-Path $TemasDir) {
@@ -924,11 +951,13 @@ $xaml = @"
 
                     <StackPanel x:Name="PanelComboSec">
                       <TextBlock Text="🖥️ Pantalla Secundaria" Foreground="#E6B45A" FontSize="12" FontWeight="Bold" Margin="0,0,0,5"/>
-                      <ComboBox x:Name="CmbFondoSecundaria" FontSize="12" Height="34" Margin="0,0,0,12">
+                      <ComboBox x:Name="CmbFondoSecundaria" FontSize="12" Height="34" Margin="0,0,0,10">
                         <ComboBoxItem Content="Principal" Tag="principal"/>
                         <ComboBoxItem Content="Secundaria" Tag="secundaria"/>
                         <ComboBoxItem Content="Bloqueo" Tag="bloqueo"/>
                       </ComboBox>
+                      <TextBlock Text="🌍 Mundo independiente en Monitor 2 (opcional)" Foreground="#A8B8CF" FontSize="11.5" Margin="0,0,0,4"/>
+                      <ComboBox x:Name="CmbTemaSec" FontSize="12" Height="34" Margin="0,0,0,12"/>
                     </StackPanel>
 
                     <CheckBox x:Name="ChkBloqueo" Content="🔒 Aplicar también fondo a la Pantalla de Bloqueo de Windows" FontWeight="SemiBold" Margin="0,2,0,8"/>
@@ -966,6 +995,28 @@ $xaml = @"
                     </DockPanel>
                   </StackPanel>
                 </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,12,0,0">
+                  <StackPanel>
+                    <TextBlock Text="Clima Dinámico &amp; Rotación Automática" Foreground="#54DED4" FontSize="13.5" FontWeight="Bold" Margin="0,0,0,8"/>
+                    <TextBlock Text="🌦️ Clima atmosférico sobre el escenario" Foreground="#A8B8CF" FontSize="11.5" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="CmbClima" FontSize="12" Height="34" Margin="0,0,0,12">
+                      <ComboBoxItem Content="✨ Despejado (Original del mundo)" Tag="normal"/>
+                      <ComboBoxItem Content="🌧️ Lluvia suave en tiempo real" Tag="lluvia"/>
+                      <ComboBoxItem Content="⛈️ Tormenta con relámpagos" Tag="tormenta"/>
+                      <ComboBoxItem Content="❄️ Nevadas suaves de invierno" Tag="nieve"/>
+                      <ComboBoxItem Content="🌫️ Niebla nocturna misteriosa" Tag="niebla"/>
+                      <ComboBoxItem Content="🤖 Automático por universo y hora" Tag="auto"/>
+                    </ComboBox>
+                    <TextBlock Text="🔀 Playlist — Cambio automático de mundo" Foreground="#A8B8CF" FontSize="11.5" Margin="0,0,0,4"/>
+                    <ComboBox x:Name="CmbRotacion" FontSize="12" Height="34">
+                      <ComboBoxItem Content="🔒 Desactivado — Mantener mundo elegido" Tag="0"/>
+                      <ComboBoxItem Content="⏱️ Rotar cada 5 minutos" Tag="5"/>
+                      <ComboBoxItem Content="⏱️ Rotar cada 15 minutos" Tag="15"/>
+                      <ComboBoxItem Content="⏱️ Rotar cada 30 minutos" Tag="30"/>
+                      <ComboBoxItem Content="🕒 Rotar cada hora" Tag="60"/>
+                    </ComboBox>
+                  </StackPanel>
+                </Border>
               </StackPanel>
             </ScrollViewer>
 
@@ -978,11 +1029,17 @@ $xaml = @"
                 </DockPanel>
                 <TextBlock Text="Transparentes al ratón: puedes hacer clic a través de ellas en tu escritorio. Mira su distribución en el estudio a la derecha." Foreground="#8EA3C4" FontSize="12" Margin="0,2,0,12" TextWrapping="Wrap"/>
 
-                <WrapPanel Margin="0,0,0,14">
+                <WrapPanel Margin="0,0,0,10">
                   <Button x:Name="BtnHudTodas" Content="✦ Mostrar todas (9)" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
                   <Button x:Name="BtnHudMinimo" Content="Modo limpio (Reloj + Frase)" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
                   <Button x:Name="BtnHudSoloReloj" Content="Solo Reloj" Style="{StaticResource PillBtn}" Margin="0,0,0,6"/>
                 </WrapPanel>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="11" Margin="0,0,0,12">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkCompactoHud" Content="🗜️ Modo HUD compacto + paleta adaptada al mundo" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                    <CheckBox x:Name="ChkAudioReactivo" Content="🎵 Pulsar efectos visuales de combate/partículas con audio" FontWeight="SemiBold" Margin="0"/>
+                  </StackPanel>
+                </Border>
 
                 <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
                   <StackPanel>
@@ -1060,7 +1117,18 @@ $xaml = @"
                     <CheckBox x:Name="ChkAutoInicio" Content="🚀 Aplicar fondos e iniciar en bandeja al encender Windows" FontWeight="SemiBold"/>
                     <TextBlock Text="Restaura automáticamente tus fondos animados y tarjetas al iniciar sesión." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,10" TextWrapping="Wrap"/>
                     <CheckBox x:Name="ChkTrayCerrar" Content="📌 Al pulsar cerrar (X), minimizar junto al reloj en vez de salir" FontWeight="SemiBold"/>
-                    <TextBlock Text="Permite cambiar de mundo o activar el HUD en un clic desde la bandeja." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Permite cambiar de mundo o activar el HUD en un clic desde la bandeja." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,10" TextWrapping="Wrap"/>
+                    <CheckBox x:Name="ChkPausaJuego" Content="🎮 Pausar motor (0% CPU) con juegos/apps a pantalla completa o batería baja" FontWeight="SemiBold"/>
+                    <TextBlock Text="Detiene el renderizado mientras juegas o ves vídeos a pantalla completa y ahorra batería." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,10" TextWrapping="Wrap"/>
+                    <CheckBox x:Name="ChkHotkeys" Content="⌨️ Atajos globales (Ctrl+Alt + W: Mundo · H: HUD · F: Clima · P: Pausa · E: Evento)" FontWeight="SemiBold"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,10">
+                  <StackPanel>
+                    <TextBlock Text="Eventos Épicos en Tiempo Real" Foreground="#E6B45A" FontSize="13.5" FontWeight="Bold" Margin="0,0,0,4"/>
+                    <TextBlock Text="Dispara un cometa, círculo de invocación o anomalía dimensional sobre tu escritorio." Foreground="#8EA3C4" FontSize="11.5" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                    <Button x:Name="BtnEventoAhora" Content="✦ Disparar evento épico ahora" Style="{StaticResource PillBtn}" HorizontalAlignment="Left" Foreground="#F6C86E" BorderBrush="#E6B45A"/>
                   </StackPanel>
                 </Border>
 
@@ -1108,42 +1176,38 @@ $xaml = @"
                 <Border BorderBrush="#49C8C0" BorderThickness="1.5" CornerRadius="8" Background="#040711" Height="150" Margin="0,0,0,7" ClipToBounds="True">
                   <Grid>
                     <Image x:Name="ImgPrev1" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-                    <!-- Simulación de cajitas HUD superpuestas -->
-                    <StackPanel x:Name="MockHudPanel" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6,6,6,0">
-                      <StackPanel x:Name="MockColExtra" Width="88" Margin="0,0,4,0">
-                        <Border x:Name="MockClima" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
-                          <TextBlock Text="☀ SOL +18° DÍA" Foreground="#E6C06E" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                        <Border x:Name="MockGpu" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
-                          <TextBlock Text="▣ GPU 24% 8FPS" Foreground="#66DCE0" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                        <Border x:Name="MockAudio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
-                          <TextBlock Text="♪ BSO 88 BPM" Foreground="#72C48C" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                        <Border x:Name="MockFoco" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2">
-                          <TextBlock Text="⧖ ZEN 25:00" Foreground="#54DED4" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                      </StackPanel>
-                      <StackPanel Width="98">
-                        <Border x:Name="MockTiempo" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,3" Margin="0,0,0,2">
-                          <StackPanel>
-                            <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
-                            <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
-                          </StackPanel>
-                        </Border>
-                        <Border x:Name="MockSistema" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
-                          <TextBlock Text="CPU 12%  RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="6.8"/>
-                        </Border>
-                        <Border x:Name="MockRed" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
-                          <TextBlock Text="WI-FI  ↓ 12K/s" Foreground="#54DED4" FontFamily="Consolas" FontSize="6.8"/>
-                        </Border>
-                        <Border x:Name="MockDev" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
-                          <TextBlock Text="DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="6.8"/>
-                        </Border>
-                        <Border x:Name="MockGrimorio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2">
-                          <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="6.8" TextTrimming="CharacterEllipsis"/>
-                        </Border>
-                      </StackPanel>
+                    <!-- Simulación de cajitas HUD superpuestas en columna derecha única -->
+                    <StackPanel x:Name="MockHudPanel" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,6,0" Width="106">
+                      <Border x:Name="MockTiempo" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1.5" Margin="0,0,0,1.5">
+                        <StackPanel>
+                          <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="8" FontWeight="Bold"/>
+                          <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                      </Border>
+                      <Border x:Name="MockClima" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="☀ SOL +18° DÍA" Foreground="#E6C06E" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockSistema" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="❖ CPU 12% RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockGpu" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="▣ GTX 1650 · 44°C" Foreground="#66DCE0" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockRed" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="◈ ETH 192.168.1.38" Foreground="#54DED4" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockAudio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="♪ SPOTIFY EN VIVO" Foreground="#72C48C" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockDev" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="⚔ DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockFoco" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1" Margin="0,0,0,1.5">
+                        <TextBlock Text="⧖ ZEN 25:00" Foreground="#54DED4" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
+                      <Border x:Name="MockGrimorio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="3" Padding="4,1">
+                        <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="5.5" TextTrimming="CharacterEllipsis"/>
+                      </Border>
                     </StackPanel>
                     <!-- Sutil simulación barra de tareas Windows -->
                     <Border VerticalAlignment="Bottom" Height="6" Background="#90070B16">
@@ -1254,6 +1318,12 @@ using System.Runtime.InteropServices;
 public static class PzWinTheme {
     [DllImport("dwmapi.dll")]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+    [DllImport("user32.dll")]
+    public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+    public static void SendMediaKey(byte vk) {
+        keybd_event(vk, 0, 0, UIntPtr.Zero);
+        keybd_event(vk, 0, 2, UIntPtr.Zero);
+    }
     public static void ApplyDarkTitlebar(IntPtr hwnd) {
         if (hwnd == IntPtr.Zero) return;
         int dark = 1;
@@ -1274,7 +1344,7 @@ $win.Add_SourceInitialized({
 })
 
 $el = @{}
-foreach ($n in 'TxtMonInfo','BadgeMotor','TxtMotorBadge','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnPresetClasico','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkClima','ChkSistema','ChkGpu','ChkRed','ChkAudio','ChkDev','ChkFoco','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockColExtra','MockClima','MockGpu','MockAudio','MockFoco','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BadgeMotor','TxtMotorBadge','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnPresetClasico','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','CmbTemaSec','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','CmbClima','CmbRotacion','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkCompactoHud','ChkAudioReactivo','ChkTiempo','ChkClima','ChkSistema','ChkGpu','ChkRed','ChkAudio','ChkDev','ChkFoco','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','ChkPausaJuego','ChkHotkeys','BtnEventoAhora','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockClima','MockGpu','MockAudio','MockFoco','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -1641,6 +1711,25 @@ Set-ComboByTag $el.CmbFondoPrincipal ([string]$cfg.fondoPrincipal) 0
 Set-ComboByTag $el.CmbFondoSecundaria ([string]$cfg.fondoSecundario) 1
 Set-ComboByTag $el.CmbFondoBloqueo ([string]$cfg.fondoBloqueo) 2
 
+$script:eventoSeq = [int]($cfg.eventoSeq)
+$itSame = New-Object System.Windows.Controls.ComboBoxItem
+$itSame.Content = '🔗 Mismo mundo que Monitor 1 (continuación)'
+$itSame.Tag = 'igual'
+$null = $el.CmbTemaSec.Items.Add($itSame)
+foreach ($tm in $temas) {
+    $itSec = New-Object System.Windows.Controls.ComboBoxItem
+    $itSec.Content = "$($tm.anime) · $($tm.titulo)"
+    $itSec.Tag = $tm.id
+    $null = $el.CmbTemaSec.Items.Add($itSec)
+}
+Set-ComboByTag $el.CmbTemaSec ([string]$cfg.temaSecundario) 0
+Set-ComboByTag $el.CmbClima ([string]$cfg.clima) 0
+Set-ComboByTag $el.CmbRotacion ([string]$cfg.rotacionMinutos) 0
+$el.ChkCompactoHud.IsChecked = [bool]$cfg.compactoHud
+$el.ChkAudioReactivo.IsChecked = [bool]$cfg.audioReactivo
+$el.ChkPausaJuego.IsChecked = [bool]$cfg.pausaJuego
+$el.ChkHotkeys.IsChecked = [bool]$cfg.hotkeys
+
 # Diagnóstico sencillo
 $pyPath = Resolver-Python
 $pyMsg = if ($pyPath) { "✅ Animación solar automática y vista web listas (Python detectado)." } else { "✅ Animación solar nativa activa (no requiere Python)." }
@@ -1652,13 +1741,25 @@ function Lee-FormConfig {
     $fp = if ($el.CmbFondoPrincipal.SelectedItem) { [string]$el.CmbFondoPrincipal.SelectedItem.Tag } else { 'principal' }
     $fs = if ($el.CmbFondoSecundaria.SelectedItem) { [string]$el.CmbFondoSecundaria.SelectedItem.Tag } else { 'secundaria' }
     $fb = if ($el.CmbFondoBloqueo.SelectedItem) { [string]$el.CmbFondoBloqueo.SelectedItem.Tag } else { 'bloqueo' }
+    $ts = if ($el.CmbTemaSec.SelectedItem) { [string]$el.CmbTemaSec.SelectedItem.Tag } else { 'igual' }
+    $cl = if ($el.CmbClima.SelectedItem) { [string]$el.CmbClima.SelectedItem.Tag } else { 'normal' }
+    $rot = if ($el.CmbRotacion.SelectedItem) { [int]$el.CmbRotacion.SelectedItem.Tag } else { 0 }
     return [ordered]@{
         tema = $script:selectedTema
+        temaSecundario = $ts
         monitores = if ($el.RbMon2.IsChecked) { 2 } else { 1 }
         modo = $el.CmbModo.SelectedItem.Tag
         horaFija = [double]$el.SldHora.Value
         fps = 8
         hud = [bool]$el.ChkHudMaster.IsChecked
+        compactoHud = [bool]$el.ChkCompactoHud.IsChecked
+        clima = $cl
+        rotacionMinutos = $rot
+        pausaJuego = [bool]$el.ChkPausaJuego.IsChecked
+        audioReactivo = [bool]$el.ChkAudioReactivo.IsChecked
+        hotkeys = [bool]$el.ChkHotkeys.IsChecked
+        eventoSeq = [int]$script:eventoSeq
+        eventoTipo = ''
         trayAlCerrar = [bool]$el.ChkTrayCerrar.IsChecked
         usarBloqueo = [bool]$el.ChkBloqueo.IsChecked
         fondoPrincipal = $fp
@@ -1829,13 +1930,16 @@ function Actualiza-Vista {
     }
 
     # Imágenes de vista previa M1, M2 y Bloqueo
+    $tsTag = if ($el.CmbTemaSec -and $el.CmbTemaSec.SelectedItem) { [string]$el.CmbTemaSec.SelectedItem.Tag } else { 'igual' }
+    $tidSec = if ($tsTag -and $tsTag -ne 'igual' -and $tsTag -ne $tid) { $tsTag } else { $tid }
     $el.ImgPrev1.Source = $prevCache[$fpTag]
-    $el.ImgPrev2.Source = $prevCache[$fsTag]
+    $el.ImgPrev2.Source = if ($tidSec -ne $tid) { Cargar-Bitmap (Resolver-Preview $tidSec $script:previewFase $fsTag) } else { $prevCache[$fsTag] }
     $el.ImgPrevBloqueo.Source = $prevCache[$fbTag]
     $el.TxtPrev1Title.Text = "PANTALLA 1 · $(Nombre-EscenaVariante $fpTag)"
-    $el.TxtPrev2Title.Text = "PANTALLA 2 · $(Nombre-EscenaVariante $fsTag)"
+    $tSecMeta = if ($tidSec -ne $tid) { $temas | Where-Object { $_.id -eq $tidSec } | Select-Object -First 1 } else { $null }
+    $el.TxtPrev2Title.Text = if ($tSecMeta) { "PANTALLA 2 · $($tSecMeta.titulo)" } else { "PANTALLA 2 · $(Nombre-EscenaVariante $fsTag)" }
     $el.PanelPrev2.Visibility = if ($dosMon) { 'Visible' } else { 'Collapsed' }
-    $el.TxtM2Sub.Text = "En tu 2.º monitor: $(Nombre-EscenaVariante $fsTag)"
+    $el.TxtM2Sub.Text = if ($tSecMeta) { "Mundo independiente: $($tSecMeta.anime) ($fsTag)" } else { "En tu 2.º monitor: $(Nombre-EscenaVariante $fsTag)" }
     $el.TxtPrevBloqTitle.Text = "🔒 BLOQUEO · $(Nombre-EscenaVariante $fbTag)"
     $el.PanelPrevBloqueo.Visibility = if ($usarBloq) { 'Visible' } else { 'Collapsed' }
     $el.TxtBloqSub.Text = "Bloqueo de Windows: $(Nombre-EscenaVariante $fbTag)"
@@ -1860,7 +1964,6 @@ function Actualiza-Vista {
     $el.MockDev.Visibility      = if ($el.ChkDev.IsChecked)      { 'Visible' } else { 'Collapsed' }
     $el.MockFoco.Visibility     = if ($el.ChkFoco.IsChecked)     { 'Visible' } else { 'Collapsed' }
     $el.MockGrimorio.Visibility = if ($el.ChkGrimorio.IsChecked) { 'Visible' } else { 'Collapsed' }
-    $el.MockColExtra.Visibility = if ($el.ChkClima.IsChecked -or $el.ChkGpu.IsChecked -or $el.ChkAudio.IsChecked -or $el.ChkFoco.IsChecked) { 'Visible' } else { 'Collapsed' }
 
     # Habilitar/atenuar checkboxes individuales según interruptor maestro
     $allHudChks = @($el.ChkTiempo, $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco, $el.ChkGrimorio)
@@ -1991,6 +2094,21 @@ $el.BtnAccesoDirecto.Add_Click({
     $rutaLnk = Crear-AccesoDirecto
     $el.TxtEstado.Text = "✅ Acceso directo creado en tu Escritorio: PixelZen Worlds.lnk"
 })
+$el.BtnEventoAhora.Add_Click({
+    $script:eventoSeq++
+    $c = Lee-FormConfig
+    $c.eventoSeq = $script:eventoSeq
+    Guardar-Config $c
+    $el.TxtEstado.Text = "✦ Evento épico enviado al fondo de escritorio."
+})
+$el.CmbTemaSec.Add_SelectionChanged({ if (-not $script:syncingCombos) { Actualiza-Vista } })
+foreach ($cbx in @($el.CmbClima, $el.CmbRotacion, $el.ChkCompactoHud, $el.ChkAudioReactivo, $el.ChkPausaJuego, $el.ChkHotkeys)) {
+    if ($cbx -is [System.Windows.Controls.ComboBox]) {
+        $cbx.Add_SelectionChanged({ if (-not $script:syncingCombos) { $c = Lee-FormConfig; Guardar-Config $c } })
+    } else {
+        $cbx.Add_Click({ if (-not $script:syncingCombos) { $c = Lee-FormConfig; Guardar-Config $c } })
+    }
+}
 $el.ChkAutoInicio.Add_Checked({ Set-AutoInicio $true; $el.TxtEstado.Text = "✅ PixelZen se aplicará automáticamente al iniciar Windows." })
 $el.ChkAutoInicio.Add_Unchecked({ Set-AutoInicio $false; $el.TxtEstado.Text = "Auto-inicio con Windows desactivado." })
 $el.BtnBuscarUpdate.Add_Click({
@@ -2157,6 +2275,61 @@ foreach ($t in $temas) {
     $null = $miMundos.DropDownItems.Add($sub)
 }
 $null = $ctxMenu.Items.Add($miMundos)
+
+$miSiguiente = $ctxMenu.Items.Add('🔀 Siguiente mundo')
+$miSiguiente.Add_Click({
+    $ids = @($temas | ForEach-Object { $_.id })
+    if ($ids.Count -ge 2) {
+        $idx = [Array]::IndexOf($ids, $script:selectedTema)
+        $sig = $ids[($idx + 1) % $ids.Count]
+        $script:selectedTema = $sig
+        $script:selectedSerie = $script:worldSeries[$sig]
+        $c = Lee-FormConfig; $c.tema = $sig
+        $script:previewFase = Aplicar-Todo $c
+        Actualiza-Vista
+    }
+})
+
+$miClima = New-Object System.Windows.Forms.ToolStripMenuItem('🌦️ Clima dinámico')
+foreach ($clPair in @(
+    @('✨ Normal (Original)', 'normal'),
+    @('🌧️ Lluvia suave', 'lluvia'),
+    @('⛈️ Tormenta', 'tormenta'),
+    @('❄️ Nieve', 'nieve'),
+    @('🌫️ Niebla', 'niebla'),
+    @('🤖 Automático', 'auto')
+)) {
+    $subCl = New-Object System.Windows.Forms.ToolStripMenuItem($clPair[0])
+    $subCl.Tag = $clPair[1]
+    $subCl.Add_Click({
+        param($s, $e)
+        $script:syncingCombos = $true
+        Set-ComboByTag $el.CmbClima ([string]$s.Tag) 0
+        $script:syncingCombos = $false
+        $c = Lee-FormConfig; $c.clima = [string]$s.Tag
+        Guardar-Config $c
+        $el.TxtEstado.Text = "🌦️ Clima cambiado a $($s.Tag)."
+    })
+    $null = $miClima.DropDownItems.Add($subCl)
+}
+$null = $ctxMenu.Items.Add($miClima)
+
+$miMedia = New-Object System.Windows.Forms.ToolStripMenuItem('🎵 Control multimedia')
+$mPlay = New-Object System.Windows.Forms.ToolStripMenuItem('⏯ Play / Pausa')
+$mPlay.Add_Click({ [PzWinTheme]::SendMediaKey(0xB3) })
+$mNext = New-Object System.Windows.Forms.ToolStripMenuItem('⏭ Siguiente pista')
+$mNext.Add_Click({ [PzWinTheme]::SendMediaKey(0xB0) })
+$mPrev = New-Object System.Windows.Forms.ToolStripMenuItem('⏮ Pista anterior')
+$mPrev.Add_Click({ [PzWinTheme]::SendMediaKey(0xB1) })
+$null = $miMedia.DropDownItems.AddRange(@($mPlay, $mNext, $mPrev))
+$null = $ctxMenu.Items.Add($miMedia)
+
+$miEvento = $ctxMenu.Items.Add('✦ Disparar evento épico')
+$miEvento.Add_Click({
+    $script:eventoSeq++
+    $c = Lee-FormConfig; $c.eventoSeq = $script:eventoSeq
+    Guardar-Config $c
+})
 
 $miHud = $ctxMenu.Items.Add('Mostrar / Ocultar cajitas HUD')
 $miHud.Add_Click({ $el.BtnToggleHudNow.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Primitives.ButtonBase]::ClickEvent))) })

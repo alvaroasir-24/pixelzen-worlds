@@ -58,15 +58,19 @@ def cargar_config():
         'hud': True,
         'stats': {
             'tiempo': True,
+            'clima': True,
             'sistema': True,
+            'gpu': True,
             'red': True,
+            'audio': True,
             'dev': True,
+            'foco': True,
             'grimorio': True,
         },
     }
     if os.path.isfile(CONFIG_PATH):
         try:
-            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+            with open(CONFIG_PATH, 'r', encoding='utf-8-sig') as f:
                 data = json.load(f)
             defecto.update(data)
         except Exception:

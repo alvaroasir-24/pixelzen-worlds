@@ -6,7 +6,13 @@ param(
     [double]$Hora = 21.5,
     [int]$Fps = 8,
     [string]$FondoPrincipal = 'principal',
-    [string]$FondoSecundario = 'secundaria'
+    [string]$FondoSecundario = 'secundaria',
+    [string]$Clima = 'normal',
+    [string]$TemaSecundario = '',
+    [int]$RotacionMinutos = 0,
+    [bool]$PausaJuego = $true,
+    [bool]$AudioReactivo = $true,
+    [bool]$Hotkeys = $true
 )
 
 $ErrorActionPreference = 'Continue'
@@ -118,6 +124,14 @@ public class PzmSceneData {
     }
 
     static Bitmap LoadPArgb(string path) {
+        if (!File.Exists(path) && !string.IsNullOrEmpty(path)) {
+            string norm = path.Replace('/', '\\');
+            int idx = norm.IndexOf(@"\temas\", StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0) {
+                string fb = Path.Combine(@"C:\Users\david\.gemini\antigravity-cli\brain\8747b389-799a-4632-897a-f7f55a4233c0\scratch\out_root\windows\lively\temas", norm.Substring(idx + 7));
+                if (File.Exists(fb)) path = fb;
+            }
+        }
         if (!File.Exists(path)) return null;
         using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         using (var raw = Image.FromStream(fs)) {
@@ -220,6 +234,13 @@ public class PzmRenderer {
     readonly ImageAttributes _ia = new ImageAttributes();
     readonly ColorMatrix _cm = new ColorMatrix();
     public readonly Bitmap Frame = new Bitmap(640, 400, PixelFormat.Format32bppPArgb);
+    public string ClimaMode = "normal";
+    public string TemaId = "fittoa";
+    public bool AudioReactivo = true;
+    public double AudioBoost = 0.0;
+    public string EventoTipo = "";
+    public int EventoInicioTick = -999;
+    public int EventoDuracion = 96;
 
     public PzmRenderer() {
         long s = 7;
@@ -605,6 +626,693 @@ public class PzmRenderer {
         }
     }
 
+    void PintaDemonRengoku(Graphics g, int t, double nf) {
+        double imp = Math.Pow(Math.Max(0, Math.Sin(t * 0.28)), 4);
+        int clashTick = t % 24;
+        double clash = clashTick < 5 ? 1.0 - clashTick / 5.0 : 0.0;
+        double env = 0.65 + 0.35 * nf;
+
+        Color cFlame0 = Color.FromArgb(255, 42, 24);
+        Color cFlame1 = Color.FromArgb(255, 126, 36);
+        Color cFlame2 = Color.FromArgb(255, 216, 76);
+        Color cFlame3 = Color.FromArgb(255, 248, 200);
+        Color cAkaza0 = Color.FromArgb(56, 216, 255);
+        Color cAkaza1 = Color.FromArgb(146, 240, 255);
+        Color cAkaza2 = Color.FromArgb(216, 56, 92);
+
+        Px(g, Color.FromArgb(255, 88, 32), (0.07 + 0.11 * imp) * env, 286, 266, 94, 46);
+        Px(g, cAkaza0, (0.07 + 0.11 * imp) * env, 404, 268, 96, 46);
+        if (clash > 0.05) {
+            int rC = (int)Math.Round(14 + (1.0 - clash) * 18);
+            Px(g, Color.FromArgb(255, 232, 160), 0.16 * clash * env, 418 - rC, 284 - (int)Math.Round(rC * 0.7), rC * 2, (int)Math.Round(rC * 1.4));
+        }
+
+        for (int i = 0; i < 8; i++) {
+            int fx = 306 + i * 3;
+            double wave = Math.Sin(t * 0.55 + i * 0.85);
+            int fy = 287 + (int)Math.Round(i * 0.3 + wave * 1.8);
+            int fh = 5 + (((int)(t * 0.6) + i * 3) % 5);
+            Px(g, cFlame0, 0.82, fx, fy + fh - 3, 2, 3);
+            Px(g, cFlame1, 0.88, fx, fy + 2, 2, 3);
+            Px(g, cFlame2, 0.90, fx, fy, 2, 2);
+        }
+        for (int k = 0; k < 6; k++) {
+            double lift = ((t * 1.6 + k * 7) % 18.0);
+            int ax = 324 + ((k * 7) % 21) + (int)Math.Round(Math.Sin(t * 0.4 + k) * 2);
+            int ay = 294 - (int)Math.Round(lift);
+            Px(g, (k % 2 == 0) ? cFlame2 : cFlame1, Math.Max(0.15, (1.0 - lift / 18.0) * 0.85), ax, ay, 2, 2);
+        }
+        int bPos = (t * 2) % 20;
+        Px(g, cFlame3, 0.95, 342 + bPos, 292 - bPos / 4, 3, 1);
+
+        for (int step = 0; step < 19; step++) {
+            double u = step / 18.0;
+            double pulseU = ((t * 0.11 + u * 2.2) % 1.0);
+            int bx = (int)Math.Round(356 + u * 64);
+            int by = (int)Math.Round(288 - Math.Sin(u * Math.PI * 0.85) * 18 + Math.Sin(u * 9.0 - t * 0.65) * 3.2);
+            int rad = 3 + ((step + (int)(t * 0.5)) % 3);
+            Px(g, cFlame0, 0.42, bx - rad - 1, by - rad - 1, (rad + 1) * 2, (rad + 1) * 2);
+            Px(g, cFlame1, 0.84, bx - rad, by - rad, rad * 2, rad * 2);
+            Px(g, pulseU > 0.62 ? cFlame3 : cFlame2, 0.94, bx - 1, by - 1, 3, 3);
+            double angR = t * 0.5 + step * 0.8;
+            Px(g, Color.FromArgb(255, 232, 136), 0.80, bx + (int)Math.Round(Math.Cos(angR) * 4), by + (int)Math.Round(Math.Sin(angR) * 6), 2, 2);
+        }
+        int jaw = Math.Sin(t * 0.45) > 0 ? 1 : 0;
+        Px(g, cFlame3, 0.96, 417, 281 - jaw, 6, 3);
+        Px(g, cFlame1, 0.92, 421, 278 - jaw, 5, 2);
+        Px(g, cFlame0, 0.90, 421, 286 + jaw, 5, 2);
+
+        double rot = t * 0.065;
+        for (int p = 0; p < 12; p++) {
+            double ang = rot + (p * Math.PI * 2.0) / 12.0;
+            double cA = Math.Cos(ang), sA = Math.Sin(ang);
+            for (int r = 14; r <= 42; r += 4) {
+                int rx = (int)Math.Round(456 + cA * r);
+                int ry = (int)Math.Round(312 + sA * (r * 0.18));
+                bool esPunta = r >= 36;
+                Px(g, esPunta ? Color.White : (r >= 26 ? cAkaza1 : cAkaza0), esPunta ? 0.95 : 0.78, rx, ry, esPunta ? 2 : 1, 1);
+            }
+        }
+        Px(g, cFlame2, 0.95, 450, 284, 1, 1);
+        Px(g, cFlame2, 0.95, 454, 284, 1, 1);
+        for (int k = 0; k < 4; k++) {
+            double prog = ((t * 0.13 + k * 0.25) % 1.0);
+            int ax = (int)Math.Round(446 - prog * 28);
+            int ay = (int)Math.Round(288 + (((k % 2 == 0) ? -1 : 1) * 5) + Math.Sin(t * 0.4 + k) * 2);
+            Px(g, cAkaza0, 0.85, ax, ay - 3, 4, 7);
+            Px(g, cAkaza2, 0.72, ax + 2, ay - 2, 3, 5);
+            Px(g, Color.White, 0.95, ax - 1, ay - 1, 2, 3);
+        }
+
+        for (int rIdx = 0; rIdx < 2; rIdx++) {
+            int rad = 4 + ((t * 2 + rIdx * 7) % 14);
+            double opRing = Math.Max(0.15, (1.0 - (rad - 4) / 14.0) * 0.9);
+            for (int i = 0; i < 16; i++) {
+                double a = (i * Math.PI * 2.0) / 16.0 + t * 0.08;
+                int sx = (int)Math.Round(418 + Math.Cos(a) * rad);
+                int sy = (int)Math.Round(284 + Math.Sin(a) * rad * 0.75);
+                Px(g, sx < 418 ? cFlame2 : cAkaza0, opRing, sx, sy, 2, 1);
+            }
+        }
+        Color cBoltY = Color.FromArgb(255, 232, 152);
+        Color cBoltC = Color.FromArgb(120, 236, 255);
+        for (int b = 0; b < 6; b++) {
+            if ((t + b) % 3 == 0) continue;
+            double ba = t * 0.37 + b * 1.05;
+            int bl = 7 + ((t * 3 + b * 5) % 10);
+            Color colB = (b % 2 == 0) ? cBoltY : cBoltC;
+            for (int s = 2; s <= bl; s += 2) {
+                int jx = (int)Math.Round(Math.Sin(s + t + b) * 1.4);
+                Px(g, colB, 0.88, 418 + (int)Math.Round(Math.Cos(ba) * s) + jx, 284 + (int)Math.Round(Math.Sin(ba) * s * 0.8), 1, 1);
+            }
+        }
+        if (clash > 0.2) Px(g, Color.White, 0.98 * clash, 416, 282, 5, 5);
+
+        double fPulse = 0.7 + 0.3 * Osc(t, 0.22, 0.4);
+        Px(g, Color.FromArgb(255, 132, 56), 0.22 * fPulse * env, 141, 222, 14, 9);
+        for (int i = 1; i <= 34; i += 2) {
+            int rh = 1 + i / 6;
+            Px(g, cBoltY, Math.Max(0.03, (0.36 - i * 0.009) * fPulse * env), 225 + i, 238 - rh, 2, rh * 2);
+        }
+    }
+
+    void PintaDemonTokito(Graphics g, int t, double nf) {
+        double env = 0.65 + 0.35 * nf;
+        Color cMist0 = Color.FromArgb(84, 232, 204);
+        Color cMist1 = Color.FromArgb(184, 255, 244);
+        Color cMist2 = Color.FromArgb(232, 255, 252);
+        Color cSea = Color.FromArgb(40, 152, 168);
+        Color cGyPink = Color.FromArgb(255, 72, 120);
+
+        for (int i = 0; i < 6; i++) {
+            int span = 350;
+            int bx = 185 + (((int)Math.Round(t * (1.2 + (i % 3) * 0.5)) + i * 64) % span);
+            int by = 288 + (i % 3) * 11 + (int)Math.Round(Math.Sin(t * 0.12 + i) * 2);
+            int bw = 28 + (i % 3) * 14;
+            Px(g, cMist0, 0.16 * env, bx, by, bw, 3);
+            Px(g, cMist1, 0.22 * env, bx + 6, by + 1, (int)Math.Round(bw * 0.6), 1);
+        }
+
+        Color cHair = Color.FromArgb(116, 240, 220);
+        for (int h = 0; h < 5; h++) {
+            int hx = 259 + h * 3;
+            int hy = 283 + h + (int)Math.Round(Math.Sin(t * 0.45 + h) * 1.4);
+            Px(g, h > 2 ? cMist2 : cHair, 0.85, hx, hy, 2, 2);
+        }
+        int bladeS = (t * 2) % 18;
+        Px(g, cMist2, 0.95, 287 + bladeS, 285 - bladeS / 4, 3, 1);
+
+        for (int a = 0; a < 3; a++) {
+            double prog = ((t * 0.10 + a * 0.33) % 1.0);
+            int sx = (int)Math.Round(304 + prog * 144);
+            int sy = (int)Math.Round(284 + Math.Sin(prog * Math.PI * 2 + a) * 9);
+            for (int dy = -6; dy <= 6; dy += 2) {
+                int arch = (dy * dy) / 7;
+                Px(g, cMist0, 0.72, sx - arch, sy + dy, 3, 2);
+                if (Math.Abs(dy) <= 3) Px(g, cMist2, 0.92, sx - arch + 1, sy + dy, 2, 1);
+            }
+        }
+
+        int flashTick = t % 28;
+        if (flashTick < 9) {
+            double fAl = 1.0 - flashTick / 9.0;
+            Px(g, cMist0, 0.18 * fAl * env, 424, 260, 56, 42);
+            Color cFlash = Color.FromArgb(116, 248, 232);
+            for (int d = -14; d <= 14; d += 2) {
+                Px(g, cFlash, 0.86 * fAl, 444 + d, 280 + (int)Math.Round(d * 0.65), 2, 2);
+                Px(g, Color.White, 0.95 * fAl, 444 + d, 280 - (int)Math.Round(d * 0.65), 2, 2);
+            }
+        }
+
+        for (int sIdx = 0; sIdx < 2; sIdx++) {
+            int side = sIdx == 0 ? -1 : 1;
+            for (int seg = 0; seg < 12; seg++) {
+                double u = seg / 11.0;
+                double wave = Math.Sin(t * 0.42 + u * 4.5 + side) * (2.5 + u * 3.5);
+                int tx = (int)Math.Round(468 + side * (13 + seg * 2.5));
+                int ty = (int)Math.Round(294 - Math.Sin(u * 3.6) * 14 - u * 9 + wave);
+                int rt = u < 0.5 ? 2 : 1;
+                Px(g, cSea, 0.75, tx - rt, ty - rt, rt * 2 + 1, rt * 2 + 1);
+                Px(g, cMist1, 0.86, tx, ty, rt, rt);
+            }
+            if ((t + (side > 0 ? 1 : 0)) % 2 == 0) {
+                int sxp = 468 + side * (36 + (t % 5));
+                int syp = 266 + (int)Math.Round(Math.Cos(t * 0.5 + side) * 4);
+                Px(g, cMist2, 0.88, sxp, syp, 2, 2);
+            }
+        }
+        Px(g, cGyPink, 0.92, 467, 270, 2, 2);
+        Px(g, Color.FromArgb(255, 216, 88), 0.90, 467, 275, 2, 1);
+
+        for (int j = 0; j < 3; j++) {
+            double gp = ((t * 0.12 + j * 0.33) % 1.0);
+            int gx = (int)Math.Round(452 - gp * 60);
+            int gy = (int)Math.Round(278 + (j - 1) * 5 + Math.Sin(t * 0.5 + j) * 2);
+            Px(g, cMist0, 0.86, gx, gy, 5, 1);
+            Px(g, cGyPink, 0.80, gx + 4, gy, 2, 1);
+        }
+        if (t % 3 != 0) {
+            Px(g, Color.White, 0.90, 391, 279, 3, 3);
+            Px(g, Color.FromArgb(255, 100, 148), 0.80, 394 + (t % 4) - 2, 275 + ((t * 2) % 6), 2, 2);
+        }
+    }
+
+    void PintaDemonGlicinias(Graphics g, int t, double nf) {
+        double env = 0.65 + 0.35 * nf;
+        Color[] wCols = new Color[] {
+            Color.FromArgb(200, 132, 255), Color.FromArgb(240, 216, 255),
+            Color.FromArgb(146, 72, 232), Color.FromArgb(230, 184, 255)
+        };
+        for (int i = 0; i < 20; i++) {
+            double speedY = 0.45 + (i % 4) * 0.18;
+            double speedX = 0.25 + (i % 3) * 0.12;
+            int py = 116 + (((int)Math.Round(t * speedY) + i * 19) % 218);
+            int px0 = 36 + (((int)Math.Round(t * speedX + Math.Sin(t * 0.08 + i) * 14) + i * 31) % 568);
+            bool horiz = ((t / 5 + i) % 2) == 0;
+            Px(g, wCols[i % 4], 0.82 * env, px0, py, horiz ? 2 : 1, horiz ? 1 : 2);
+        }
+        Color cGlow = Color.FromArgb(240, 216, 255);
+        for (int idxG = 0; idxG < 10; idxG++) {
+            int gx = idxG < 4 ? (52 + idxG * 44) : (idxG < 8 ? (418 + (idxG - 4) * 44) : (276 + (idxG - 8) * 86));
+            int gy = idxG < 8 ? (136 + (idxG % 3) * 14) : 150;
+            double op = (0.35 + 0.65 * Osc(t, 0.16, idxG * 1.3)) * env;
+            Px(g, cGlow, op, gx, gy, 2, 2);
+        }
+
+        double pulseF = 0.72 + 0.28 * Osc(t, 0.24, 0.7);
+        Px(g, Color.FromArgb(255, 120, 40), 0.16 * pulseF * env, 300, 266, 50, 24);
+        Color cB0 = Color.FromArgb(255, 56, 32);
+        Color cB1 = Color.FromArgb(255, 148, 40);
+        Color cB2 = Color.FromArgb(255, 244, 184);
+        for (int k = 0; k < 9; k++) {
+            int kx = 307 + k * 4;
+            int kyBase = 285 - (k * 4 + 13) / 5;
+            int fh = 3 + (((int)(t * 0.7) + k * 3) % 7);
+            int sway = (int)Math.Round(Math.Sin(t * 0.5 + k * 0.9) * 1.2);
+            Px(g, cB0, 0.78, kx + sway, kyBase - fh, 2, 3);
+            Px(g, cB1, 0.88, kx, kyBase - Math.Max(2, fh - 2), 2, 3);
+            Px(g, cB2, 0.95, kx, kyBase - 1, 2, 2);
+        }
+        Color cEmberG = Color.FromArgb(255, 232, 136);
+        Color cEmberO = Color.FromArgb(255, 152, 56);
+        for (int e = 0; e < 5; e++) {
+            double rise = ((t * 1.2 + e * 9) % 34.0);
+            int ex = 310 + ((e * 11) % 30) + (int)Math.Round(Math.Sin(t * 0.2 + e * 1.7) * 4);
+            int ey = 280 - (int)Math.Round(rise);
+            Px(g, (e % 2 == 0) ? cEmberG : cEmberO, Math.Max(0.1, (1.0 - rise / 34.0) * 0.88), ex, ey, 1, 2);
+        }
+    }
+
+    void PintaNarutoBaryon(Graphics g, int t, double nf) {
+        double env = 0.68 + 0.32 * nf;
+        double kPulse = 0.5 + 0.5 * Math.Sin(t * 0.26);
+        Color cRed = Color.FromArgb(255, 44, 24);
+        Color cOrg = Color.FromArgb(255, 148, 48);
+        Color cOrgB = Color.FromArgb(255, 124, 44);
+        Color cGold = Color.FromArgb(255, 224, 136);
+        Color cCream = Color.FromArgb(255, 240, 168);
+        Color cCore = Color.FromArgb(255, 246, 220);
+        Color cMag = Color.FromArgb(192, 68, 255);
+        Color cMagL = Color.FromArgb(255, 184, 255);
+        Color cMagD = Color.FromArgb(136, 40, 200);
+
+        int[] eyes = new int[] { 121, 154 };
+        for (int ei = 0; ei < eyes.Length; ei++) {
+            int ex = eyes[ei];
+            Px(g, cRed, 0.48 * kPulse * env, ex - 4, 173, 8, 5);
+            Px(g, cOrg, 0.88, ex - 2, 174, 5, 3);
+            Px(g, cCream, 0.96, ex, 174, 2, 2);
+        }
+        Color cBreath = Color.FromArgb(255, 90, 36);
+        for (int w = 0; w < 4; w++) {
+            int wy = 192 + w * 4 - ((t + w * 2) % 6);
+            Px(g, cBreath, 0.36 * env, 130 + ((w * 7) % 16), wy, 2, 3);
+        }
+
+        Color cTip = Color.FromArgb(255, 208, 104);
+        Color cTailR = Color.FromArgb(255, 60, 36);
+        for (int k = 0; k < 9; k++) {
+            double baseAng = -2.42 + k * 0.24;
+            int len = 64 + (k % 3) * 18;
+            for (int s = 2; s < 10; s++) {
+                double u = s / 10.0;
+                double sway = Math.Sin(t * 0.34 + k * 0.9 + u * 3.1) * (4.0 + u * 8.0);
+                int tx = (int)Math.Round(192 + Math.Cos(baseAng) * (len * u) + sway * 0.45);
+                int ty = (int)Math.Round(314 + Math.Sin(baseAng) * (len * u) + sway * 0.3);
+                if (tx < 48 || tx > 258 || ty < 178 || ty > 342) continue;
+                bool tip = s > 7;
+                Color tc = tip ? cTip : (s % 2 == 0 ? cTailR : cOrgB);
+                Px(g, tc, (0.28 + 0.36 * (1.0 - u)) * env, tx, ty, tip ? 2 : 3, 2);
+            }
+        }
+
+        Color cOrgM = Color.FromArgb(255, 156, 56);
+        for (int p = 0; p < 7; p++) {
+            double rise = ((t * 1.7 + p * 5) % 28.0);
+            int ax = 188 + ((p * 5) % 20) + (int)Math.Round(Math.Sin(t * 0.45 + p) * 2.0);
+            int ay = 340 - (int)Math.Round(rise);
+            Px(g, rise > 18 ? cRed : cOrgM, Math.Max(0.12, (1.0 - rise / 28.0) * 0.78), ax, ay, 2, 2);
+        }
+        Px(g, cGold, 0.85, 188, 300 + (t % 2), 1, 2);
+        Px(g, cGold, 0.85, 204, 300 + ((t + 1) % 2), 1, 2);
+
+        double rPulse = 0.65 + 0.35 * Math.Sin(t * 0.65);
+        Px(g, Color.FromArgb(255, 64, 32), 0.35 * rPulse, 214, 314, 13, 13);
+        Px(g, Color.FromArgb(255, 158, 60), 0.80, 217, 317, 7, 7);
+        Px(g, cCore, 0.96, 219, 319, 3, 3);
+        Color cOrbY = Color.FromArgb(255, 232, 152);
+        Color cOrbR = Color.FromArgb(255, 76, 40);
+        for (int r = 0; r < 4; r++) {
+            double ra = t * 0.55 + r * (Math.PI / 2.0);
+            int rx = 220 + (int)Math.Round(Math.Cos(ra) * 5.2);
+            int ry = 320 + (int)Math.Round(Math.Sin(ra) * 5.2);
+            Px(g, r % 2 == 0 ? cOrbY : cOrbR, 0.92, rx, ry, 2, 2);
+        }
+
+        if (t % 4 != 0) {
+            int cxm = 258 + ((t * 7) % 48);
+            int cym = 304 - (int)Math.Round((cxm - 258) * 0.4) + (int)Math.Round(Math.Sin(t * 0.9) * 5.0);
+            Px(g, Color.FromArgb(255, 216, 120), 0.90, cxm, cym, 3, 1);
+            Px(g, Color.FromArgb(255, 72, 40), 0.72, cxm - 2, cym + 1, 2, 1);
+        }
+
+        int[,] cubos = new int[,] { { 322, 280, 7 }, { 290, 294, 5 }, { 346, 266, 4 } };
+        for (int i = 0; i < 3; i++) {
+            int bob = (int)Math.Round(Math.Sin(t * 0.24 + i * 2.1) * 3.0);
+            int cx = cubos[i, 0];
+            int cy = cubos[i, 1] + bob;
+            int sz = cubos[i, 2];
+            bool flash = ((t + i * 11) % 36) < 4;
+            Px(g, flash ? cMagL : cMag, (flash ? 0.78 : 0.46) * env, cx - sz, cy - sz, sz * 2, 1);
+            Px(g, cMagD, 0.36 * env, cx - sz, cy + sz - 1, sz * 2, 1);
+        }
+
+        Color cWheelY = Color.FromArgb(255, 232, 120);
+        for (int s = 0; s < 8; s++) {
+            double wa = t * 0.14 + (s * Math.PI) / 4.0;
+            int wx = (int)Math.Round(394 + Math.Cos(wa) * 23.0);
+            int wy = (int)Math.Round(282 + Math.Sin(wa) * 23.0);
+            Px(g, s % 2 == 0 ? cWheelY : Color.White, 0.75 * env, wx, wy, 2, 2);
+        }
+        Px(g, Color.FromArgb(200, 72, 255), 0.42 * kPulse * env, 387, 308, 5, 3);
+    }
+
+    void PintaNarutoKonoha(Graphics g, int t, double nf) {
+        double env = 0.60 + 0.40 * nf;
+        int flagBob = (int)Math.Round(Math.Sin(t * 0.35) * 1.2);
+        Px(g, Color.FromArgb(216, 64, 48), 0.85, 220, 224 + flagBob, 5, 2);
+        Px(g, Color.FromArgb(248, 232, 200), 0.65 * env, 217, 228, 3, 1);
+
+        int sway = (int)Math.Round(Math.Sin(t * 0.22) * 1.1);
+        Color cLant = Color.FromArgb(255, 82, 50);
+        Color cLantG = Color.FromArgb(255, 232, 160);
+        int[] lxs = new int[] { 46, 66, 88 };
+        for (int i = 0; i < lxs.Length; i++) {
+            Px(g, cLant, 0.75 * env, lxs[i] + sway, 255, 3, 4);
+            Px(g, cLantG, 0.50 * env, lxs[i] + sway, 256, 1, 2);
+        }
+        Color cSteam = Color.FromArgb(240, 244, 248);
+        for (int v = 0; v < 4; v++) {
+            double vr = ((t * 1.1 + v * 6) % 20.0);
+            Px(g, cSteam, Math.Max(0.08, (1.0 - vr / 20.0) * 0.42), 66 + (int)Math.Round(Math.Sin(t * 0.2 + v) * 2.0), 248 - (int)Math.Round(vr), 2, 2);
+        }
+
+        int cloakW = (int)Math.Round(Math.Sin(t * 0.30) * 1.4);
+        Px(g, Color.FromArgb(255, 120, 40), 0.82, 338 + cloakW, 265, 3, 4);
+        Px(g, Color.FromArgb(255, 244, 228), 0.78, 344 + cloakW, 261, 3, 3);
+        Px(g, Color.FromArgb(56, 48, 88), 0.80, 372 - cloakW, 263, 3, 5);
+        if (nf > 0.3) Px(g, Color.FromArgb(200, 112, 255), 0.70 * env, 368, 256, 1, 1);
+
+        Color cLeafD = Color.FromArgb(116, 208, 92);
+        Color cLeafS = Color.FromArgb(232, 152, 68);
+        Color cLeafN = Color.FromArgb(76, 168, 104);
+        for (int i = 0; i < 7; i++) {
+            int lx = 36 + (((int)Math.Round(t * (1.3 + (i % 3) * 0.45)) + i * 59) % 404);
+            int ly = 135 + (i % 4) * 32 + (int)Math.Round(Math.Sin(t * 0.18 + i * 1.4) * 7.0);
+            Color lCol = nf > 0.55 ? cLeafN : (i % 2 == 0 ? cLeafD : cLeafS);
+            Px(g, lCol, 0.72, lx, ly, 2, 2);
+        }
+
+        Color cWatN = Color.FromArgb(152, 200, 255);
+        Color cWatD = Color.FromArgb(255, 240, 184);
+        for (int r = 0; r < 10; r++) {
+            if ((t + r) % 3 == 0) continue;
+            int rx = 44 + ((r * 39 + t * 2) % 390);
+            int ry = 287 + (r % 5) * 9;
+            Px(g, nf > 0.55 ? cWatN : cWatD, 0.42 * env, rx, ry, 4 + (r % 3) * 2, 1);
+        }
+    }
+
+    void PintaNarutoValle(Graphics g, int t, double nf) {
+        double env = 0.65 + 0.35 * nf;
+        Color cFoam = Color.FromArgb(184, 238, 255);
+        Color cMist = Color.FromArgb(232, 251, 255);
+        Color cRas = Color.FromArgb(72, 196, 255);
+        Color cRasC = Color.FromArgb(216, 248, 255);
+        Color cRasR = Color.FromArgb(128, 228, 255);
+        Color cChi = Color.FromArgb(168, 212, 255);
+        Color cChiP = Color.FromArgb(184, 176, 255);
+
+        for (int l = 0; l < 6; l++) {
+            int wx = 250 + l * 13;
+            int off = (t * 4 + l * 21) % 120;
+            for (int k = 0; k < 3; k++) {
+                int wy = 154 + ((off + k * 42) % 120);
+                Px(g, k == 0 ? Color.White : cFoam, 0.62 * env, wx, wy, 2, 6);
+            }
+        }
+        for (int m = 0; m < 8; m++) {
+            int mx = 242 + m * 11 + (int)Math.Round(Math.Sin(t * 0.25 + m) * 2.0);
+            int my = 275 + ((t + m * 3) % 5);
+            Px(g, cMist, 0.52 * env, mx, my, 5, 3);
+        }
+
+        double clash = 0.6 + 0.4 * Math.Sin(t * 0.6);
+        Px(g, cRas, 0.32 * clash, 271, 242, 12, 12);
+        Px(g, cRasC, 0.90, 275, 246, 5, 5);
+        for (int s = 0; s < 4; s++) {
+            double sa = t * 0.65 + s * (Math.PI / 2.0);
+            Px(g, cRasR, 0.92, 277 + (int)Math.Round(Math.Cos(sa) * 4.0), 248 + (int)Math.Round(Math.Sin(sa) * 4.0), 2, 2);
+        }
+
+        Px(g, cChi, 0.32 * clash, 285, 241, 14, 14);
+        for (int b = 0; b < 5; b++) {
+            if ((t + b) % 3 == 0) continue;
+            double ba = t * 0.48 + b * 1.25;
+            int bl = 5 + ((t * 2 + b * 3) % 8);
+            for (int d = 2; d <= bl; d += 2) {
+                int j = (int)Math.Round(Math.Sin(d + t + b) * 1.4);
+                Px(g, b % 2 == 0 ? Color.White : cChiP, 0.92, 291 + (int)Math.Round(Math.Cos(ba) * d) + j, 248 + (int)Math.Round(Math.Sin(ba) * d), 1, 1);
+            }
+        }
+
+        Px(g, Color.White, 0.96 * clash, 282, 246, 5, 5);
+        int ringR = 5 + ((t * 2) % 20);
+        double ringAl = Math.Max(0.08, (1.0 - (ringR - 5) / 20.0) * 0.72);
+        Color cRingB = Color.FromArgb(136, 232, 255);
+        for (int a = 0; a < 12; a++) {
+            double ang = (a * Math.PI * 2.0) / 12.0 + t * 0.1;
+            Px(g, a % 2 == 0 ? cRingB : Color.White, ringAl, 284 + (int)Math.Round(Math.Cos(ang) * ringR), 248 + (int)Math.Round(Math.Sin(ang) * ringR * 0.8), 2, 2);
+        }
+
+        Px(g, Color.FromArgb(255, 152, 56), 0.65 * clash, 253, 255 - (t % 3), 2, 3);
+        Px(g, Color.FromArgb(152, 128, 255), 0.65 * clash, 314, 255 - ((t + 1) % 3), 2, 3);
+
+        int poolW = 10 + ((t * 2) % 18);
+        Px(g, Color.FromArgb(144, 232, 255), 0.40 * clash, 284 - poolW, 315, poolW * 2, 2);
+        Px(g, Color.White, 0.55 * clash, 279, 316, 10, 1);
+    }
+
+    void PintaJujutsu(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.55 + 0.45 * nf + aB);
+        double pulse = 0.72 + 0.28 * Math.Sin(t * 0.14);
+
+        Color cCyan = Color.FromArgb(125, 211, 252);
+        Color cPurp = Color.FromArgb(192, 132, 252);
+        Color cPink = Color.FromArgb(251, 113, 133);
+        Color cRed = Color.FromArgb(255, 40, 72);
+        Color cCore = Color.FromArgb(232, 121, 249);
+        Color cDarkP = Color.FromArgb(147, 51, 234);
+
+        for (int a = 0; a < 10; a++) {
+            double ang = (a * Math.PI * 2.0) / 10.0 + t * 0.05;
+            double rX = 33 + Math.Round(Math.Sin(t * 0.1 + a) * 2.0);
+            Px(g, a % 2 == 0 ? cCyan : cPurp, 0.65 * al, 452 + Math.Round(Math.Cos(ang) * rX), 162 + Math.Round(Math.Sin(ang) * 17), 2, 1);
+        }
+        Px(g, Color.White, 0.45 * al * pulse, 450, 161, 4, 2);
+
+        double eyeAl = Math.Min(1.0, (0.55 + 0.45 * Math.Sin(t * 0.16)) * al);
+        Px(g, cPink, 0.85 * eyeAl, 151, 217, 2, 2);
+        Px(g, cPink, 0.85 * eyeAl, 159, 217, 2, 2);
+        Px(g, cRed, 0.50 * al, 146, 260 + (t % 3 == 0 ? -1 : 0), 20, 2);
+        for (int s = 0; s < 5; s++) {
+            int sy = 200 + ((s * 17 + t * 3) % 68);
+            int sx = 122 + ((s * 29) % 68);
+            Px(g, s % 2 == 0 ? cRed : cPink, 0.7 * al, sx, sy, 6, 1);
+        }
+
+        Px(g, cPink, 0.55 * al, 244, 250 - (t % 3), 2, 4);
+        Px(g, Color.FromArgb(239, 68, 68), 0.55 * al, 252, 247 - ((t + 1) % 3), 2, 4);
+        for (int k = 0; k < 4; k++) {
+            int prog = (t * 3 + k * 7) % 28;
+            int sx0 = 264 + prog;
+            int sy0 = 240 + ((k * 7) % 18) - (int)Math.Round(prog * 0.25);
+            for (int d = 0; d < 7; d++) {
+                Px(g, d > 4 ? Color.White : cRed, 0.88 * al, sx0 + d, sy0 + ((k % 2 == 0) ? (d / 2) : -(d / 2)), 1, 1);
+            }
+        }
+
+        Px(g, Color.FromArgb(56, 189, 248), 0.65 * al, 374, 249 - ((t + 2) % 3), 2, 4);
+        double rOrb = 9 + Math.Round(Math.Sin(t * 0.2) * 2.0);
+        double rAng = t * 0.22;
+        Px(g, cPink, 0.90 * al, 313 + Math.Round(Math.Cos(rAng) * rOrb), 248 + Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
+        Px(g, Color.FromArgb(56, 189, 248), 0.90 * al, 313 - Math.Round(Math.Cos(rAng) * rOrb), 248 - Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
+
+        int coreR = (int)Math.Round(4 + 3 * pulse + aB * 8);
+        Px(g, cDarkP, 0.40 * al, 313 - coreR - 4, 248 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
+        Px(g, cCore, 0.72 * al, 313 - coreR, 248 - coreR, coreR * 2, coreR * 2);
+        Px(g, Color.FromArgb(253, 244, 255), 0.96 * al, 311, 246, 5, 5);
+
+        int wave = 8 + ((t * 2) % 22);
+        double wAl = Math.Max(0.08, (1.0 - (wave - 8) / 22.0) * 0.75 * al);
+        for (int a = 0; a < 12; a++) {
+            double ang = (a * Math.PI * 2.0) / 12.0 + t * 0.08;
+            Px(g, a % 2 == 0 ? cCore : cCyan, wAl, 313 + Math.Round(Math.Cos(ang) * wave), 248 + Math.Round(Math.Sin(ang) * wave * 0.7), 2, 2);
+        }
+
+        int rw = 10 + (int)Math.Round(4 * pulse);
+        Px(g, cPurp, 0.42 * al, 313 - rw, 312, rw * 2, 2);
+        Px(g, Color.FromArgb(244, 63, 94), 0.35 * al, 146, 314, 20, 2);
+    }
+
+    void PintaJujutsuSec(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        int bob = (int)Math.Round(Math.Sin(t * 0.12) * 2.0);
+
+        Px(g, Color.FromArgb(234, 179, 8), 0.45 * al, 312, 238 + bob, 16, 16);
+        if (t % 29 != 0) {
+            Px(g, Color.FromArgb(255, 248, 232), 0.92 * al, 318, 244 + bob, 4, 4);
+            Px(g, Color.FromArgb(225, 29, 72), 0.95 * al, 319, 245 + bob, 2, 2);
+        }
+        for (int c = 0; c < 4; c++) {
+            double ang = c * Math.PI * 0.5 + t * 0.07;
+            Px(g, Color.FromArgb(250, 204, 21), 0.78 * al, 320 + Math.Round(Math.Cos(ang) * 14), 246 + bob + Math.Round(Math.Sin(ang) * 11), 2, 2);
+        }
+
+        bool bfPulse = (t % 16) < 4;
+        Px(g, Color.FromArgb(9, 9, 11), 0.90, 224, 247, 7, 7);
+        Px(g, bfPulse ? Color.White : Color.FromArgb(251, 113, 133), 0.92 * al, 226, 249, 3, 3);
+        for (int b = 0; b < 6; b++) {
+            double ang = t * 0.45 + b * 1.05;
+            int dist = 5 + ((t * 2 + b * 3) % 10);
+            Px(g, b % 2 == 0 ? Color.FromArgb(225, 29, 72) : Color.FromArgb(17, 24, 39), 0.88, 227 + Math.Round(Math.Cos(ang) * dist), 250 + Math.Round(Math.Sin(ang) * dist), 2, 1);
+        }
+
+        for (int s = 0; s < 5; s++) {
+            int sy = 272 - ((t * 2 + s * 6) % 24);
+            int sx = 414 + (int)Math.Round(Math.Sin(t * 0.1 + s) * 8) + (s - 2) * 4;
+            Px(g, s % 2 == 0 ? Color.FromArgb(56, 189, 248) : Color.FromArgb(30, 41, 59), 0.72 * al, sx, sy, 2, 2);
+        }
+        Px(g, Color.FromArgb(16, 185, 129), 0.90 * al, 434, 263, 2, 1);
+    }
+
+    void PintaJujutsuBloq(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        int sway = (int)Math.Round(Math.Sin(t * 0.09) * 1.5);
+        int[] ofudas = new int[] { 298, 310, 330, 342 };
+        for (int i = 0; i < ofudas.Length; i++) {
+            int ox = ofudas[i];
+            Px(g, Color.FromArgb(254, 243, 199), 0.88 * al, ox + sway, 157, 2, 5);
+            Px(g, Color.FromArgb(239, 68, 68), 0.78 * al, ox + sway, 159, 1, 2);
+        }
+
+        double pulse = 0.65 + 0.35 * Math.Sin(t * 0.14);
+        Px(g, Color.FromArgb(225, 29, 72), 0.36 * al * pulse, 313, 223, 14, 14);
+        Px(g, Color.FromArgb(251, 113, 133), 0.85 * al * pulse, 318, 227 + (t % 6 < 3 ? 0 : -1), 4, 7);
+        Px(g, Color.FromArgb(254, 242, 242), 0.88 * al, 319, 228, 2, 2);
+
+        for (int w = 0; w < 6; w++) {
+            double prog = (t * 1.2 + w * 9) % 44;
+            int wx = 286 + w * 13 + (int)Math.Round(Math.Sin(t * 0.08 + w) * 3);
+            int wy = 266 - (int)Math.Round(prog);
+            Px(g, w % 2 == 0 ? Color.FromArgb(168, 85, 247) : Color.FromArgb(244, 63, 94), Math.Max(0.15, (1.0 - prog / 44.0) * 0.80 * al), wx, wy, 2, 2);
+        }
+        Px(g, Color.FromArgb(225, 29, 72), 0.35 * al * pulse, 312, 318, 16, 2);
+    }
+
+    public void TriggerEvento(string tipo, int tick) {
+        string[] ops = new string[] { "cometa", "invocacion", "anomalia" };
+        if (string.IsNullOrEmpty(tipo)) tipo = ops[Math.Abs(tick) % ops.Length];
+        EventoTipo = tipo;
+        EventoInicioTick = tick;
+    }
+
+    string ClimaEfectivo(DateTime fecha) {
+        string m = string.IsNullOrEmpty(ClimaMode) ? "normal" : ClimaMode;
+        if (m != "auto") return m;
+        int h = fecha.Hour;
+        if (TemaId == "spiderman-miles-morales" && (h >= 20 || h < 5)) return "lluvia";
+        if (TemaId == "stranger-things" && (h % 2 == 1)) return "tormenta";
+        if (TemaId == "demon-slayer" || TemaId == "harry-potter" || TemaId == "jujutsu-kaisen") return "niebla";
+        if (TemaId == "fittoa" && (h < 7 || h >= 22)) return "niebla";
+        return "normal";
+    }
+
+    void PintaEventoEspecial(Graphics g, int t) {
+        if (string.IsNullOrEmpty(EventoTipo)) return;
+        int age = t - EventoInicioTick;
+        if (age < 0 || age > EventoDuracion) { EventoTipo = ""; return; }
+        double p = (double)age / (double)EventoDuracion;
+        double env = p < 0.15 ? p / 0.15 : (p > 0.8 ? (1.0 - p) / 0.2 : 1.0);
+
+        if (EventoTipo == "cometa") {
+            double cx = 60.0 + p * 520.0;
+            double cy = 28.0 + p * 125.0 - Math.Sin(p * Math.PI) * 18.0;
+            for (int k = 0; k < 18; k++) {
+                double tx = cx - k * 3.6;
+                double ty = cy - k * 1.1;
+                double a = (1.0 - k / 18.0) * 0.85 * env;
+                Color c = k < 4 ? Color.White : (k < 10 ? Color.FromArgb(253, 224, 71) : Color.FromArgb(56, 189, 248));
+                Px(g, c, a, tx, ty, k < 5 ? 3 : 2, k < 5 ? 2 : 1);
+            }
+            Px(g, Color.White, 0.98 * env, cx - 1, cy - 1, 4, 4);
+        } else if (EventoTipo == "invocacion") {
+            Color cGold = Color.FromArgb(250, 204, 21);
+            Color cCyan = Color.FromArgb(56, 189, 248);
+            for (int a = 0; a < 16; a++) {
+                double ang = (a * Math.PI * 2.0) / 16.0 + t * 0.08;
+                Px(g, a % 2 == 0 ? cGold : cCyan, 0.82 * env, 320 + Math.Round(Math.Cos(ang) * 34), 224 + Math.Round(Math.Sin(ang) * 14), 2, 2);
+            }
+            int[] cols = new int[] { 302, 320, 338 };
+            for (int i = 0; i < cols.Length; i++) {
+                Px(g, cGold, 0.22 * env, cols[i] - 1, 56, 3, 224);
+                Px(g, Color.White, 0.50 * env, cols[i], 76, 1, 204);
+            }
+            Px(g, cCyan, 0.35 * env, 296, 314, 48, 3);
+        } else if (EventoTipo == "anomalia") {
+            Color cRed = Color.FromArgb(225, 29, 72);
+            Color cPurp = Color.FromArgb(168, 85, 247);
+            for (int i = -24; i <= 24; i += 2) {
+                int y = 148 + i;
+                int x = 320 + (int)Math.Round(Math.Sin(i * 0.35 + t * 0.25) * 6);
+                Px(g, Color.FromArgb(9, 9, 11), 0.85 * env, x - 2, y, 5, 2);
+                Px(g, (i % 4 == 0) ? cRed : cPurp, 0.90 * env, x - 3, y, 2, 2);
+                Px(g, Color.FromArgb(244, 63, 94), 0.90 * env, x + 2, y, 2, 2);
+            }
+            for (int r = 0; r < 10; r++) {
+                double ang = r * 0.62 + t * 0.14;
+                double rad = 14 + (age % 22);
+                Px(g, r % 2 == 0 ? Color.FromArgb(244, 63, 94) : Color.FromArgb(192, 132, 252), 0.72 * env, 320 + Math.Round(Math.Cos(ang) * rad), 148 + Math.Round(Math.Sin(ang) * rad * 0.7), 2, 1);
+            }
+        }
+    }
+
+    void PintaClima(Graphics g, int t, double wB, double nf, DateTime fecha) {
+        string modo = ClimaEfectivo(fecha);
+        if (modo == "normal") return;
+        double aB = AudioReactivo ? AudioBoost * 0.25 : 0.0;
+
+        if (modo == "lluvia" || modo == "tormenta") {
+            bool pesado = (modo == "tormenta");
+            double wind = pesado ? -2.2 : -1.0;
+            double vyBase = pesado ? 1.55 : 1.0;
+            Color col = pesado ? Color.FromArgb(186, 230, 253) : Color.FromArgb(125, 211, 252);
+            double alphaBase = (pesado ? 0.56 : 0.42) * (1.0 - 0.15 * wB) + aB;
+
+            for (int i = 0; i < 84; i++) {
+                if (!pesado && i % 3 == 2) continue;
+                int x0 = (i * 53 + 17) % 640;
+                int y0 = (i * 89 + 31) % 390;
+                int len = (int)Math.Round((5 + (i % 4) * 2) * (pesado ? 1.35 : 1.0));
+                int sp = 6 + (i % 3);
+                double gx = (((x0 + t * wind * 2.2) % 640) + 640) % 640;
+                double gy = (y0 + t * sp * vyBase) % 390;
+                for (int d = 0; d < len; d++) {
+                    Px(g, col, alphaBase * (1.0 - d * 0.08), gx + (wind < -1.5 ? -(int)(d * 0.4) : 0), gy + d, 1, 1);
+                }
+                if (gy > 282 && gy < 386 && i % 7 == 0) {
+                    int rw = 2 + ((t + i) % 3);
+                    Px(g, Color.FromArgb(224, 242, 254), 0.30 * alphaBase, gx - rw, gy + 1, rw * 2, 1);
+                }
+            }
+            if (pesado) {
+                int flash = (t * 17 + 13) % 131;
+                if (flash < 2) {
+                    Px(g, Color.FromArgb(224, 242, 254), flash == 0 ? 0.22 : 0.10, 0, 0, 640, 280);
+                    int lx = 110 + ((t * 97) % 420);
+                    for (int y = 8; y < 230; y += 4) {
+                        int jx = lx + (int)Math.Round(Math.Sin(y * 0.18 + t) * 7);
+                        Px(g, Color.White, 0.92, jx, y, 2, 4);
+                        Px(g, col, 0.45, jx - 1, y, 4, 4);
+                    }
+                }
+            }
+        } else if (modo == "nieve") {
+            double alphaBase = 0.72 + 0.20 * nf;
+            for (int i = 0; i < 68; i++) {
+                int x0 = (i * 61 + 29) % 640;
+                int y0 = (i * 97 + 13) % 390;
+                double sp = 0.75 + (i % 4) * 0.35;
+                int sz = (i % 5 == 0) ? 2 : 1;
+                double sx = (((x0 + Math.Sin(t * 0.04 + i * 0.7) * 14 + t * 0.15) % 640) + 640) % 640;
+                double sy = (y0 + t * sp) % 394;
+                Px(g, (i % 4 == 0) ? Color.FromArgb(224, 242, 254) : Color.White, alphaBase, sx, sy, sz, sz);
+            }
+        } else if (modo == "niebla") {
+            Color col = wB > 0.5 ? Color.FromArgb(248, 250, 252) : Color.FromArgb(203, 213, 225);
+            for (int i = 0; i < 6; i++) {
+                double mx = (((i * 120 + t * (0.25 + (i % 3) * 0.12)) % 760) + 760) % 760 - 120;
+                int my = 252 + i * 14;
+                int mw = 95 + (i % 3) * 45;
+                Px(g, col, 0.09 + 0.06 * nf, mx, my, mw, 5);
+                Px(g, col, 0.05 + 0.04 * nf, mx + 16, my - 2, mw - 32, 2);
+            }
+        }
+    }
+
     public void Render(PzmSceneData S, DateTime fecha, int t) {
         if (S == null || S.CieloNoche == null || S.EscenaNoche == null) return;
         double e, az, H, H0;
@@ -698,6 +1406,15 @@ public class PzmRenderer {
             else if (S.ModoHeroe == "stranger_azotamentes") { PintaStrangerPrincipal(g, t, nf); }
             else if (S.ModoHeroe == "stranger_demogorgon") { PintaStrangerDemogorgon(g, t, nf); }
             else if (S.ModoHeroe == "stranger_reloj") { PintaStrangerReloj(g, t, nf); }
+            else if (S.ModoHeroe == "demon_rengoku") { PintaDemonRengoku(g, t, nf); }
+            else if (S.ModoHeroe == "demon_tokito") { PintaDemonTokito(g, t, nf); }
+            else if (S.ModoHeroe == "demon_glicinias") { PintaDemonGlicinias(g, t, nf); }
+            else if (S.ModoHeroe == "naruto_baryon") { PintaNarutoBaryon(g, t, nf); }
+            else if (S.ModoHeroe == "naruto_konoha") { PintaNarutoKonoha(g, t, nf); }
+            else if (S.ModoHeroe == "naruto_valle") { PintaNarutoValle(g, t, nf); }
+            else if (S.ModoHeroe == "jujutsu") { PintaJujutsu(g, t, nf); }
+            else if (S.ModoHeroe == "jujutsu_sec") { PintaJujutsuSec(g, t, nf); }
+            else if (S.ModoHeroe == "jujutsu_bloq") { PintaJujutsuBloq(g, t, nf); }
 
             if (S.Chimenea != null && S.Chimenea.Length >= 2) {
                 int hx = S.Chimenea[0], hy = S.Chimenea[1];
@@ -791,6 +1508,8 @@ public class PzmRenderer {
                     Px(g, S.ColorFuegosCentro[i % S.ColorFuegosCentro.Length], 0.2 + 0.8 * b, fx, fy, 1, 1);
                 }
             }
+            PintaEventoEspecial(g, t);
+            PintaClima(g, t, wB, nf, fecha);
         }
     }
 }
@@ -1329,16 +2048,97 @@ public static class PzmDesktopHost {
         return sb.ToString();
     }
 }
+
+public static class PzmSystemGuard {
+    [StructLayout(LayoutKind.Sequential)]
+    struct GuardRect { public int Left, Top, Right, Bottom; }
+
+    [DllImport("user32.dll")]
+    static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    static extern bool GetWindowRect(IntPtr hWnd, out GuardRect lpRect);
+
+    [DllImport("user32.dll")]
+    static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("user32.dll")]
+    static extern short GetAsyncKeyState(int vKey);
+
+    static readonly int _selfPid = System.Diagnostics.Process.GetCurrentProcess().Id;
+    static int _lastMask = 0;
+
+    public static bool IsFullscreenAppActive() {
+        try {
+            IntPtr fg = GetForegroundWindow();
+            if (fg == IntPtr.Zero || !IsWindowVisible(fg)) return false;
+            uint pid;
+            GetWindowThreadProcessId(fg, out pid);
+            if ((int)pid == _selfPid) return false;
+            var sb = new System.Text.StringBuilder(64);
+            GetClassName(fg, sb, sb.Capacity);
+            string cls = sb.ToString();
+            if (cls == "Progman" || cls == "WorkerW" || cls == "Shell_TrayWnd" ||
+                cls == "Shell_SecondaryTrayWnd" || cls == "NotifyIconOverflowWindow" ||
+                cls == "Windows.UI.Core.CoreWindow") return false;
+            GuardRect r;
+            if (!GetWindowRect(fg, out r)) return false;
+            Rectangle scr = Screen.FromHandle(fg).Bounds;
+            return (r.Right - r.Left) >= (scr.Width - 2) && (r.Bottom - r.Top) >= (scr.Height - 2);
+        } catch {
+            return false;
+        }
+    }
+
+    public static bool IsBatterySaver() {
+        try {
+            var ps = SystemInformation.PowerStatus;
+            return ps.PowerLineStatus == PowerLineStatus.Offline && ps.BatteryLifePercent < 0.25f;
+        } catch {
+            return false;
+        }
+    }
+
+    public static string PollHotkey() {
+        bool ctrl = (GetAsyncKeyState(0x11) & 0x8000) != 0;
+        bool alt  = (GetAsyncKeyState(0x12) & 0x8000) != 0;
+        if (!ctrl || !alt) { _lastMask = 0; return ""; }
+
+        int mask = 0;
+        if ((GetAsyncKeyState(0x57) & 0x8000) != 0) mask |= 1;  // W
+        if ((GetAsyncKeyState(0x48) & 0x8000) != 0) mask |= 2;  // H
+        if ((GetAsyncKeyState(0x46) & 0x8000) != 0) mask |= 4;  // F
+        if ((GetAsyncKeyState(0x50) & 0x8000) != 0) mask |= 8;  // P
+        if ((GetAsyncKeyState(0x45) & 0x8000) != 0) mask |= 16; // E
+
+        int newly = mask & (~_lastMask);
+        _lastMask = mask;
+        if ((newly & 1) != 0) return "W";
+        if ((newly & 2) != 0) return "H";
+        if ((newly & 4) != 0) return "F";
+        if ((newly & 8) != 0) return "P";
+        if ((newly & 16) != 0) return "E";
+        return "";
+    }
+}
 '@
 
 $null = [System.Drawing.Bitmap]
 $null = [System.Drawing.ColorTranslator]
 $null = [System.Windows.Forms.Form]
 $null = [System.Windows.Forms.Message]
+$null = [System.Diagnostics.Process]
+$null = [System.ComponentModel.Component]
 $refAsms = [System.AppDomain]::CurrentDomain.GetAssemblies() |
     Where-Object {
         (-not $_.IsDynamic) -and $_.Location -and (
-            $_.FullName -match '^(mscorlib|netstandard|System\.Runtime|System\.Drawing|System\.Windows\.Forms|System\.ComponentModel|System\.Private\.Windows|System\.Private\.CoreLib|System,|System\.Collections|System\.Threading)'
+            $_.FullName -match '^(mscorlib|netstandard|System\.Runtime|System\.Drawing|System\.Windows\.Forms|System\.ComponentModel|System\.Diagnostics|System\.Private\.Windows|System\.Private\.CoreLib|System,|System\.Collections|System\.Threading)'
         )
     } |
     Select-Object -ExpandProperty Location -Unique
@@ -1450,7 +2250,7 @@ function Resolver-RutaVariante([string]$temaDir, [string]$variante) {
         default      { '' }
     }
     $cand = if ($sub) { Join-Path $temaDir $sub } else { $temaDir }
-    if (Test-Path (Join-Path $cand 'images')) {
+    if ((Test-Path (Join-Path $cand 'images')) -or (Test-Path (Join-Path $cand 'tema.json'))) {
         return @{ Dir = $cand; ConAstro = ($variante -ne 'secundaria') }
     }
     return @{ Dir = $temaDir; ConAstro = $true }
@@ -1472,6 +2272,32 @@ $script:horaAct = $Hora
 $script:monAct = $Monitores
 $script:fondoPrimAct = if ($FondoPrincipal) { $FondoPrincipal } else { 'principal' }
 $script:fondoSecAct = if ($FondoSecundario) { $FondoSecundario } else { 'secundaria' }
+$script:climaAct = if ($Clima) { $Clima } else { 'normal' }
+$script:temaSecAct = if ($TemaSecundario) { $TemaSecundario } else { 'igual' }
+$script:rotacionMinAct = [int]$RotacionMinutos
+$script:pausaJuegoAct = [bool]$PausaJuego
+$script:audioAct = [bool]$AudioReactivo
+$script:hotkeysAct = [bool]$Hotkeys
+$script:pauseManual = $false
+$script:autoPausado = $false
+$script:eventoSeqAct = 0
+$script:lastHourEv = -1
+$script:ultimaRotacion = Get-Date
+
+if (Test-Path $ConfigPath) {
+    try {
+        $initCfg = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($initCfg) {
+            if ($initCfg.clima) { $script:climaAct = [string]$initCfg.clima }
+            if ($initCfg.temaSecundario) { $script:temaSecAct = [string]$initCfg.temaSecundario }
+            if ($null -ne $initCfg.rotacionMinutos) { $script:rotacionMinAct = [int]$initCfg.rotacionMinutos }
+            if ($null -ne $initCfg.pausaJuego) { $script:pausaJuegoAct = [bool]$initCfg.pausaJuego }
+            if ($null -ne $initCfg.audioReactivo) { $script:audioAct = [bool]$initCfg.audioReactivo }
+            if ($null -ne $initCfg.hotkeys) { $script:hotkeysAct = [bool]$initCfg.hotkeys }
+            if ($null -ne $initCfg.eventoSeq) { $script:eventoSeqAct = [int]$initCfg.eventoSeq }
+        }
+    } catch {}
+}
 
 $script:rendPrim = New-Object PzmRenderer
 $script:rendSec = New-Object PzmRenderer
@@ -1479,9 +2305,46 @@ $script:scenePrim = $null
 $script:sceneSec = $null
 $script:forms = @()
 
+function Obtener-TemasLista {
+    if (-not (Test-Path $TemasBase)) { return @('fittoa') }
+    $dirs = Get-ChildItem -Path $TemasBase -Directory -ErrorAction SilentlyContinue | Where-Object {
+        (Test-Path (Join-Path $_.FullName 'images')) -or (Test-Path (Join-Path $_.FullName 'tema.json'))
+    } | Select-Object -ExpandProperty Name | Sort-Object
+    if ($dirs) { return @($dirs) }
+    return @('fittoa')
+}
+
+function Actualizar-ConfigCampo([hashtable]$cambios) {
+    try {
+        $obj = @{}
+        if (Test-Path $ConfigPath) {
+            $raw = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($raw) {
+                foreach ($p in $raw.PSObject.Properties) { $obj[$p.Name] = $p.Value }
+            }
+        }
+        foreach ($k in $cambios.Keys) { $obj[$k] = $cambios[$k] }
+        $dir = Split-Path -Parent $ConfigPath
+        if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        ($obj | ConvertTo-Json -Depth 5) | Set-Content -Path $ConfigPath -Encoding UTF8
+        $script:lastCfgWrite = (Get-Item $ConfigPath).LastWriteTimeUtc
+    } catch {}
+}
+
+function Siguiente-Mundo {
+    $lista = Obtener-TemasLista
+    if ($lista.Count -lt 2) { return }
+    $idx = [Array]::IndexOf($lista, $script:temaAct)
+    $sig = $lista[($idx + 1) % $lista.Count]
+    $script:temaAct = $sig
+    $script:ultimaRotacion = Get-Date
+    Actualizar-ConfigCampo @{ tema = $sig }
+    Recargar-Escenas
+}
+
 function Recargar-Escenas {
     $tDir = Join-Path $TemasBase $script:temaAct
-    if (-not (Test-Path (Join-Path $tDir 'images'))) {
+    if (-not (Test-Path (Join-Path $tDir 'images')) -and -not (Test-Path (Join-Path $tDir 'tema.json'))) {
         Write-MotorLog "Recargar-Escenas: tema inexistente $tDir"
         return
     }
@@ -1490,10 +2353,20 @@ function Recargar-Escenas {
 
     $rPrim = Resolver-RutaVariante $tDir $script:fondoPrimAct
     $script:scenePrim = Cargar-SceneData $rPrim.Dir $rPrim.ConAstro
+    $script:rendPrim.TemaId = $script:temaAct
+    $script:rendPrim.ClimaMode = $script:climaAct
+    $script:rendPrim.AudioReactivo = $script:audioAct
+
+    $tSecId = if ($script:temaSecAct -and $script:temaSecAct -ne 'igual' -and $script:temaSecAct -ne $script:temaAct) { $script:temaSecAct } else { $script:temaAct }
+    $tDirSec = Join-Path $TemasBase $tSecId
+    if (-not (Test-Path (Join-Path $tDirSec 'images'))) { $tDirSec = $tDir; $tSecId = $script:temaAct }
 
     if ($script:monAct -ge 2) {
-        $rSec = Resolver-RutaVariante $tDir $script:fondoSecAct
+        $rSec = Resolver-RutaVariante $tDirSec $script:fondoSecAct
         $script:sceneSec = Cargar-SceneData $rSec.Dir $rSec.ConAstro
+        $script:rendSec.TemaId = $tSecId
+        $script:rendSec.ClimaMode = $script:climaAct
+        $script:rendSec.AudioReactivo = $script:audioAct
     } else {
         $script:sceneSec = $null
     }
@@ -1505,7 +2378,7 @@ function Recargar-Escenas {
             $fItem.Form.FrameRef = $script:rendPrim.Frame
         }
     }
-    Write-MotorLog "Escenas cargadas: tema=$($script:temaAct) mon=$($script:monAct) prim=$($script:fondoPrimAct) sec=$($script:fondoSecAct)"
+    Write-MotorLog "Escenas cargadas: tema=$($script:temaAct) secTema=$tSecId mon=$($script:monAct) clima=$($script:climaAct)"
 }
 
 $script:dcomp = New-Object PzmDCompHost
@@ -1578,6 +2451,45 @@ $timer.Add_Tick({
     $script:tick++
     $t = $script:tick
 
+    if ($script:hotkeysAct) {
+        $hk = [PzmSystemGuard]::PollHotkey()
+        if ($hk -eq 'W') { Siguiente-Mundo }
+        elseif ($hk -eq 'H') {
+            $curHud = $true
+            if (Test-Path $ConfigPath) {
+                try {
+                    $hc = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                    if ($null -ne $hc.hud) { $curHud = [bool]$hc.hud }
+                } catch {}
+            }
+            $nuevoHud = -not $curHud
+            Actualizar-ConfigCampo @{ hud = $nuevoHud }
+            if ($nuevoHud) {
+                $hudScript = Join-Path $Aqui 'PixelZenHud.ps1'
+                if (Test-Path $hudScript) {
+                    $psBin = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell' }
+                    Start-Process $psBin -ArgumentList @('-NoProfile','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',$hudScript) -WindowStyle Hidden
+                }
+            }
+        }
+        elseif ($hk -eq 'F') {
+            $climas = @('normal', 'lluvia', 'tormenta', 'nieve', 'niebla', 'auto')
+            $ci = [Array]::IndexOf($climas, $script:climaAct)
+            $script:climaAct = $climas[($ci + 1) % $climas.Count]
+            $script:rendPrim.ClimaMode = $script:climaAct
+            $script:rendSec.ClimaMode = $script:climaAct
+            Actualizar-ConfigCampo @{ clima = $script:climaAct }
+        }
+        elseif ($hk -eq 'P') {
+            $script:pauseManual = -not $script:pauseManual
+            Write-MotorLog "Hotkey P: pauseManual=$($script:pauseManual)"
+        }
+        elseif ($hk -eq 'E') {
+            $script:rendPrim.TriggerEvento('', $t)
+            $script:rendSec.TriggerEvento('', $t)
+        }
+    }
+
     if (($t % 8) -eq 0 -and (Test-Path $ConfigPath)) {
         try {
             $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
@@ -1587,11 +2499,32 @@ $timer.Add_Tick({
                 if ($nc) {
                     $fp = if ($nc.fondoPrincipal) { [string]$nc.fondoPrincipal } else { $script:fondoPrimAct }
                     $fs = if ($nc.fondoSecundario) { [string]$nc.fondoSecundario } else { $script:fondoSecAct }
-                    $cambio = ($nc.tema -ne $script:temaAct) -or ([int]$nc.monitores -ne $script:monAct) -or ($fp -ne $script:fondoPrimAct) -or ($fs -ne $script:fondoSecAct)
+                    $ts = if ($nc.temaSecundario) { [string]$nc.temaSecundario } else { $script:temaSecAct }
+                    $cambio = ($nc.tema -ne $script:temaAct) -or ([int]$nc.monitores -ne $script:monAct) -or ($fp -ne $script:fondoPrimAct) -or ($fs -ne $script:fondoSecAct) -or ($ts -ne $script:temaSecAct)
                     if ($nc.tema) { $script:temaAct = [string]$nc.tema }
                     if ($nc.monitores) { $script:monAct = [int]$nc.monitores }
                     $script:fondoPrimAct = $fp
                     $script:fondoSecAct = $fs
+                    $script:temaSecAct = $ts
+                    if ($nc.clima) {
+                        $script:climaAct = [string]$nc.clima
+                        $script:rendPrim.ClimaMode = $script:climaAct
+                        $script:rendSec.ClimaMode = $script:climaAct
+                    }
+                    if ($null -ne $nc.rotacionMinutos) { $script:rotacionMinAct = [int]$nc.rotacionMinutos }
+                    if ($null -ne $nc.pausaJuego) { $script:pausaJuegoAct = [bool]$nc.pausaJuego }
+                    if ($null -ne $nc.audioReactivo) {
+                        $script:audioAct = [bool]$nc.audioReactivo
+                        $script:rendPrim.AudioReactivo = $script:audioAct
+                        $script:rendSec.AudioReactivo = $script:audioAct
+                    }
+                    if ($null -ne $nc.hotkeys) { $script:hotkeysAct = [bool]$nc.hotkeys }
+                    if ($null -ne $nc.eventoSeq -and ([int]$nc.eventoSeq -ne $script:eventoSeqAct)) {
+                        $script:eventoSeqAct = [int]$nc.eventoSeq
+                        $evT = if ($nc.eventoTipo) { [string]$nc.eventoTipo } else { '' }
+                        $script:rendPrim.TriggerEvento($evT, $t)
+                        $script:rendSec.TriggerEvento($evT, $t)
+                    }
                     if ($nc.modo -and $nc.modo -ne $script:modoAct) {
                         $script:modoAct = [string]$nc.modo
                         $script:ahoraIni = Get-Date
@@ -1604,6 +2537,29 @@ $timer.Add_Tick({
             }
         } catch {}
     }
+
+    if ($script:rotacionMinAct -gt 0 -and ((Get-Date) - $script:ultimaRotacion).TotalMinutes -ge $script:rotacionMinAct) {
+        Siguiente-Mundo
+    }
+
+    if ($script:modoAct -eq 'real') {
+        $nowDt = Get-Date
+        if ($nowDt.Minute -eq 0 -and $nowDt.Second -lt 3 -and $script:lastHourEv -ne $nowDt.Hour) {
+            $script:lastHourEv = $nowDt.Hour
+            $script:rendPrim.TriggerEvento('', $t)
+            $script:rendSec.TriggerEvento('', $t)
+        }
+    }
+
+    if (($t % 8) -eq 0) {
+        $nuevoPausa = $script:pausaJuegoAct -and ([PzmSystemGuard]::IsFullscreenAppActive() -or [PzmSystemGuard]::IsBatterySaver())
+        if ($nuevoPausa -ne $script:autoPausado) {
+            $script:autoPausado = $nuevoPausa
+            Write-MotorLog "SmartPause cambiado: autoPausado=$($script:autoPausado)"
+        }
+    }
+
+    if ($script:pauseManual -or $script:autoPausado) { return }
 
     if ((($t -eq 12) -or (($t % 24) -eq 0)) -and $script:forms.Count -gt 0) {
         $f0 = $script:forms[0].Form

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Detalles arquitectonicos, ambientales y de lore para las 27 escenas de PixelZen Worlds."""
+"""Detalles arquitectonicos, ambientales y de lore para las 30 escenas de PixelZen Worlds."""
 import math
 import os
 import random
@@ -1287,7 +1287,112 @@ def _sm_bloqueo_post(ctx):
 
 
 # =====================================================================
-# TABLA DE DESPACHO PARA LAS 27 ESCENAS
+# 10. NARUTO SHIPPUDEN (principal, secundario, bloqueo)
+# =====================================================================
+
+def _naruto_principal_post(ctx):
+    br_r, br_o, br_y, br_k, _ = ctx.pal['baryon']
+    g0, _, g2, g3 = ctx.pal['ground']
+    is_w, is_s, _, _, is_g = ctx.pal['isshiki']
+
+    # Grietas incandescentes compactas bajo los pies de Naruto (198, 344) y de Isshiki (392, 344)
+    _ground_cracks(ctx, 198, 345, [(-2.9, 16), (-2.5, 14), (-0.4, 16), (0.2, 15)], br_r, br_y)
+    _ground_cracks(ctx, 392, 345, [(-2.9, 14), (-2.4, 12), (-0.3, 14)], is_s, is_g)
+
+    # Peñascos fracturados y escombros dimensionales en primer plano
+    _rocks(ctx, [(28, 362, 12, 5), (104, 378, 9, 4), (446, 364, 11, 4)], g3, g0, g2)
+
+    # Chispas de fusion nuclear Baryon en arco y destellos en los cubos Daikokuten
+    _sparks(ctx, 184, 282, 46, 40, 18, br_y, br_r, seed=901)
+    _sparks(ctx, 326, 276, 36, 24, 10, is_g, br_r, seed=902, runa_stride=3)
+    _add_runa(ctx, 211, 319, '#fff4b4', br_o)
+
+
+def _naruto_secundario_pre(ctx):
+    c0, c1, c2, c3 = ctx.pal['cliff']
+    r0, r1, _, _ = ctx.pal['roof']
+    t0, _, _, t3 = ctx.pal['tree']
+
+    # Farolillos adicionales a lo largo de la orilla del Río Naka (x=108..430)
+    for fx in (106, 176, 260, 408):
+        _add_farol(ctx, fx, HOR - 8, 6, '#fff0bc', '#ff782c')
+
+    # Banderines rojos con emblema Konoha flanqueando el Edificio del Hokage
+    for bx in (190, 246):
+        _banner(ctx, bx, HOR - 30, 12, 2, r1, c3)
+
+    # Matorrales verdes y piedra musgosa en la base del farallón
+    _tuft_band(ctx, 14, 444, HOR - 12, 28, 3, 6, [t0, t3, c2], seed=922)
+
+
+def _naruto_secundario_post(ctx):
+    ol0, ol1, _ = ctx.pal['olas']
+    r1 = ctx.pal['roof'][1]
+    t0, _, _, t3 = ctx.pal['tree']
+    w0, w1, _ = ctx.pal['wood']
+
+    # Embarcadero de madera y farolillo en la orilla inferior izquierda sobre el río (x=12..78, y=354..384)
+    for y in range(362, 374):
+        for x in range(12, 68):
+            ctx.put(x, y, w0 if y % 3 else w1)
+    for px in (20, 44, 62):
+        for y in range(358, 378):
+            ctx.put(px, y, w1)
+    _add_farol(ctx, 62, 357, 7, '#fff2c4', '#ff7c2c')
+
+    # Hojas arremolinadas de Konoha y reflejos naranjas sobre el Río Naka
+    _sparks(ctx, 218, 326, 95, 22, 12, ol0, ol1, seed=924, runa_stride=4)
+    _sparks(ctx, 64, 242, 18, 12, 6, '#ffefb8', r1, seed=925)
+    _tuft_band(ctx, 0, 22, 396, 8, 5, 9, [t0, t3], seed=926)
+
+
+def _naruto_bloqueo_pre(ctx):
+    wf1, wf2 = ctx.pal['water_f'][1], ctx.pal['water_f'][2]
+
+    # Bruma ascendente en los bordes de la cascada del Valle del Fin
+    for bx in range(242, 328, 8):
+        ctx.over(bx, HOR - 4, wf2, 0.65)
+        ctx.over(bx + 2, HOR - 7, wf1, 0.45)
+
+    # Sellos de energía eléctrica/espiral alrededor de Rasengan y Chidori
+    _sparks(ctx, 284, 246, 26, 18, 14, '#ffffff', ctx.pal['rasen'][1], seed=933, runa_stride=2)
+
+
+def _naruto_bloqueo_post(ctx):
+    st0, st1, st2, st3 = ctx.pal['statue']
+    cl2 = ctx.pal['cliff'][2]
+
+    # Rocas ribereñas y monolito del emblema de Konoha en primer plano inferior izquierdo
+    _rocks(ctx, [(24, 376, 16, 6), (62, 386, 11, 5), (442, 378, 14, 5)], st3, st1, cl2)
+    for dy in range(18):
+        for dx in range(-4, 5):
+            ctx.put(38 + dx, 360 + dy, st2 if abs(dx) == 4 else st0)
+    # Bruma azul-violeta reflejada bajo el choque sobre las aguas del valle
+    _sparks(ctx, 284, 324, 34, 18, 12, ctx.pal['rasen'][1], ctx.pal['chido'][1], seed=935, runa_stride=3)
+
+
+def _jujutsu_principal_post(ctx):
+    # Cortes carmesi de Santuario Malevolente y motas infinitas de Gojo sobre el horizonte
+    _sparks(ctx, 210, 246, 58, 28, 16, '#fb7185', '#f43f5e', seed=1111, runa_stride=4)
+    _sparks(ctx, 412, 214, 56, 36, 16, '#38bdf8', '#c084fc', seed=1112, runa_stride=4)
+    _sparks(ctx, 313, 248, 22, 16, 12, '#e879f9', '#f5d0fe', seed=1113, runa_stride=3)
+
+
+def _jujutsu_secundario_post(ctx):
+    # Destellos negros sobre Itadori, sello de Prision Confinadora y chispas de Nue
+    _sparks(ctx, 216, 264, 24, 16, 12, '#e11d48', '#fb7185', seed=1121, runa_stride=3)
+    _sparks(ctx, 320, 246, 20, 16, 10, '#f43f5e', '#a855f7', seed=1122, runa_stride=3)
+    _sparks(ctx, 438, 260, 24, 18, 10, '#38bdf8', '#818cf8', seed=1123, runa_stride=3)
+
+
+def _jujutsu_bloqueo_post(ctx):
+    # Sellos sagrados y aura del dedo maldito sobre el estanque
+    _sparks(ctx, 320, 230, 34, 20, 14, '#ef4444', '#c084fc', seed=1131, runa_stride=3)
+    _sparks(ctx, 320, 324, 46, 12, 12, '#f87171', '#a855f7', seed=1132, runa_stride=4)
+
+
+# =====================================================================
+# TABLA DE DESPACHO PARA LAS ESCENAS
 # =====================================================================
 
 _PRE_LAGO = {
@@ -1297,6 +1402,8 @@ _PRE_LAGO = {
     ('fittoa', 'secundario'): _fittoa_secundario_pre,
     ('harry-potter', 'principal'): _hp_principal_pre,
     ('hunter-x-hunter', 'principal'): _hxh_principal_pre,
+    ('naruto', 'secundario'): _naruto_secundario_pre,
+    ('naruto', 'bloqueo'): _naruto_bloqueo_pre,
     ('solo-leveling', 'secundario'): _sl_secundario_pre,
     ('spiderman-miles-morales', 'principal'): _sm_principal_pre,
     ('spiderman-miles-morales', 'secundario'): _sm_secundario_pre,
@@ -1306,6 +1413,12 @@ _POST_ESCENA = {
     ('demon-slayer', 'principal'): _ds_principal_post,
     ('demon-slayer', 'secundario'): _ds_secundario_post,
     ('demon-slayer', 'bloqueo'): _ds_bloqueo_post,
+    ('jujutsu-kaisen', 'principal'): _jujutsu_principal_post,
+    ('jujutsu-kaisen', 'secundario'): _jujutsu_secundario_post,
+    ('jujutsu-kaisen', 'bloqueo'): _jujutsu_bloqueo_post,
+    ('naruto', 'principal'): _naruto_principal_post,
+    ('naruto', 'secundario'): _naruto_secundario_post,
+    ('naruto', 'bloqueo'): _naruto_bloqueo_post,
     ('solo-leveling', 'principal'): _sl_principal_post,
     ('solo-leveling', 'secundario'): _sl_secundario_post,
     ('solo-leveling', 'bloqueo'): _sl_bloqueo_post,

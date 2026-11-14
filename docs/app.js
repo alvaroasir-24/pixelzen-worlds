@@ -90,6 +90,27 @@
       m3: { name: 'Andén 9¾ y Reliquias', sub: "King's Cross · Hedwig y Saúco", desc: 'Arco victoriano del Andén 9¾ iluminado con faroles dorados, baúl con Hedwig y el resplandor de las Reliquias de la Muerte.' },
       cita: '«La felicidad se puede hallar hasta en los momentos más oscuros si recuerdas encender la luz.» — Albus Dumbledore',
     },
+    {
+      id: 'naruto',
+      serie: 'Naruto',
+      cat: 'anime',
+      titulo: 'Konoha & Modo Baryon',
+      m1: { name: 'Naruto Modo Baryon', sub: 'Naruto y Kurama vs Isshiki', desc: 'Duelo definitivo en el desierto rocío bajo la silueta espectral de Kurama, Naruto envuelto en las 9 colas de chakra Modo Baryon con Baryon Rasengan frente a Isshiki y sus cubos Daikokuten.' },
+      m2: { name: 'Konoha y Monte Hokage', sub: 'Aldea Oculta e Ichiraku Ramen', desc: 'Río Naka reflejando el Monumento a los Hokages, la Residencia Hokage, faroles de Ichiraku Ramen y Naruto Séptimo Hokage junto a Sasuke bajo las hojas de Konoha.' },
+      m3: { name: 'Valle del Fin', sub: 'Rasengan vs Chidori en la cascada', desc: 'Estatuas colosales de Hashirama y Madara flanqueando la gran cascada del Valle del Fin mientras el Rasengan y el Chidori chocan sobre las aguas.' },
+      cita: '«Mientras no te rindas, siempre habrá una manera de cambiar tu destino.» — Naruto Uzumaki',
+    },
+    {
+      id: 'jujutsu-kaisen',
+      anime: 'Jujutsu Kaisen',
+      serie: 'Jujutsu Kaisen',
+      cat: 'anime',
+      titulo: 'Expansión de Dominio',
+      m1: { name: 'Santuario Malevolente vs Vacío Infinito', sub: 'Sukuna vs Gojo · Shinjuku', desc: 'Choque de dominios sobre aguas oscuras con el Santuario Malevolente, el Horizonte de Vacío Infinito, cortes Desmantelar y Púrpura Vacío.' },
+      m2: { name: 'Incidente de Shibuya', sub: 'Prisión Confinadora, Itadori y Fushiguro', desc: 'Cruce nocturno de Shibuya con la Torre 109, el cubo de la Prisión Confinadora levitando, el Destello Negro de Itadori y las Diez Sombras de Megumi.' },
+      m3: { name: 'Santuario del Dedo Maldito', sub: 'Torii Sagrado y Sellos Ofuda', desc: 'Valle de cedros y pagoda iluminados por linternas Toro, puerta Torii bermellón con sellos Ofuda y el Dedo de Ryomen Sukuna sellado.' },
+      cita: '«A lo largo del Cielo y la Tierra, solo yo soy el Honrado.» — Satoru Gojo',
+    },
   ];
 
   const STAT_KEYS = ['tiempo', 'clima', 'sistema', 'gpu', 'red', 'audio', 'dev', 'foco', 'grimorio'];
@@ -167,6 +188,13 @@
       aux.state.inicioMs = state.inicioMs;
       aux.state.inicioHora = state.inicioHora;
       aux.state.tick = state.tick;
+      aux.state.clima = state.clima;
+      aux.state.audioReactivo = state.audioReactivo;
+      aux.state.audioEnergy = state.audioEnergy;
+      aux.state.parallax = state.parallax;
+      aux.state.parallaxX = state.parallaxX;
+      aux.state.parallaxY = state.parallaxY;
+      aux.state.evento = state.evento ? { ...state.evento } : null;
     }
   }
 
@@ -305,13 +333,135 @@
     else if (wrapEl.requestFullscreen) wrapEl.requestFullscreen();
   });
 
-  /* GALERÍA DINÁMICA DE 9 MUNDOS × 3 ESCENAS */
+  document.querySelectorAll('.btn-opt[data-clima]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-opt[data-clima]').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      state.clima = btn.dataset.clima || 'normal';
+      renderTodo();
+    });
+  });
+
+  const btnSynth = document.getElementById('btn-synth');
+  const syncSynthBtn = () => {
+    if (!btnSynth) return;
+    const on = renderer.audioCtrl.isPlaying();
+    btnSynth.classList.toggle('is-active', on);
+    btnSynth.textContent = on ? '♪ Synth: ON' : '♪ Synth Lo-Fi';
+  };
+  if (btnSynth) {
+    btnSynth.addEventListener('click', () => {
+      renderer.audioCtrl.toggleSynth();
+      syncSynthBtn();
+      renderTodo();
+    });
+  }
+
+  const btnEvento = document.getElementById('btn-evento');
+  if (btnEvento) {
+    btnEvento.addEventListener('click', () => {
+      const elegido = renderer.dispararEvento();
+      sincronizaAuxiliares();
+      renderTodo();
+      const orig = btnEvento.textContent;
+      btnEvento.textContent = `✦ ${elegido.toUpperCase()}`;
+      setTimeout(() => { btnEvento.textContent = orig; }, 1600);
+    });
+  }
+
+  const btnCompact = document.getElementById('btn-hud-compact');
+  if (btnCompact) {
+    btnCompact.addEventListener('click', () => {
+      state.hudCompacto = !state.hudCompacto;
+      btnCompact.classList.toggle('is-active', state.hudCompacto);
+      renderTodo();
+    });
+  }
+
+  const btnParallax = document.getElementById('btn-parallax');
+  if (btnParallax) {
+    btnParallax.addEventListener('click', () => {
+      state.parallax = !state.parallax;
+      if (!state.parallax) { state.parallaxX = 0; state.parallaxY = 0; }
+      btnParallax.classList.toggle('is-active', state.parallax);
+      renderTodo();
+    });
+  }
+
+  if (wrapEl) {
+    wrapEl.addEventListener('mousemove', e => {
+      if (!state.parallax) return;
+      const r = wrapEl.getBoundingClientRect();
+      state.parallaxX = ((e.clientX - r.left) / Math.max(1, r.width) - 0.5) * 2;
+      state.parallaxY = ((e.clientY - r.top) / Math.max(1, r.height) - 0.5) * 2;
+    });
+    wrapEl.addEventListener('mouseleave', () => {
+      state.parallaxX = 0;
+      state.parallaxY = 0;
+    });
+  }
+
+  function exportarPng(w, h, etiqueta) {
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    const octx = out.getContext('2d');
+    octx.imageSmoothingEnabled = false;
+    const scale = Math.max(w / canvas.width, h / canvas.height);
+    const dw = Math.round(canvas.width * scale);
+    const dh = Math.round(canvas.height * scale);
+    const dx = Math.round((w - dw) / 2);
+    const dy = Math.round((h - dh) / 2);
+    octx.drawImage(canvas, dx, dy, dw, dh);
+    try {
+      const link = document.createElement('a');
+      link.download = `pixelzen-${state.tema}-${etiqueta}.png`;
+      link.href = out.toDataURL('image/png');
+      link.click();
+    } catch (_err) {
+      const btn = document.getElementById(etiqueta === '4k' ? 'btn-export-4k' : 'btn-export-1080');
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = '⚠ Abrir vía http://';
+        setTimeout(() => { btn.textContent = orig; }, 2200);
+      }
+    }
+  }
+  const btn4k = document.getElementById('btn-export-4k');
+  const btn1080 = document.getElementById('btn-export-1080');
+  if (btn4k) btn4k.addEventListener('click', () => exportarPng(3840, 2160, '4k'));
+  if (btn1080) btn1080.addEventListener('click', () => exportarPng(1920, 1080, '1080p'));
+
+  const wireHud = (id, fn) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', ev => { ev.stopPropagation(); fn(); syncSynthBtn(); renderTodo(); });
+  };
+  wireHud('btn-audio-play', () => renderer.audioCtrl.toggleSynth());
+  wireHud('btn-audio-prev', () => renderer.audioCtrl.prevTrack());
+  wireHud('btn-audio-next', () => renderer.audioCtrl.nextTrack());
+  wireHud('btn-foco-toggle', () => renderer.toggleFoco());
+  wireHud('btn-foco-reset', () => renderer.resetFoco());
+  wireHud('btn-foco-mode', () => renderer.setFocoModo(!state.foco.descanso));
+
+  /* GALERÍA DINÁMICA DE 11 MUNDOS × 3 ESCENAS */
   const gridEl = document.getElementById('worlds-grid');
   const cardCtrl = {};
+  const PREVIEW_FALLBACK_BASE = 'file:///C:/Users/david/.gemini/antigravity-cli/brain/8747b389-799a-4632-897a-f7f55a4233c0/scratch/out_root/docs/';
 
   function previewUrl(id, pan, fase) {
     const pref = pan === 'm2' ? 'm2-' : pan === 'm3' ? 'm3-' : '';
     return `previews/${id}/${pref}${fase}.png`;
+  }
+
+  function setPreviewImg(imgEl, relUrl) {
+    if (!imgEl) return;
+    delete imgEl.dataset.fbApplied;
+    imgEl.onerror = function () {
+      if (this.dataset.fbApplied === '1') return;
+      this.dataset.fbApplied = '1';
+      this.src = PREVIEW_FALLBACK_BASE + relUrl;
+    };
+    imgEl.src = relUrl;
   }
 
   function renderCards() {
@@ -323,7 +473,7 @@
       card.dataset.cat = w.cat;
       card.innerHTML = `
         <div class="world-media">
-          <img src="${previewUrl(w.id, 'm1', 'dorado')}" alt="${w.titulo} (${w.m1.name})" loading="lazy" />
+          <img alt="${w.titulo} (${w.m1.name})" loading="lazy" />
           <span class="world-screen-pill">M1 · ${w.m1.name}</span>
           <div class="phase-switch">
             <div class="phase-sub">
@@ -357,10 +507,11 @@
       const subEl = card.querySelector('.world-scene-sub');
       const descEl = card.querySelector('.world-body p');
       const estadoCard = { pan: 'm1', fase: 'dorado' };
+      setPreviewImg(img, previewUrl(w.id, estadoCard.pan, estadoCard.fase));
 
       function syncCard() {
         const info = w[estadoCard.pan];
-        img.src = previewUrl(w.id, estadoCard.pan, estadoCard.fase);
+        setPreviewImg(img, previewUrl(w.id, estadoCard.pan, estadoCard.fase));
         img.alt = `${w.titulo} — ${info.name}`;
         pill.textContent = `${estadoCard.pan.toUpperCase()} · ${info.name}`;
         subEl.textContent = info.sub;
@@ -430,7 +581,7 @@
     document.getElementById('modal-title').textContent = `${w.titulo} — ${info.name}`;
     document.getElementById('modal-sub').textContent = info.sub;
     document.getElementById('modal-desc').textContent = info.desc;
-    document.getElementById('modal-img').src = previewUrl(w.id, modalState.pan, modalState.fase);
+    setPreviewImg(document.getElementById('modal-img'), previewUrl(w.id, modalState.pan, modalState.fase));
     document.getElementById('modal-quote').textContent = w.cita;
 
     document.querySelectorAll('#modal-pan-btns button').forEach(b => b.classList.toggle('is-active', b.dataset.mpan === modalState.pan));
@@ -441,7 +592,8 @@
     for (const pan of ['m1', 'm2', 'm3']) {
       const div = document.createElement('div');
       div.className = 'trip-thumb' + (modalState.pan === pan ? ' is-active' : '');
-      div.innerHTML = `<img src="${previewUrl(w.id, pan, modalState.fase)}" alt="${w[pan].name}" /><span>${pan.toUpperCase()} · ${w[pan].name}</span>`;
+      div.innerHTML = `<img alt="${w[pan].name}" /><span>${pan.toUpperCase()} · ${w[pan].name}</span>`;
+      setPreviewImg(div.querySelector('img'), previewUrl(w.id, pan, modalState.fase));
       div.addEventListener('click', () => { modalState.pan = pan; pintaModal(); });
       trip.appendChild(div);
     }
@@ -516,6 +668,77 @@
       }
     });
   });
+
+  /* COMPARADOR DIVIDIDO DE FASES */
+  const cmpMundo = document.getElementById('cmp-mundo');
+  const cmpRange = document.getElementById('cmp-range');
+  const cmpStage = document.getElementById('cmp-stage');
+  const cmpImgL = document.getElementById('cmp-img-left');
+  const cmpImgR = document.getElementById('cmp-img-right');
+  const cmpLblL = document.getElementById('cmp-lbl-left');
+  const cmpLblR = document.getElementById('cmp-lbl-right');
+  const cmpState = { id: 'jujutsu-kaisen', pan: 'm1', left: 'dia', right: 'noche' };
+  const phaseNames = { dia: 'DÍA', dorado: 'DORADO', noche: 'NOCHE' };
+
+  function setImgWithFallback(imgEl, rel) {
+    if (!imgEl) return;
+    imgEl.dataset.fbApplied = '';
+    imgEl.onerror = () => {
+      if (imgEl.dataset.fbApplied === '1') return;
+      imgEl.dataset.fbApplied = '1';
+      imgEl.src = PREVIEW_FALLBACK_BASE + rel;
+    };
+    imgEl.src = rel;
+  }
+
+  function actualizaComparador() {
+    if (!cmpStage) return;
+    setImgWithFallback(cmpImgL, previewUrl(cmpState.id, cmpState.pan, cmpState.left));
+    setImgWithFallback(cmpImgR, previewUrl(cmpState.id, cmpState.pan, cmpState.right));
+    if (cmpLblL) cmpLblL.textContent = phaseNames[cmpState.left] || cmpState.left.toUpperCase();
+    if (cmpLblR) cmpLblR.textContent = phaseNames[cmpState.right] || cmpState.right.toUpperCase();
+  }
+
+  if (cmpMundo && cmpStage) {
+    for (const w of WORLDS) {
+      const opt = document.createElement('option');
+      opt.value = w.id;
+      opt.textContent = `${w.anime} · ${w.titulo}`;
+      cmpMundo.appendChild(opt);
+    }
+    cmpMundo.value = cmpState.id;
+    cmpMundo.addEventListener('change', () => { cmpState.id = cmpMundo.value; actualizaComparador(); });
+    if (cmpRange) {
+      cmpRange.addEventListener('input', () => {
+        cmpStage.style.setProperty('--split', `${cmpRange.value}%`);
+      });
+    }
+    document.querySelectorAll('[data-cmp-pan]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-cmp-pan]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        cmpState.pan = btn.dataset.cmpPan;
+        actualizaComparador();
+      });
+    });
+    document.querySelectorAll('[data-cmp-left]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-cmp-left]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        cmpState.left = btn.dataset.cmpLeft;
+        actualizaComparador();
+      });
+    });
+    document.querySelectorAll('[data-cmp-right]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-cmp-right]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        cmpState.right = btn.dataset.cmpRight;
+        actualizaComparador();
+      });
+    });
+    actualizaComparador();
+  }
 
   setInterval(() => { state.tick++; renderTodo(); }, 100);
   seleccionaYCarga(state.tema);

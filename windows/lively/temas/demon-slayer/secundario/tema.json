@@ -7,6 +7,7 @@
   "descripcion": "Sendero brumoso entre bosques de cedros junto al taller de los herreros donde Muichiro Tokito blande la Respiración de la Niebla contra Gyokko y sus vasijas demoníacas.",
   "sin_lago": true,
   "cielo_fondo": "#06101c",
+  "modo_heroe": "demon_tokito",
   "modo_pajaros": "grullas",
   "color_pajaros": "#101a28",
   "modo_particulas": "hojas_mana",

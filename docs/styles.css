@@ -425,76 +425,106 @@ a { color: var(--cyan); }
   image-rendering: crisp-edges;
 }
 
-/* HUD CARDS OVERLAY */
+/* HUD CARDS OVERLAY (columna única alineada a la derecha) */
 .hud {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: min(215px, 42%);
+  top: 8px;
+  right: 8px;
+  width: min(192px, 38%);
+  max-height: calc(100% - 16px);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
+  overflow: hidden;
   pointer-events: none;
   z-index: 6;
 }
 
-.hud.is-multicol {
-  width: min(410px, 78%);
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 5px;
-}
-
 .hud-card {
   background: rgba(11, 16, 32, 0.86);
-  border: 1px solid var(--border-gold);
-  padding: 6px 8px;
-  box-shadow: inset 2px 2px 0 rgba(230, 180, 90, 0.35);
+  border: 1px solid var(--hud-border, var(--border-gold));
+  padding: 3px 6px;
+  box-shadow: inset 2px 2px 0 var(--hud-accent, rgba(230, 180, 90, 0.35));
   font-family: var(--font-mono);
+  transition: border-color 0.3s, box-shadow 0.3s, padding 0.2s;
+}
+.hud.is-compact { width: min(170px, 34%); gap: 2px; }
+.hud.is-compact .hud-card { padding: 2px 5px; }
+.hud.is-compact .hud-clock { font-size: 12px; }
+.hud-ctrls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  pointer-events: auto;
+}
+.hud-btn {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  line-height: 1.1;
+  padding: 1px 4px;
+  background: rgba(18, 28, 52, 0.92);
+  color: var(--text);
+  border: 1px solid var(--hud-border, #2f4266);
+  cursor: pointer;
+}
+.hud-btn:hover { border-color: var(--hud-accent, var(--gold)); color: var(--hud-accent, var(--gold)); }
+.hud-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5px;
+  height: 9px;
+  margin-left: auto;
+}
+.hud-eq span {
+  display: block;
+  width: 2px;
+  height: 35%;
+  background: var(--hud-accent-2, var(--cyan));
+  transition: height 0.1s linear;
 }
 
 .hud-head {
   display: flex;
   justify-content: space-between;
   gap: 4px;
-  font-size: 8.5px;
+  font-size: 7.5px;
   color: var(--dim);
   border-bottom: 1px dashed #2f4266;
-  padding-bottom: 3px;
-  margin-bottom: 4px;
+  padding-bottom: 2px;
+  margin-bottom: 2px;
 }
 .hud-head span:first-child { color: var(--cyan); }
 
 .hud-clock {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: bold;
-  line-height: 1.05;
+  line-height: 1.02;
   color: var(--text);
 }
 .hud-clock small {
-  font-size: 10px;
+  font-size: 8.5px;
   color: var(--cyan);
   margin-left: 3px;
 }
 
-.hud-date { font-size: 9px; color: var(--dim); margin-top: 2px; }
-.hud-sub { font-size: 9.5px; color: var(--gold); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hud-quote { font-size: 9px; color: var(--dim); line-height: 1.32; }
+.hud-date { font-size: 7.5px; color: var(--dim); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-sub { font-size: 8px; color: var(--gold); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-quote { font-size: 7.5px; color: var(--dim); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 .hud-stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 5px;
-  font-size: 9px;
+  gap: 4px;
+  font-size: 7.5px;
   color: var(--dim);
-  margin-top: 2px;
+  margin-top: 1.5px;
 }
 .hud-stat-row strong { color: var(--text); }
 .hud-bar {
   flex: 1;
-  height: 5px;
+  height: 4px;
   background: #1c2844;
   border: 1px solid #2f4266;
   overflow: hidden;
@@ -1055,6 +1085,106 @@ a { color: var(--cyan); }
   padding: 10px 12px;
 }
 
+/* COMPARADOR DIVIDIDO */
+.compare-shell {
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  padding: 14px;
+}
+.compare-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.compare-select {
+  background: #0a1022;
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 5px 9px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.compare-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  background: #040712;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  user-select: none;
+  touch-action: pan-y;
+}
+.compare-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+.compare-left-wrap {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0);
+  pointer-events: none;
+}
+.compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--split, 50%);
+  width: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(84, 222, 212, 0.75);
+  pointer-events: none;
+  z-index: 4;
+}
+.compare-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0b132b;
+  border: 2px solid var(--cyan);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+}
+.compare-tag {
+  position: absolute;
+  bottom: 10px;
+  padding: 3px 9px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  background: rgba(6, 10, 22, 0.86);
+  border: 1px solid var(--line);
+  z-index: 5;
+  pointer-events: none;
+}
+.compare-tag-left { left: 10px; border-color: var(--gold); color: var(--gold); }
+.compare-tag-right { right: 10px; border-color: var(--cyan); color: var(--cyan); }
+.compare-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 6;
+}
+
 /* FOOTER */
 .footer {
   border-top: 1px solid var(--line);
@@ -1083,6 +1213,5 @@ a { color: var(--cyan); }
   .worlds-grid, .hud-showcase-grid, .features-grid, .modal-triptych, .config-gen { grid-template-columns: 1fr; }
   .canvas-wrap.is-dual, .canvas-wrap.is-triple { aspect-ratio: auto; grid-template-columns: 1fr; }
   .canvas-wrap.is-dual .monitor-pane, .canvas-wrap.is-triple .monitor-pane { aspect-ratio: 16 / 10; }
-  .hud { width: 52%; }
-  .hud.is-multicol { width: 92%; }
+  .hud { width: 46%; }
 }

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PixelZen Worlds · 9 Universos Pixel Art Dinámicos (Windows &amp; Linux)</title>
-  <meta name="description" content="9 mundos pixel art animados en 27 escenarios (Principal, Monitor 2 y Pantalla de Bloqueo) con ciclo solar astronómico, 9 tarjetas HUD flotantes y motor nativo C# para Windows y GNOME." />
+  <title>PixelZen Worlds · 11 Universos Pixel Art Dinámicos (Windows &amp; Linux)</title>
+  <meta name="description" content="11 mundos pixel art animados en 33 escenarios (Principal, Monitor 2 y Pantalla de Bloqueo) con ciclo solar astronómico, clima dinámico, synth reactivo, 9 tarjetas HUD flotantes y motor nativo C# para Windows y GNOME." />
   <link rel="icon" type="image/png" href="previews/fittoa/dia.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -14,11 +14,12 @@
       <a href="#top" class="brand">
         <span class="brand-glyph">✦</span>
         <span class="brand-name">PIXELZEN WORLDS</span>
-        <span class="brand-tag">9 MUNDOS · 27 ESCENAS</span>
+        <span class="brand-tag">11 MUNDOS · 33 ESCENAS</span>
       </a>
       <nav class="nav">
         <a href="#visor">Visor en vivo</a>
         <a href="#mundos">Galería</a>
+        <a href="#comparador">Comparador</a>
         <a href="#hud-showcase">9 HUD</a>
         <a href="#arquitectura">Motor</a>
         <a href="#instalar" class="nav-cta">Instalar</a>
@@ -32,29 +33,29 @@
       <div class="container">
         <div class="hero-intro">
           <div class="badge-row">
-            <span class="badge badge-cyan">9 Universos · 27 Escenarios</span>
+            <span class="badge badge-cyan">11 Universos · 33 Escenarios</span>
             <span class="badge badge-gold">Windows Motor Nativo C# + WPF HUD</span>
-            <span class="badge badge-green">Sin .exe · Portable y Open Source</span>
+            <span class="badge badge-green">Sin .exe · Clima, Synth &amp; Pomodoro</span>
             <span class="badge">Linux GNOME 46–50+</span>
           </div>
           <h1>Mundos pixel art vivos sincronizados con la órbita solar</h1>
           <p class="lead">
             Motor modular en <strong>640×400</strong> con interpolación astronómica entre día, hora dorada y noche estrellada,
-            continuidad narrativa en <strong>3 pantallas (Principal, Monitor 2 y Bloqueo)</strong> y <strong>9 tarjetas HUD flotantes</strong> transparentes al ratón.
+            clima en tiempo real, eventos épicos, continuidad en <strong>3 pantallas (Principal, Monitor 2 y Bloqueo)</strong> y <strong>9 tarjetas HUD flotantes</strong> adaptadas a cada universo.
           </p>
 
           <div class="hero-metrics">
             <div class="metric-box">
-              <div class="metric-val">9 Mundos</div>
+              <div class="metric-val">11 Mundos</div>
               <div class="metric-lbl">Anime, Marvel y Series</div>
             </div>
             <div class="metric-box">
-              <div class="metric-val">27 Escenas</div>
-              <div class="metric-lbl">M1 + M2 + Bloqueo (81 vistas)</div>
+              <div class="metric-val">33 Escenas</div>
+              <div class="metric-lbl">M1 + M2 + Bloqueo (99 vistas)</div>
             </div>
             <div class="metric-box">
               <div class="metric-val">9 Tarjetas HUD</div>
-              <div class="metric-lbl">Reloj, Sol, PC, GPU, Red, BSO, Zen…</div>
+              <div class="metric-lbl">Interactivas + Paleta por Mundo</div>
             </div>
             <div class="metric-box">
               <div class="metric-val">C# GDI+ / JS</div>
@@ -64,7 +65,7 @@
 
           <div class="hero-actions">
             <a href="#instalar" class="btn-primary">⬇ Instalar en Windows (1 clic)</a>
-            <a href="#mundos" class="btn-secondary">🗺 Explorar los 9 mundos</a>
+            <a href="#mundos" class="btn-secondary">🗺 Explorar los 11 mundos</a>
             <a href="https://github.com/davidlpizano/pixelzen-worlds" target="_blank" rel="noopener" class="btn-secondary">⌥ GitHub Oficial</a>
           </div>
         </div>
@@ -81,6 +82,8 @@
               <button class="pill" data-tema="demon-slayer">Demon Slayer</button>
               <button class="pill" data-tema="stranger-things">Stranger Things</button>
               <button class="pill" data-tema="harry-potter">Harry Potter</button>
+              <button class="pill" data-tema="naruto">Naruto</button>
+              <button class="pill" data-tema="jujutsu-kaisen">Jujutsu Kaisen</button>
             </div>
             <div class="stage-actions">
               <button class="btn-mini" id="btn-hud" title="Mostrar u ocultar tarjetas HUD">HUD: ON</button>
@@ -119,11 +122,31 @@
             </div>
           </div>
 
+          <div class="options-bar" aria-label="Efectos dinámicos y exportación">
+            <div class="opt-group">
+              <span class="opt-label">CLIMA:</span>
+              <button class="btn-opt is-active" data-clima="normal">Despejado</button>
+              <button class="btn-opt" data-clima="lluvia">Lluvia</button>
+              <button class="btn-opt" data-clima="tormenta">Tormenta</button>
+              <button class="btn-opt" data-clima="nieve">Nieve</button>
+              <button class="btn-opt" data-clima="niebla">Niebla</button>
+              <button class="btn-opt" data-clima="auto">Auto</button>
+            </div>
+            <div class="opt-group">
+              <button class="btn-opt" id="btn-synth" title="Activar audio procedural Web Audio API reactivo">♪ Synth Lo-Fi</button>
+              <button class="btn-opt" id="btn-evento" title="Disparar cometa, círculo mágico o anomalía">✦ Evento Épico</button>
+              <button class="btn-opt" id="btn-hud-compact" title="Alternar HUD compacto">🗜 Compacto</button>
+              <button class="btn-opt is-active" id="btn-parallax" title="Parallax suave al mover el ratón">🧭 Parallax</button>
+              <button class="btn-opt" id="btn-export-4k" title="Exportar Wallpaper 3840x2160 pixelado">🖼 4K PNG</button>
+              <button class="btn-opt" id="btn-export-1080" title="Exportar Wallpaper 1920x1080 pixelado">🖼 1080p</button>
+            </div>
+          </div>
+
           <div class="canvas-wrap is-dual" id="canvas-wrap">
             <div class="monitor-pane" id="pane-prim">
               <span class="monitor-badge">MONITOR 1 · PRINCIPAL</span>
               <canvas id="lienzo" width="640" height="400"></canvas>
-              <aside class="hud is-multicol" id="hud">
+              <aside class="hud" id="hud">
                 <div class="hud-card" id="card-tiempo">
                   <div class="hud-head"><span>✦ TIEMPO</span><span id="hud-modo">FIJA</span></div>
                   <div class="hud-clock"><span id="hud-hm">18:45</span><small id="hud-s">00</small></div>
@@ -183,13 +206,19 @@
                 </div>
 
                 <div class="hud-card" id="card-audio">
-                  <div class="hud-head"><span>♪ BSO MUNDO</span><span id="hud-audio-meta">SONANDO</span></div>
+                  <div class="hud-head"><span>♪ BSO MUNDO</span><span id="hud-audio-meta">AMBIENT OST</span></div>
                   <div class="hud-sub" id="hud-audio-track" style="margin-top:0">Lullaby of Fittoa · OST</div>
                   <div class="hud-stat-row">
                     <span id="hud-audio-bpm">84 BPM · LO-FI</span>
                     <strong id="hud-audio-vol" style="color:#72c48c">VOL 68%</strong>
                   </div>
                   <div class="hud-stat-row"><div class="hud-bar"><div class="hud-bar-fill" id="hud-audio-bar"></div></div></div>
+                  <div class="hud-ctrls">
+                    <button class="hud-btn" id="btn-audio-prev" title="Pista anterior">⏮</button>
+                    <button class="hud-btn" id="btn-audio-play" title="Synth lo-fi / pausa">⏯</button>
+                    <button class="hud-btn" id="btn-audio-next" title="Siguiente pista">⏭</button>
+                    <div class="hud-eq" id="hud-eq"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                  </div>
                 </div>
 
                 <div class="hud-card" id="card-dev">
@@ -205,6 +234,11 @@
                     <span id="hud-foco-sesion">0m 00s activa</span>
                   </div>
                   <div class="hud-stat-row"><div class="hud-bar"><div class="hud-bar-fill" id="hud-foco-bar"></div></div></div>
+                  <div class="hud-ctrls">
+                    <button class="hud-btn" id="btn-foco-toggle" title="Pausar / reanudar">⏸</button>
+                    <button class="hud-btn" id="btn-foco-reset" title="Reiniciar ciclo">↺</button>
+                    <button class="hud-btn" id="btn-foco-mode" title="Cambiar 25m Zen / 5m Descanso">25/5</button>
+                  </div>
                 </div>
 
                 <div class="hud-card" id="card-grimorio">
@@ -254,11 +288,11 @@
       </div>
     </section>
 
-    <!-- GALERÍA DE 9 MUNDOS × 3 ESCENAS -->
+    <!-- GALERÍA DE 11 MUNDOS × 3 ESCENAS -->
     <section class="section" id="mundos">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">9 UNIVERSOS · 27 ESCENARIOS · 81 PREVISUALIZACIONES</span>
+          <span class="eyebrow">11 UNIVERSOS · 33 ESCENARIOS · 99 PREVISUALIZACIONES</span>
           <h2>Explora cada mundo en Día, Hora Dorada y Noche</h2>
           <p>Cada universo incluye una escena base (<strong>M1</strong>), continuación para segundo monitor (<strong>M2</strong>) y escena ceremonial de pantalla de bloqueo (<strong>M3</strong>).</p>
         </div>
@@ -266,8 +300,8 @@
         <div class="gallery-toolbar">
           <div class="filter-group" id="cat-filters">
             <span class="opt-label">UNIVERSO:</span>
-            <button class="btn-opt is-active" data-cat="all">Todos (9)</button>
-            <button class="btn-opt" data-cat="anime">Anime (6)</button>
+            <button class="btn-opt is-active" data-cat="all">Todos (11)</button>
+            <button class="btn-opt" data-cat="anime">Anime (8)</button>
             <button class="btn-opt" data-cat="series">Series &amp; Cine (2)</button>
             <button class="btn-opt" data-cat="marvel">Marvel (1)</button>
           </div>
@@ -283,7 +317,49 @@
         </div>
 
         <div class="worlds-grid" id="worlds-grid">
-          <!-- Rellenado dinámicamente desde app.js con metadatos exactos de los 9 mundos -->
+          <!-- Rellenado dinámicamente desde app.js con metadatos exactos de los 11 mundos -->
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARADOR DIVIDIDO DE FASES -->
+    <section class="section section-alt" id="comparador">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">COMPARADOR INTERACTIVO EN PANTALLA DIVIDIDA</span>
+          <h2>Compara Día, Hora Dorada y Noche al detalle</h2>
+          <p>Desliza el divisor central sobre cualquier mundo y pantalla para apreciar cómo cambian las sombras, faroles, reflejos e iluminación astronómica.</p>
+        </div>
+        <div class="compare-shell">
+          <div class="compare-toolbar">
+            <div class="opt-group">
+              <span class="opt-label">MUNDO:</span>
+              <select class="compare-select" id="cmp-mundo"></select>
+              <button class="btn-opt is-active" data-cmp-pan="m1">M1 Principal</button>
+              <button class="btn-opt" data-cmp-pan="m2">M2 Monitor 2</button>
+              <button class="btn-opt" data-cmp-pan="m3">M3 Bloqueo</button>
+            </div>
+            <div class="opt-group">
+              <span class="opt-label">IZQ:</span>
+              <button class="btn-opt is-active" data-cmp-left="dia">Día</button>
+              <button class="btn-opt" data-cmp-left="dorado">Dorado</button>
+              <button class="btn-opt" data-cmp-left="noche">Noche</button>
+              <span class="opt-label" style="margin-left:8px;">DER:</span>
+              <button class="btn-opt" data-cmp-right="dia">Día</button>
+              <button class="btn-opt" data-cmp-right="dorado">Dorado</button>
+              <button class="btn-opt is-active" data-cmp-right="noche">Noche</button>
+            </div>
+          </div>
+          <div class="compare-stage" id="cmp-stage" style="--split: 50%;">
+            <img id="cmp-img-right" src="previews/jujutsu-kaisen/noche.png" alt="Fase derecha" />
+            <div class="compare-left-wrap" id="cmp-left-wrap">
+              <img id="cmp-img-left" src="previews/jujutsu-kaisen/dia.png" alt="Fase izquierda" />
+            </div>
+            <div class="compare-divider"><div class="compare-handle">◀▶</div></div>
+            <span class="compare-tag compare-tag-left" id="cmp-lbl-left">DÍA</span>
+            <span class="compare-tag compare-tag-right" id="cmp-lbl-right">NOCHE</span>
+            <input class="compare-range" id="cmp-range" type="range" min="2" max="98" value="50" aria-label="Posición del comparador" />
+          </div>
         </div>
       </div>
     </section>
@@ -325,7 +401,7 @@
           </article>
           <article class="hud-info-card">
             <div class="hud-info-head"><span>♪ 6. BSO DEL MUNDO</span><span class="hud-tag">NUEVA</span></div>
-            <p>Banda sonora temática curada para cada uno de los 9 universos con BPM y detección de reproductores activos.</p>
+            <p>Banda sonora temática curada para cada uno de los 10 universos con BPM y detección de reproductores activos.</p>
             <div class="hud-sample">KAMADO TANJIRO NO UTA · 78 BPM</div>
           </article>
           <article class="hud-info-card">
@@ -408,7 +484,7 @@
               <a href="Instalar-PixelZenWorlds.ps1" download="Instalar-PixelZenWorlds.ps1" class="btn-secondary" id="dl-ps1">⬇ Script PowerShell (.ps1)</a>
               <button class="btn-secondary" id="btn-copy-oneliner" data-copy="irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex">⧉ Copiar comando 1 línea</button>
             </div>
-            <div class="install-note">✓ Incluye los 9 mundos (27 escenas), estudio de configuración en bandeja y las 9 tarjetas HUD flotantes.</div>
+            <div class="install-note">✓ Incluye los 11 mundos (33 escenas), estudio de configuración en bandeja, clima dinámico y las 9 tarjetas HUD flotantes.</div>
           </div>
 
           <div class="install-box">
@@ -425,6 +501,8 @@
                   <option value="demon-slayer">Demon Slayer</option>
                   <option value="stranger-things">Stranger Things</option>
                   <option value="harry-potter">Harry Potter</option>
+                  <option value="naruto">Naruto</option>
+                  <option value="jujutsu-kaisen">Jujutsu Kaisen</option>
                 </select>
               </label>
               <label>Ciclo solar
@@ -492,12 +570,14 @@ python windows/pixelzen_win.py --tema solo-leveling --90m</code></pre>
 cd linux
 ./instalar.sh --90m
 
-# 2. Cambiar entre los 9 mundos disponibles:
+# 2. Cambiar entre los 11 mundos disponibles:
 ./tema.sh --listar
+./tema.sh jujutsu-kaisen
 ./tema.sh demon-slayer
 ./tema.sh solo-leveling
 ./tema.sh stranger-things
 ./tema.sh harry-potter
+./tema.sh naruto
 
 # 3. Controlar la hora solar:
 ./hora.sh 90m   |   ./hora.sh real   |   ./hora.sh demo   |   ./hora.sh 21:30</code></pre>
@@ -509,7 +589,7 @@ cd linux
               <button class="copy-btn" data-copy="windows\lively\index.html">Copiar</button>
               <pre><code># Abrir en Lively Wallpaper:
 # Arrastra o añade el archivo: windows\lively\index.html
-# Soporta LivelyProperties.json con los 9 mundos, Pantalla M1/M2/Bloqueo y las 9 tarjetas HUD.</code></pre>
+# Soporta LivelyProperties.json con los 11 mundos, Pantalla M1/M2/Bloqueo, reactividad de audio y las 9 tarjetas HUD.</code></pre>
             </div>
           </div>
 

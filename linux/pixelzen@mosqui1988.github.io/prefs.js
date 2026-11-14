@@ -15,6 +15,7 @@ const TEMAS_BASE = [
     {id: 'demon-slayer', nombre: 'Demon Slayer · Tren Infinito'},
     {id: 'stranger-things', nombre: 'Stranger Things · Hawkins y el Revés'},
     {id: 'harry-potter', nombre: 'Harry Potter · Castillo de Hogwarts'},
+    {id: 'naruto', nombre: 'Naruto · Modo Baryon'},
 ];
 
 export default class PixelZenPreferences extends ExtensionPreferences {

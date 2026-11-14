@@ -119,6 +119,24 @@
       horaFija: 21.5,
       fps: 8,
       mostrarHud: true,
+      hudCompacto: false,
+      clima: 'normal',
+      audioReactivo: true,
+      audioEnergy: 0,
+      parallax: true,
+      parallaxX: 0,
+      parallaxY: 0,
+      evento: null,
+      _lastHourEvent: -1,
+      foco: {
+        activo: true,
+        descanso: false,
+        cicloSec: 25 * 60,
+        restSec: 25 * 60,
+        sesionSec: 0,
+        ciclo: 1,
+        lastTickMs: Date.now(),
+      },
       hudStats: {
         tiempo: true,
         clima: true,
@@ -143,6 +161,20 @@
       brillantes: [],
       ...(opts.initialState || {}),
     };
+
+    const GOTAS_CLIMA = Array.from({ length: 84 }, (_, i) => [
+      (i * 53 + 17) % 640,
+      (i * 89 + 31) % 390,
+      5 + (i % 4) * 2,
+      6 + (i % 3),
+    ]);
+    const COPOS_CLIMA = Array.from({ length: 68 }, (_, i) => [
+      (i * 61 + 29) % 640,
+      (i * 97 + 13) % 390,
+      0.75 + (i % 4) * 0.35,
+      i * 0.7,
+      i % 5 === 0 ? 2 : 1,
+    ]);
 
     const px = (hex, op, ax, ay, aw = 1, ah = 1) => {
       if (op <= 0.004) return;
@@ -435,6 +467,820 @@
       }
     }
 
+    function pintaDemonRengoku(t, nf) {
+      const imp = Math.pow(Math.max(0, Math.sin(t * 0.28)), 4);
+      const clashTick = t % 24;
+      const clash = clashTick < 5 ? 1 - clashTick / 5 : 0;
+      const env = 0.65 + 0.35 * nf;
+
+      // 1. Auras termicas/criogenicas y destello de choque en el claro
+      px('#ff5820', (0.07 + 0.11 * imp) * env, 286, 266, 94, 46);
+      px('#38d8ff', (0.07 + 0.11 * imp) * env, 404, 268, 96, 46);
+      if (clash > 0.05) {
+        const rC = Math.round(14 + (1 - clash) * 18);
+        px('#ffe8a0', 0.16 * clash * env, 418 - rC, 284 - Math.round(rC * 0.7), rC * 2, Math.round(rC * 1.4));
+      }
+
+      // 2. Haori en llamas y aura ascendente de Rengoku (cx=334, by=310)
+      for (let i = 0; i < 8; i++) {
+        const fx = 306 + i * 3;
+        const wave = Math.sin(t * 0.55 + i * 0.85);
+        const fy = 287 + Math.round(i * 0.3 + wave * 1.8);
+        const fh = 5 + ((Math.floor(t * 0.6) + i * 3) % 5);
+        px('#ff3624', 0.82, fx, fy + fh - 3, 2, 3);
+        px('#ff7e24', 0.88, fx, fy + 2, 2, 3);
+        px('#ffd84c', 0.90, fx, fy, 2, 2);
+      }
+      for (let k = 0; k < 6; k++) {
+        const lift = ((t * 1.6 + k * 7) % 18);
+        const ax = 324 + ((k * 7) % 21) + Math.round(Math.sin(t * 0.4 + k) * 2);
+        const ay = 294 - Math.round(lift);
+        px(k % 2 === 0 ? '#ffd84c' : '#ff5e24', Math.max(0.15, (1 - lift / 18) * 0.85), ax, ay, 2, 2);
+      }
+      // Brillo vivo en la katana Nichirin de la Llama
+      const bPos = (t * 2) % 20;
+      px('#fff8d8', 0.95, 342 + bPos, 292 - Math.floor(bPos / 4), 3, 1);
+
+      // 3. Novena Postura: Rengoku! Dragon de fuego rugiendo hacia el choque (x=356..422)
+      for (let step = 0; step < 19; step++) {
+        const u = step / 18;
+        const pulseU = ((t * 0.11 + u * 2.2) % 1.0);
+        const bx = Math.round(356 + u * 64);
+        const by = Math.round(288 - Math.sin(u * Math.PI * 0.85) * 18 + Math.sin(u * 9.0 - t * 0.65) * 3.2);
+        const rad = 3 + ((step + Math.floor(t * 0.5)) % 3);
+        px('#ff2a18', 0.42, bx - rad - 1, by - rad - 1, (rad + 1) * 2, (rad + 1) * 2);
+        px('#ff7e24', 0.84, bx - rad, by - rad, rad * 2, rad * 2);
+        px(pulseU > 0.62 ? '#fff8c8' : '#ffd84c', 0.94, bx - 1, by - 1, 3, 3);
+        // Anillos espirales alrededor del dragon
+        const angR = t * 0.5 + step * 0.8;
+        px('#ffe888', 0.80, bx + Math.round(Math.cos(angR) * 4), by + Math.round(Math.sin(angR) * 6), 2, 2);
+      }
+      // Fauces animadas del dragon en el choque (x=418, y=284)
+      const jaw = Math.sin(t * 0.45) > 0 ? 1 : 0;
+      px('#fff8d0', 0.96, 417, 281 - jaw, 6, 3);
+      px('#ff7e24', 0.92, 421, 278 - jaw, 5, 2);
+      px('#ff3624', 0.90, 421, 286 + jaw, 5, 2);
+
+      // 4. Brujula Destructiva giratoria bajo los pies de Akaza (cx=456, cy=312)
+      const rot = t * 0.065;
+      for (let p = 0; p < 12; p++) {
+        const ang = rot + (p * Math.PI * 2) / 12;
+        const cA = Math.cos(ang), sA = Math.sin(ang);
+        for (let r = 14; r <= 42; r += 4) {
+          const rx = Math.round(456 + cA * r);
+          const ry = Math.round(312 + sA * (r * 0.18));
+          const esPunta = r >= 36;
+          px(esPunta ? '#ffffff' : (r >= 26 ? '#92f0ff' : '#38d8ff'), esPunta ? 0.95 : 0.78, rx, ry, esPunta ? 2 : 1, 1);
+        }
+      }
+      // Aura Soryu, ojos dorados y rafagas de Aire Destructivo de Akaza (446 -> 418)
+      px('#ffd84c', 0.95, 450, 284, 1, 1);
+      px('#ffd84c', 0.95, 454, 284, 1, 1);
+      for (let k = 0; k < 4; k++) {
+        const prog = ((t * 0.13 + k * 0.25) % 1.0);
+        const ax = Math.round(446 - prog * 28);
+        const ay = Math.round(288 + ((k % 2 === 0 ? -1 : 1) * 5) + Math.sin(t * 0.4 + k) * 2);
+        px('#38d8ff', 0.85, ax, ay - 3, 4, 7);
+        px('#d8385c', 0.72, ax + 2, ay - 2, 3, 5);
+        px('#ffffff', 0.95, ax - 1, ay - 1, 2, 3);
+      }
+
+      // 5. Ondas de choque concentricas, relampagos de ki y pavesas en (418, 284)
+      for (let rIdx = 0; rIdx < 2; rIdx++) {
+        const rad = 4 + ((t * 2 + rIdx * 7) % 14);
+        const opRing = Math.max(0.15, (1 - (rad - 4) / 14) * 0.9);
+        for (let i = 0; i < 16; i++) {
+          const a = (i * Math.PI * 2) / 16 + t * 0.08;
+          const sx = Math.round(418 + Math.cos(a) * rad);
+          const sy = Math.round(284 + Math.sin(a) * rad * 0.75);
+          px(sx < 418 ? '#ffd84c' : '#38d8ff', opRing, sx, sy, 2, 1);
+        }
+      }
+      for (let b = 0; b < 6; b++) {
+        if ((t + b) % 3 === 0) continue;
+        const ba = t * 0.37 + b * 1.05;
+        const bl = 7 + ((t * 3 + b * 5) % 10);
+        const colB = b % 2 === 0 ? '#ffe898' : '#78ecff';
+        for (let s = 2; s <= bl; s += 2) {
+          const jx = Math.round(Math.sin(s + t + b) * 1.4);
+          px(colB, 0.88, 418 + Math.round(Math.cos(ba) * s) + jx, 284 + Math.round(Math.sin(ba) * s * 0.8), 1, 1);
+        }
+      }
+      if (clash > 0.2) {
+        px('#ffffff', 0.98 * clash, 416, 282, 5, 5);
+      }
+
+      // 6. Faro del Tren Infinito y fulgor vivo en la caldera (x=140..275)
+      const fPulse = 0.7 + 0.3 * osc(0.22, 0.4);
+      px('#ff8438', 0.22 * fPulse * env, 141, 222, 14, 9);
+      for (let i = 1; i <= 34; i += 2) {
+        const rh = 1 + Math.floor(i / 6);
+        px('#ffe898', Math.max(0.03, (0.36 - i * 0.009) * fPulse * env), 225 + i, 238 - rh, 2, rh * 2);
+      }
+    }
+
+    function pintaDemonTokito(t, nf) {
+      const env = 0.65 + 0.35 * nf;
+
+      // 1. Bancos de niebla turquesa de la Septima Postura deslizandose por el claro
+      for (let i = 0; i < 6; i++) {
+        const span = 350;
+        const bx = 185 + ((Math.round(t * (1.2 + (i % 3) * 0.5)) + i * 64) % span);
+        const by = 288 + (i % 3) * 11 + Math.round(Math.sin(t * 0.12 + i) * 2);
+        const bw = 28 + (i % 3) * 14;
+        px('#54e8cc', 0.16 * env, bx, by, bw, 3);
+        px('#b8fff4', 0.22 * env, bx + 6, by + 1, Math.round(bw * 0.6), 1);
+      }
+
+      // 2. Melena menta, hoja Nichirin y arcos cortantes de Muichiro Tokito (cx=278, by=304)
+      for (let h = 0; h < 5; h++) {
+        const hx = 259 + h * 3;
+        const hy = 283 + h + Math.round(Math.sin(t * 0.45 + h) * 1.4);
+        px(h > 2 ? '#d8fff8' : '#74f0dc', 0.85, hx, hy, 2, 2);
+      }
+      const bladeS = (t * 2) % 18;
+      px('#e8fffc', 0.95, 287 + bladeS, 285 - Math.floor(bladeS / 4), 3, 1);
+
+      // Arcos de niebla veloces viajando desde Tokito (x=302) hasta Gyokko (x=448)
+      for (let a = 0; a < 3; a++) {
+        const prog = ((t * 0.10 + a * 0.33) % 1.0);
+        const sx = Math.round(304 + prog * 144);
+        const sy = Math.round(284 + Math.sin(prog * Math.PI * 2 + a) * 9);
+        for (let dy = -6; dy <= 6; dy += 2) {
+          const arch = Math.round((dy * dy) / 7);
+          px('#54e8cc', 0.72, sx - arch, sy + dy, 3, 2);
+          if (Math.abs(dy) <= 3) px('#e8fffc', 0.92, sx - arch + 1, sy + dy, 2, 1);
+        }
+      }
+
+      // Destello relampago en X (Septima Postura: Neblina) sobre Gyokko
+      const flashTick = t % 28;
+      if (flashTick < 9) {
+        const fAl = 1 - flashTick / 9;
+        px('#54e8cc', 0.18 * fAl * env, 424, 260, 56, 42);
+        for (let d = -14; d <= 14; d += 2) {
+          px('#74f8e8', 0.86 * fAl, 444 + d, 280 + Math.round(d * 0.65), 2, 2);
+          px('#ffffff', 0.95 * fAl, 444 + d, 280 - Math.round(d * 0.65), 2, 2);
+        }
+      }
+
+      // 3. Tentaculos acuaticos agitados, ojos y agujas de Gyokko (cx=468, by=308)
+      for (const side of [-1, 1]) {
+        for (let seg = 0; seg < 12; seg++) {
+          const u = seg / 11;
+          const wave = Math.sin(t * 0.42 + u * 4.5 + side) * (2.5 + u * 3.5);
+          const tx = Math.round(468 + side * (13 + seg * 2.5));
+          const ty = Math.round(294 - Math.sin(u * 3.6) * 14 - u * 9 + wave);
+          const rt = u < 0.5 ? 2 : 1;
+          px('#2898a8', 0.75, tx - rt, ty - rt, rt * 2 + 1, rt * 2 + 1);
+          px('#98fff0', 0.86, tx, ty, rt, rt);
+        }
+        // Salpicaduras en las puntas de los tentaculos
+        if ((t + (side > 0 ? 1 : 0)) % 2 === 0) {
+          const sxp = 468 + side * (36 + (t % 5));
+          const syp = 266 + Math.round(Math.cos(t * 0.5 + side) * 4);
+          px('#d8fffc', 0.88, sxp, syp, 2, 2);
+        }
+      }
+      // Ojos verticales brillantes de Gyokko
+      px('#ff4878', 0.92, 467, 270, 2, 2);
+      px('#ffd858', 0.90, 467, 275, 2, 1);
+
+      // Agujas de agua demoníacas chocando con la niebla en (392, 280)
+      for (let j = 0; j < 3; j++) {
+        const gp = ((t * 0.12 + j * 0.33) % 1.0);
+        const gx = Math.round(452 - gp * 60);
+        const gy = Math.round(278 + (j - 1) * 5 + Math.sin(t * 0.5 + j) * 2);
+        px('#54e4d4', 0.86, gx, gy, 5, 1);
+        px('#ff5488', 0.80, gx + 4, gy, 2, 1);
+      }
+      if (t % 3 !== 0) {
+        px('#ffffff', 0.90, 391, 279, 3, 3);
+        px('#ff6494', 0.80, 394 + (t % 4) - 2, 275 + ((t * 2) % 6), 2, 2);
+      }
+    }
+
+    function pintaDemonGlicinias(t, nf) {
+      const env = 0.65 + 0.35 * nf;
+
+      // 1. Petalos luminosos de glicinia meciendo la brisa por todo el santuario
+      const wCols = ['#c884ff', '#f0d8ff', '#9248e8', '#e6b8ff'];
+      for (let i = 0; i < 20; i++) {
+        const speedY = 0.45 + (i % 4) * 0.18;
+        const speedX = 0.25 + (i % 3) * 0.12;
+        const py = 116 + ((Math.round(t * speedY) + i * 19) % 218);
+        const px0 = 36 + ((Math.round(t * speedX + Math.sin(t * 0.08 + i) * 14) + i * 31) % 568);
+        const horiz = (Math.floor(t / 5) + i) % 2 === 0;
+        px(wCols[i % 4], 0.82 * env, px0, py, horiz ? 2 : 1, horiz ? 1 : 2);
+      }
+      // Destellos bioluminiscentes en los racimos izquierdo y derecho y dintel del Torii
+      for (let g = 0; g < 10; g++) {
+        const gx = g < 4 ? (52 + g * 44) : g < 8 ? (418 + (g - 4) * 44) : (276 + (g - 8) * 86);
+        const gy = g < 8 ? (136 + (g % 3) * 14) : 150;
+        const op = (0.35 + 0.65 * osc(0.16, g * 1.3)) * env;
+        px('#f0d8ff', op, gx, gy, 2, 2);
+      }
+
+      // 2. Llama sagrada viva danzando sobre la Katana Nichirin del altar (x=306..344, y=276..288)
+      const pulseF = 0.72 + 0.28 * osc(0.24, 0.7);
+      px('#ff7828', 0.16 * pulseF * env, 300, 266, 50, 24);
+      for (let k = 0; k < 9; k++) {
+        const kx = 307 + k * 4;
+        const kyBase = 285 - Math.floor((k * 4 + 13) / 5);
+        const fh = 3 + ((Math.floor(t * 0.7) + k * 3) % 7);
+        const sway = Math.round(Math.sin(t * 0.5 + k * 0.9) * 1.2);
+        px('#ff3820', 0.78, kx + sway, kyBase - fh, 2, 3);
+        px('#ff9428', 0.88, kx, kyBase - Math.max(2, fh - 2), 2, 3);
+        px('#fff4b8', 0.95, kx, kyBase - 1, 2, 2);
+      }
+      // Pavesas doradas elevandose hacia el Torii desde la hoja
+      for (let e = 0; e < 5; e++) {
+        const rise = ((t * 1.2 + e * 9) % 34);
+        const ex = 310 + ((e * 11) % 30) + Math.round(Math.sin(t * 0.2 + e * 1.7) * 4);
+        const ey = 280 - Math.round(rise);
+        px(e % 2 === 0 ? '#ffe888' : '#ff9838', Math.max(0.1, (1 - rise / 34) * 0.88), ex, ey, 1, 2);
+      }
+    }
+
+    function pintaNarutoBaryon(t, nf) {
+      const env = 0.68 + 0.32 * nf;
+      const kPulse = 0.5 + 0.5 * Math.sin(t * 0.26);
+
+      // 1. Ojos rasgados (x=121, 154, y=175) y aliento chakra de la silueta de Kurama (136, 286)
+      for (const ex of [121, 154]) {
+        px('#ff2c18', 0.48 * kPulse * env, ex - 4, 173, 8, 5);
+        px('#ff9430', 0.88, ex - 2, 174, 5, 3);
+        px('#fff0a8', 0.96, ex, 174, 2, 2);
+      }
+      for (let w = 0; w < 4; w++) {
+        const wy = 192 + w * 4 - ((t + w * 2) % 6);
+        px('#ff5a24', 0.36 * env, 130 + ((w * 7) % 16), wy, 2, 3);
+      }
+
+      // 2. Nueve colas de chakra Modo Baryon ondeando (centro 192, 314)
+      for (let k = 0; k < 9; k++) {
+        const baseAng = -2.42 + k * 0.24;
+        const len = 64 + (k % 3) * 18;
+        for (let s = 2; s < 10; s++) {
+          const u = s / 10;
+          const sway = Math.sin(t * 0.34 + k * 0.9 + u * 3.1) * (4 + u * 8);
+          const tx = Math.round(192 + Math.cos(baseAng) * (len * u) + sway * 0.45);
+          const ty = Math.round(314 + Math.sin(baseAng) * (len * u) + sway * 0.3);
+          if (tx < 48 || tx > 258 || ty < 178 || ty > 342) continue;
+          const tip = s > 7;
+          px(tip ? '#ffd068' : (s % 2 === 0 ? '#ff3c24' : '#ff7c2c'), (0.28 + 0.36 * (1 - u)) * env, tx, ty, tip ? 2 : 3, 2);
+        }
+      }
+
+      // 3. Manto Baryon, cuernos (188/204, 300) y pavesas ascendiendo en Naruto (198, 344)
+      for (let p = 0; p < 7; p++) {
+        const rise = ((t * 1.7 + p * 5) % 28);
+        const ax = 188 + ((p * 5) % 20) + Math.round(Math.sin(t * 0.45 + p) * 2);
+        const ay = 340 - Math.round(rise);
+        px(rise > 18 ? '#ff2c1c' : '#ff9c38', Math.max(0.12, (1 - rise / 28) * 0.78), ax, ay, 2, 2);
+      }
+      px('#ffe088', 0.85, 188, 300 + (t % 2), 1, 2);
+      px('#ffe088', 0.85, 204, 300 + ((t + 1) % 2), 1, 2);
+
+      // 4. Baryon Rasengan giratorio en la mano adelantada (220, 320)
+      const rPulse = 0.65 + 0.35 * Math.sin(t * 0.65);
+      px('#ff4020', 0.35 * rPulse, 214, 314, 13, 13);
+      px('#ff9e3c', 0.80, 217, 317, 7, 7);
+      px('#fff6dc', 0.96, 219, 319, 3, 3);
+      for (let r = 0; r < 4; r++) {
+        const ra = t * 0.55 + r * (Math.PI / 2);
+        const rx = 220 + Math.round(Math.cos(ra) * 5.2);
+        const ry = 320 + Math.round(Math.sin(ra) * 5.2);
+        px(r % 2 === 0 ? '#ffe898' : '#ff4c28', 0.92, rx, ry, 2, 2);
+      }
+
+      // 5. Chispas de choque entre Baryon Rasengan (220, 320) e Isshiki/cubos (322, 280)
+      if (t % 4 !== 0) {
+        const cxm = 258 + ((t * 7) % 48);
+        const cym = 304 - Math.round((cxm - 258) * 0.4) + Math.round(Math.sin(t * 0.9) * 5);
+        px('#ffd878', 0.90, cxm, cym, 3, 1);
+        px('#ff4828', 0.72, cxm - 2, cym + 1, 2, 1);
+      }
+
+      // 6. Cubos Daikokuten levitando (322,280), (290,294), (346,266)
+      const cubos = [[322, 280, 7], [290, 294, 5], [346, 266, 4]];
+      for (let i = 0; i < cubos.length; i++) {
+        const bob = Math.round(Math.sin(t * 0.24 + i * 2.1) * 3);
+        const cx = cubos[i][0];
+        const cy = cubos[i][1] + bob;
+        const sz = cubos[i][2];
+        const flash = ((t + i * 11) % 36) < 4;
+        px(flash ? '#ffb8ff' : '#c044ff', (flash ? 0.78 : 0.46) * env, cx - sz, cy - sz, sz * 2, 1);
+        px('#8828c8', 0.36 * env, cx - sz, cy + sz - 1, sz * 2, 1);
+      }
+
+      // 7. Rueda Dharmachakra rotando detras de Isshiki (394, 282, r=23) y ojo Dharmagan (389, 309)
+      for (let s = 0; s < 8; s++) {
+        const wa = t * 0.14 + (s * Math.PI) / 4;
+        const wx = Math.round(394 + Math.cos(wa) * 23);
+        const wy = Math.round(282 + Math.sin(wa) * 23);
+        px(s % 2 === 0 ? '#ffe878' : '#ffffff', 0.75 * env, wx, wy, 2, 2);
+      }
+      px('#c848ff', 0.42 * kPulse * env, 387, 308, 5, 3);
+    }
+
+    function pintaNarutoKonoha(t, nf) {
+      const env = 0.60 + 0.40 * nf;
+
+      // 1. Banderin en la cupula del Edificio Hokage (218, 224)
+      const flagBob = Math.round(Math.sin(t * 0.35) * 1.2);
+      px('#d84030', 0.85, 220, 224 + flagBob, 5, 2);
+      px('#f8e8c8', 0.65 * env, 217, 228, 3, 1);
+
+      // 2. Faroles y vapor aromatico de Ichiraku Ramen (44..90, 272)
+      const sway = Math.round(Math.sin(t * 0.22) * 1.1);
+      for (const lx of [46, 66, 88]) {
+        px('#ff5232', 0.75 * env, lx + sway, 255, 3, 4);
+        px('#ffe8a0', 0.50 * env, lx + sway, 256, 1, 2);
+      }
+      for (let v = 0; v < 4; v++) {
+        const vr = ((t * 1.1 + v * 6) % 20);
+        px('#f0f4f8', Math.max(0.08, (1 - vr / 20) * 0.42), 66 + Math.round(Math.sin(t * 0.2 + v) * 2), 248 - Math.round(vr), 2, 2);
+      }
+
+      // 3. Capas ondeantes de Naruto Hokage (342, 274) y Sasuke (370, 274)
+      const cloakW = Math.round(Math.sin(t * 0.30) * 1.4);
+      px('#ff7828', 0.82, 338 + cloakW, 265, 3, 4);
+      px('#fff4e4', 0.78, 344 + cloakW, 261, 3, 3);
+      px('#383058', 0.80, 372 - cloakW, 263, 3, 5);
+      if (nf > 0.3) {
+        px('#c870ff', 0.70 * env, 368, 256, 1, 1);
+      }
+
+      // 4. Hojas de Konoha arrastradas por la brisa (manteniendo libre la columna derecha)
+      for (let i = 0; i < 7; i++) {
+        const lx = 36 + ((Math.round(t * (1.3 + (i % 3) * 0.45)) + i * 59) % 404);
+        const ly = 135 + (i % 4) * 32 + Math.round(Math.sin(t * 0.18 + i * 1.4) * 7);
+        const lCol = nf > 0.55 ? '#4ca868' : (i % 2 === 0 ? '#74d05c' : '#e89844');
+        px(lCol, 0.72, lx, ly, 2, 2);
+      }
+
+      // 5. Destellos suaves sobre el Rio Naka (y >= 284, x <= 440)
+      for (let r = 0; r < 10; r++) {
+        if ((t + r) % 3 === 0) continue;
+        const rx = 44 + ((r * 39 + t * 2) % 390);
+        const ry = 287 + (r % 5) * 9;
+        px(nf > 0.55 ? '#98c8ff' : '#fff0b8', 0.42 * env, rx, ry, 4 + (r % 3) * 2, 1);
+      }
+    }
+
+    function pintaNarutoValle(t, nf) {
+      const env = 0.65 + 0.35 * nf;
+
+      // 1. Cascada viva del Valle del Fin (x=244..324, y=151..280)
+      for (let l = 0; l < 6; l++) {
+        const wx = 250 + l * 13;
+        const off = (t * 4 + l * 21) % 120;
+        for (let k = 0; k < 3; k++) {
+          const wy = 154 + ((off + k * 42) % 120);
+          px(k === 0 ? '#ffffff' : '#b8eeff', 0.62 * env, wx, wy, 2, 6);
+        }
+      }
+      for (let m = 0; m < 8; m++) {
+        const mx = 242 + m * 11 + Math.round(Math.sin(t * 0.25 + m) * 2);
+        const my = 275 + ((t + m * 3) % 5);
+        px('#e8fbff', 0.52 * env, mx, my, 5, 3);
+      }
+
+      // 2. Choque Rasengan (277, 248) vs Chidori (291, 248) en (284, 248)
+      const clash = 0.6 + 0.4 * Math.sin(t * 0.6);
+      px('#48c4ff', 0.32 * clash, 271, 242, 12, 12);
+      px('#d8f8ff', 0.90, 275, 246, 5, 5);
+      for (let s = 0; s < 4; s++) {
+        const sa = t * 0.65 + s * (Math.PI / 2);
+        px('#80e4ff', 0.92, 277 + Math.round(Math.cos(sa) * 4), 248 + Math.round(Math.sin(sa) * 4), 2, 2);
+      }
+
+      // Rayos del Chidori alrededor de (291, 248)
+      px('#a8d4ff', 0.32 * clash, 285, 241, 14, 14);
+      for (let b = 0; b < 5; b++) {
+        if ((t + b) % 3 === 0) continue;
+        const ba = t * 0.48 + b * 1.25;
+        const bl = 5 + ((t * 2 + b * 3) % 8);
+        for (let d = 2; d <= bl; d += 2) {
+          const j = Math.round(Math.sin(d + t + b) * 1.4);
+          px(b % 2 === 0 ? '#ffffff' : '#b8b0ff', 0.92, 291 + Math.round(Math.cos(ba) * d) + j, 248 + Math.round(Math.sin(ba) * d), 1, 1);
+        }
+      }
+
+      // Nucleo central de impacto y onda expansiva (284, 248)
+      px('#ffffff', 0.96 * clash, 282, 246, 5, 5);
+      const ringR = 5 + ((t * 2) % 20);
+      const ringAl = Math.max(0.08, (1 - (ringR - 5) / 20) * 0.72);
+      for (let a = 0; a < 12; a++) {
+        const ang = (a * Math.PI * 2) / 12 + t * 0.1;
+        px(a % 2 === 0 ? '#88e8ff' : '#ffffff', ringAl, 284 + Math.round(Math.cos(ang) * ringR), 248 + Math.round(Math.sin(ang) * ringR * 0.8), 2, 2);
+      }
+
+      // Aura de Naruto (254, 268) y Sasuke (314, 268)
+      px('#ff9838', 0.65 * clash, 253, 255 - (t % 3), 2, 3);
+      px('#9880ff', 0.65 * clash, 314, 255 - ((t + 1) % 3), 2, 3);
+
+      // 3. Reflejo y ondas en la poza del Valle del Fin (284, 316)
+      const poolW = 10 + ((t * 2) % 18);
+      px('#90e8ff', 0.40 * clash, 284 - poolW, 315, poolW * 2, 2);
+      px('#ffffff', 0.55 * clash, 279, 316, 10, 1);
+    }
+
+    function pintaJujutsu(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.55 + 0.45 * nf + aBoost);
+      const pulse = 0.72 + 0.28 * Math.sin(t * 0.14);
+
+      // 1. Horizonte de Vacío Infinito pulsando detrás (452, 162)
+      for (let a = 0; a < 10; a++) {
+        const ang = (a * Math.PI * 2) / 10 + t * 0.05;
+        const rX = 33 + Math.round(Math.sin(t * 0.1 + a) * 2);
+        const rY = 17;
+        px(a % 2 === 0 ? '#7dd3fc' : '#c084fc', 0.65 * al, 452 + Math.round(Math.cos(ang) * rX), 162 + Math.round(Math.sin(ang) * rY), 2, 1);
+      }
+      px('#ffffff', 0.45 * al * pulse, 450, 161, 4, 2);
+
+      // 2. Santuario Malevolente (156, 224) — llamas rituales y aura de cráneo
+      const eyeAl = Math.min(1, (0.55 + 0.45 * Math.sin(t * 0.16)) * al);
+      px('#fb7185', 0.85 * eyeAl, 151, 217, 2, 2);
+      px('#fb7185', 0.85 * eyeAl, 159, 217, 2, 2);
+      px('#ff2848', 0.50 * al, 146, 260 + (t % 3 === 0 ? -1 : 0), 20, 2);
+      for (let s = 0; s < 5; s++) {
+        const sy = 200 + ((s * 17 + t * 3) % 68);
+        const sx = 122 + ((s * 29) % 68);
+        px(s % 2 === 0 ? '#ff4468' : '#fda4af', 0.7 * al, sx, sy, 6, 1);
+      }
+
+      // 3. Cortes Desmantelar de Sukuna hacia Gojo y aura carmesí (248..298)
+      px('#fb7185', 0.55 * al, 244, 250 - (t % 3), 2, 4);
+      px('#ef4444', 0.55 * al, 252, 247 - ((t + 1) % 3), 2, 4);
+      for (let k = 0; k < 4; k++) {
+        const prog = ((t * 3 + k * 7) % 28);
+        const sx0 = 264 + prog;
+        const sy0 = 240 + ((k * 7) % 18) - Math.round(prog * 0.25);
+        for (let d = 0; d < 7; d++) {
+          px(d > 4 ? '#ffffff' : '#ff3355', 0.88 * al, sx0 + d, sy0 + (k % 2 === 0 ? d >> 1 : -(d >> 1)), 1, 1);
+        }
+      }
+
+      // 4. Rojo/Azul de Gojo y Choque Púrpura Vacío (313, 248)
+      px('#38bdf8', 0.65 * al, 374, 249 - ((t + 2) % 3), 2, 4);
+      const rOrb = 9 + Math.round(Math.sin(t * 0.2) * 2);
+      const rAng = t * 0.22;
+      px('#fb7185', 0.90 * al, 313 + Math.round(Math.cos(rAng) * rOrb), 248 + Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
+      px('#38bdf8', 0.90 * al, 313 - Math.round(Math.cos(rAng) * rOrb), 248 - Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
+
+      const coreR = Math.round(4 + 3 * pulse + aBoost * 8);
+      px('#9333ea', 0.40 * al, 313 - coreR - 4, 248 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
+      px('#e879f9', 0.72 * al, 313 - coreR, 248 - coreR, coreR * 2, coreR * 2);
+      px('#fdf4ff', 0.96 * al, 311, 246, 5, 5);
+
+      const wave = 8 + ((t * 2) % 22);
+      const wAl = Math.max(0.08, (1 - (wave - 8) / 22) * 0.75 * al);
+      for (let a = 0; a < 12; a++) {
+        const ang = (a * Math.PI * 2) / 12 + t * 0.08;
+        px(a % 2 === 0 ? '#e879f9' : '#7dd3fc', wAl, 313 + Math.round(Math.cos(ang) * wave), 248 + Math.round(Math.sin(ang) * wave * 0.7), 2, 2);
+      }
+
+      // Reflejo Púrpura en las aguas negras del santuario (y=310..330)
+      const rw = 10 + Math.round(4 * pulse);
+      px('#c084fc', 0.42 * al, 313 - rw, 312, rw * 2, 2);
+      px('#f43f5e', 0.35 * al, 156 - 10, 314, 20, 2);
+    }
+
+    function pintaJujutsuSec(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+      const bob = Math.round(Math.sin(t * 0.12) * 2);
+
+      // 1. Prisión Confinadora (320, 246) — ojo parpadeante y aura áurea/carmesí
+      px('#eab308', 0.45 * al, 312, 238 + bob, 16, 16);
+      if (t % 29 !== 0) {
+        px('#fff8e8', 0.92 * al, 318, 244 + bob, 4, 4);
+        px('#e11d48', 0.95 * al, 319, 245 + bob, 2, 2);
+      }
+      for (let c = 0; c < 4; c++) {
+        const ang = c * Math.PI * 0.5 + t * 0.07;
+        px('#facc15', 0.78 * al, 320 + Math.round(Math.cos(ang) * 14), 246 + bob + Math.round(Math.sin(ang) * 11), 2, 2);
+      }
+
+      // 2. Destello Negro de Yuji Itadori (216, 278 -> puño 226, 250)
+      const bfPulse = (t % 16) < 4;
+      px('#09090b', 0.90, 224, 247, 7, 7);
+      px(bfPulse ? '#ffffff' : '#fb7185', 0.92 * al, 226, 249, 3, 3);
+      for (let b = 0; b < 6; b++) {
+        const ang = t * 0.45 + b * 1.05;
+        const dist = 5 + ((t * 2 + b * 3) % 10);
+        px(b % 2 === 0 ? '#e11d48' : '#111827', 0.88, 227 + Math.round(Math.cos(ang) * dist), 250 + Math.round(Math.sin(ang) * dist), 2, 1);
+      }
+
+      // 3. Sombras y Perro Divino de Megumi Fushiguro (422, 278)
+      for (let s = 0; s < 5; s++) {
+        const sy = 272 - ((t * 2 + s * 6) % 24);
+        const sx = 414 + Math.round(Math.sin(t * 0.1 + s) * 8) + (s - 2) * 4;
+        px(s % 2 === 0 ? '#38bdf8' : '#1e293b', 0.72 * al, sx, sy, 2, 2);
+      }
+      px('#10b981', 0.90 * al, 434, 263, 2, 1);
+    }
+
+    function pintaJujutsuBloq(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+      const sway = Math.round(Math.sin(t * 0.09) * 1.5);
+
+      // 1. Sellos Ofuda bajo el Torii oscilando suavemente con el viento espiritual
+      for (const ox of [298, 310, 330, 342]) {
+        px('#fef3c7', 0.88 * al, ox + sway, 157, 2, 5);
+        px('#ef4444', 0.78 * al, ox + sway, 159, 1, 2);
+      }
+
+      // 2. Altar con el Dedo de Ryomen Sukuna (320, 230)
+      const pulse = 0.65 + 0.35 * Math.sin(t * 0.14);
+      px('#e11d48', 0.36 * al * pulse, 313, 223, 14, 14);
+      px('#fb7185', 0.85 * al * pulse, 318, 227 + (t % 6 < 3 ? 0 : -1), 4, 7);
+      px('#fef2f2', 0.88 * al, 319, 228, 2, 2);
+
+      // 3. Volutas de energía maldita ascendiendo + reflejo en el lago (320, 318)
+      for (let w = 0; w < 6; w++) {
+        const prog = (t * 1.2 + w * 9) % 44;
+        const wx = 286 + w * 13 + Math.round(Math.sin(t * 0.08 + w) * 3);
+        const wy = 266 - Math.round(prog);
+        px(w % 2 === 0 ? '#a855f7' : '#f43f5e', Math.max(0.15, (1 - prog / 44) * 0.80 * al), wx, wy, 2, 2);
+      }
+      px('#e11d48', 0.35 * al * pulse, 312, 318, 16, 2);
+    }
+
+    function climaEfectivo(T, fecha) {
+      const m = state.clima || 'normal';
+      if (m !== 'auto') return m;
+      const tid = state.tema || '';
+      const h = fecha ? fecha.getHours() : 21;
+      if (tid === 'spiderman-miles-morales' && (h >= 20 || h < 5)) return 'lluvia';
+      if (tid === 'stranger-things' && h % 2 === 1) return 'tormenta';
+      if (tid === 'demon-slayer' || tid === 'harry-potter' || tid === 'jujutsu-kaisen') return 'niebla';
+      if (tid === 'fittoa' && (h < 7 || h >= 22)) return 'niebla';
+      return 'normal';
+    }
+
+    function pintaClima(t, wB, nf, fecha) {
+      const modo = climaEfectivo(state.T, fecha);
+      state._climaActivo = modo;
+      if (modo === 'normal') return;
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+
+      if (modo === 'lluvia' || modo === 'tormenta') {
+        const pesado = modo === 'tormenta';
+        const wind = pesado ? -2.2 : -1.0;
+        const vyBase = pesado ? 1.55 : 1.0;
+        const col = pesado ? '#bae6fd' : '#7dd3fc';
+        const alphaBase = (pesado ? 0.56 : 0.42) * (1 - 0.15 * wB) + aBoost * 0.25;
+
+        for (let i = 0; i < GOTAS_CLIMA.length; i++) {
+          if (!pesado && i % 3 === 2) continue;
+          const g = GOTAS_CLIMA[i];
+          const gx = (((g[0] + t * wind * 2.2) % 640) + 640) % 640;
+          const gy = ((g[1] + t * g[3] * vyBase) % 390);
+          const len = Math.round(g[2] * (pesado ? 1.35 : 1.0));
+          for (let d = 0; d < len; d++) {
+            px(col, alphaBase * (1 - d * 0.08), gx + (wind < -1.5 ? -Math.floor(d * 0.4) : 0), gy + d, 1, 1);
+          }
+          if (gy > 282 && gy < 386 && i % 7 === 0) {
+            const rw = 2 + ((t + i) % 3);
+            px('#e0f2fe', 0.30 * alphaBase, gx - rw, gy + 1, rw * 2, 1);
+          }
+        }
+        if (pesado) {
+          const flash = ((t * 17 + 13) % 131);
+          if (flash < 2) {
+            px('#e0f2fe', flash === 0 ? 0.22 : 0.10, 0, 0, 640, 280);
+            const lx = 110 + ((t * 97) % 420);
+            for (let y = 8; y < 230; y += 4) {
+              const jx = lx + Math.round(Math.sin(y * 0.18 + t) * 7);
+              px('#f8fafc', 0.92, jx, y, 2, 4);
+              px('#7dd3fc', 0.45, jx - 1, y, 4, 4);
+            }
+          }
+        }
+      } else if (modo === 'nieve') {
+        const alphaBase = 0.72 + 0.2 * nf;
+        for (let i = 0; i < COPOS_CLIMA.length; i++) {
+          const c = COPOS_CLIMA[i];
+          const sx = (((c[0] + Math.sin(t * 0.04 + c[3]) * 14 + t * 0.15) % 640) + 640) % 640;
+          const sy = (c[1] + t * c[2]) % 394;
+          px(i % 4 === 0 ? '#e0f2fe' : '#ffffff', alphaBase, sx, sy, c[4], c[4]);
+        }
+      } else if (modo === 'niebla') {
+        const col = wB > 0.5 ? '#f8fafc' : '#cbd5e1';
+        for (let i = 0; i < 6; i++) {
+          const mx = (((i * 120 + t * (0.25 + (i % 3) * 0.12)) % 760) + 760) % 760 - 120;
+          const my = 252 + i * 14;
+          const mw = 95 + (i % 3) * 45;
+          px(col, 0.09 + 0.06 * nf, mx, my, mw, 5);
+          px(col, 0.05 + 0.04 * nf, mx + 16, my - 2, mw - 32, 2);
+        }
+      }
+    }
+
+    function dispararEvento(tipo) {
+      const opciones = ['cometa', 'invocacion', 'anomalia'];
+      const elegido = opciones.includes(tipo)
+        ? tipo
+        : opciones[Math.floor(Math.random() * opciones.length)];
+      state.evento = {
+        tipo: elegido,
+        inicioTick: state.tick,
+        duracion: 96,
+      };
+      return elegido;
+    }
+
+    function pintaEventoEspecial(t) {
+      const ev = state.evento;
+      if (!ev) return;
+      const age = t - ev.inicioTick;
+      if (age < 0 || age > ev.duracion) {
+        state.evento = null;
+        return;
+      }
+      const p = age / ev.duracion;
+      const env = p < 0.15 ? p / 0.15 : p > 0.8 ? (1 - p) / 0.2 : 1;
+
+      if (ev.tipo === 'cometa') {
+        const cx = 60 + p * 520;
+        const cy = 28 + p * 125 + Math.sin(p * Math.PI) * -18;
+        for (let k = 0; k < 18; k++) {
+          const tx = cx - k * 3.6;
+          const ty = cy - k * 1.1;
+          const a = (1 - k / 18) * 0.85 * env;
+          px(k < 4 ? '#ffffff' : k < 10 ? '#fde047' : '#38bdf8', a, tx, ty, k < 5 ? 3 : 2, k < 5 ? 2 : 1);
+          if (k % 3 === 0) px('#fdf4ff', a * 0.8, tx - 2, ty + ((k % 2 === 0) ? 2 : -2), 1, 1);
+        }
+        px('#ffffff', 0.98 * env, cx - 1, cy - 1, 4, 4);
+      } else if (ev.tipo === 'invocacion') {
+        const col = '#facc15';
+        const col2 = '#38bdf8';
+        for (let a = 0; a < 16; a++) {
+          const ang = (a * Math.PI * 2) / 16 + t * 0.08;
+          const rx = Math.round(Math.cos(ang) * 34);
+          const ry = Math.round(Math.sin(ang) * 14);
+          px(a % 2 === 0 ? col : col2, 0.82 * env, 320 + rx, 224 + ry, 2, 2);
+        }
+        for (const pxCol of [302, 320, 338]) {
+          px(col, 0.22 * env, pxCol - 1, 56, 3, 224);
+          px('#ffffff', 0.50 * env, pxCol, 76, 1, 204);
+        }
+        px(col2, 0.35 * env, 296, 314, 48, 3);
+      } else if (ev.tipo === 'anomalia') {
+        for (let i = -24; i <= 24; i += 2) {
+          const y = 148 + i;
+          const x = 320 + Math.round(Math.sin(i * 0.35 + t * 0.25) * 6);
+          px('#09090b', 0.85 * env, x - 2, y, 5, 2);
+          px(i % 4 === 0 ? '#e11d48' : '#a855f7', 0.90 * env, x - 3, y, 2, 2);
+          px('#f43f5e', 0.90 * env, x + 2, y, 2, 2);
+        }
+        for (let r = 0; r < 10; r++) {
+          const ang = r * 0.62 + t * 0.14;
+          const rad = 14 + (age % 22);
+          px(r % 2 === 0 ? '#f43f5e' : '#c084fc', 0.72 * env, 320 + Math.round(Math.cos(ang) * rad), 148 + Math.round(Math.sin(ang) * rad * 0.7), 2, 1);
+        }
+      }
+    }
+
+    function toggleFoco() {
+      state.foco.activo = !state.foco.activo;
+      state.foco.lastTickMs = Date.now();
+      return state.foco.activo;
+    }
+
+    function resetFoco() {
+      state.foco.restSec = state.foco.descanso ? 5 * 60 : 25 * 60;
+      state.foco.cicloSec = state.foco.restSec;
+      state.foco.lastTickMs = Date.now();
+    }
+
+    function setFocoModo(esDescanso) {
+      state.foco.descanso = !!esDescanso;
+      resetFoco();
+    }
+
+    const TRACK_POOL = [
+      ['Lullaby of Fittoa · OST', '84 BPM · FLACO LO-FI', 220.0],
+      ['Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH', 196.0],
+      ['Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN', 246.94],
+      ['DARK ARIA <LV2> · Sawano', '116 BPM · SINFÓNICO', 185.0],
+      ['Sunflower · Brooklyn Mix', '90 BPM · BOOM-BAP LO-FI', 261.63],
+      ["Kids / Synthwave '83", '104 BPM · ANALÓGICO', 207.65],
+      ['Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI', 233.08],
+      ["Hedwig's Theme · Celesta", '88 BPM · CELESTA', 293.66],
+    ];
+
+    const audioState = {
+      ctx: null,
+      analyser: null,
+      data: null,
+      masterGain: null,
+      playing: false,
+      timerId: null,
+      step: 0,
+      trackOffset: 0,
+      externalMs: 0,
+      externalVal: 0,
+    };
+
+    const audioCtrl = {
+      isPlaying() {
+        return !!audioState.playing;
+      },
+      startSynth() {
+        if (typeof window === 'undefined') return false;
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        if (!audioState.ctx) {
+          audioState.ctx = new AC();
+          audioState.analyser = audioState.ctx.createAnalyser();
+          audioState.analyser.fftSize = 64;
+          audioState.data = new Uint8Array(audioState.analyser.frequencyBinCount);
+          audioState.masterGain = audioState.ctx.createGain();
+          audioState.masterGain.gain.value = 0.08;
+          audioState.masterGain.connect(audioState.analyser);
+          audioState.analyser.connect(audioState.ctx.destination);
+        }
+        if (audioState.ctx.state === 'suspended') {
+          audioState.ctx.resume().catch(() => {});
+        }
+        if (audioState.playing) return true;
+        audioState.playing = true;
+        const playStep = () => {
+          if (!audioState.playing || !audioState.ctx) return;
+          const now = audioState.ctx.currentTime;
+          const baseHz = TRACK_POOL[(audioState.trackOffset % TRACK_POOL.length + TRACK_POOL.length) % TRACK_POOL.length][2];
+          const scale = [1, 1.189, 1.335, 1.498, 1.782, 2.0];
+          const ratio = scale[(audioState.step * 2 + (audioState.step % 3)) % scale.length];
+          const oscNode = audioState.ctx.createOscillator();
+          const filt = audioState.ctx.createBiquadFilter();
+          const g = audioState.ctx.createGain();
+          oscNode.type = audioState.step % 4 === 0 ? 'triangle' : 'sine';
+          oscNode.frequency.setValueAtTime(baseHz * ratio, now);
+          filt.type = 'lowpass';
+          filt.frequency.setValueAtTime(920, now);
+          g.gain.setValueAtTime(0.001, now);
+          g.gain.exponentialRampToValueAtTime(0.32, now + 0.08);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+          oscNode.connect(filt);
+          filt.connect(g);
+          g.connect(audioState.masterGain);
+          oscNode.start(now);
+          oscNode.stop(now + 0.9);
+          audioState.step++;
+        };
+        playStep();
+        audioState.timerId = setInterval(playStep, 520);
+        return true;
+      },
+      stopSynth() {
+        audioState.playing = false;
+        if (audioState.timerId) {
+          clearInterval(audioState.timerId);
+          audioState.timerId = null;
+        }
+        state.audioEnergy = 0;
+        return false;
+      },
+      toggleSynth() {
+        return audioState.playing ? audioCtrl.stopSynth() : audioCtrl.startSynth();
+      },
+      nextTrack() {
+        audioState.trackOffset++;
+        if (audioState.playing) audioState.step = 0;
+      },
+      prevTrack() {
+        audioState.trackOffset--;
+        if (audioState.playing) audioState.step = 0;
+      },
+      setExternalEnergy(v) {
+        audioState.externalVal = Math.max(0, Math.min(1, Number(v) || 0));
+        audioState.externalMs = Date.now();
+      },
+      sampleEnergy() {
+        if (audioState.playing && audioState.analyser && audioState.data) {
+          audioState.analyser.getByteFrequencyData(audioState.data);
+          let sum = 0;
+          const bins = Math.min(12, audioState.data.length);
+          for (let i = 0; i < bins; i++) sum += audioState.data[i];
+          const val = Math.min(1, (sum / (bins * 255)) * 2.2);
+          state.audioEnergy = state.audioEnergy * 0.45 + val * 0.55;
+          return state.audioEnergy;
+        }
+        if (Date.now() - audioState.externalMs < 1500) {
+          state.audioEnergy = state.audioEnergy * 0.4 + audioState.externalVal * 0.6;
+          return state.audioEnergy;
+        }
+        state.audioEnergy = state.audioEnergy * 0.85;
+        return state.audioEnergy;
+      },
+    };
+
     async function cargarTema(id, { pantalla } = {}) {
       state.tema = id;
       if (pantalla) state.pantalla = pantalla;
@@ -456,9 +1302,11 @@
         'sol', 'luna',
       ];
       const bundle = (typeof window !== 'undefined' && window.PIXELZEN_BUNDLE) ? window.PIXELZEN_BUNDLE : null;
-      const bases = (typeof window !== 'undefined' && Array.isArray(window.PIXELZEN_ASSET_BASES) && window.PIXELZEN_ASSET_BASES.length)
+      const fbBase = 'file:///C:/Users/david/.gemini/antigravity-cli/brain/8747b389-799a-4632-897a-f7f55a4233c0/scratch/out_root/docs/';
+      const rawBases = (typeof window !== 'undefined' && Array.isArray(window.PIXELZEN_ASSET_BASES) && window.PIXELZEN_ASSET_BASES.length)
         ? window.PIXELZEN_ASSET_BASES
         : [''];
+      const bases = rawBases.indexOf(fbBase) === -1 ? rawBases.concat([fbBase]) : rawBases;
 
       async function loadImageFallback(rel) {
         let lastErr;
@@ -521,6 +1369,20 @@
       if (!state.D || !state.T) return;
       const D = state.D, T = state.T, I = state.img, t = state.tick;
       const fecha = fechaEfectiva();
+      audioCtrl.sampleEnergy();
+      if (state.modoHora === 0 && opts.autoHourlyEvent !== false) {
+        const hNow = fecha.getHours();
+        if (fecha.getMinutes() === 0 && fecha.getSeconds() < 4 && state._lastHourEvent !== hNow) {
+          state._lastHourEvent = hNow;
+          dispararEvento();
+        }
+      }
+      const pOn = !!state.parallax;
+      const pxSky = pOn ? Math.round((state.parallaxX || 0) * 2) : 0;
+      const pySky = pOn ? Math.round((state.parallaxY || 0) * 1.5) : 0;
+      const pxCloud = pOn ? Math.round((state.parallaxX || 0) * 3.5) : 0;
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.45 : 0;
+
       const s = sol(fecha);
       const wA = s.e <= -14 ? 0 : s.e >= 0 ? 1 : suave((s.e + 14) / 14);
       const wB = s.e <= 0 ? 0 : s.e >= 16 ? 1 : suave(s.e / 16);
@@ -557,39 +1419,40 @@
       if (ef > 0.01) {
         D.estrellas.forEach((e, i) => {
           const o = i % 3 === 0 ? 0.3 + 0.7 * osc(0.10 + (i % 7) * 0.02, i * 1.3) : 1;
-          px(e[2], ef * o, e[0], e[1]);
+          px(e[2], Math.min(1, ef * o * (1 + aBoost * 0.5)), e[0] + pxSky, e[1] + pySky);
         });
         state.brillantes.forEach((e, i) => {
-          const o = ef * 0.8 * Math.max(0, osc(0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
+          const o = Math.min(1, ef * (0.8 + aBoost * 0.4) * Math.max(0, osc(0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45);
           if (o <= 0.004) return;
-          px('#c7ccff', o, e[0] - 1, e[1]); px('#c7ccff', o, e[0] + 1, e[1]);
-          px('#c7ccff', o, e[0], e[1] - 1); px('#c7ccff', o, e[0], e[1] + 1);
+          const sx = e[0] + pxSky, sy = e[1] + pySky;
+          px('#c7ccff', o, sx - 1, sy); px('#c7ccff', o, sx + 1, sy);
+          px('#c7ccff', o, sx, sy - 1); px('#c7ccff', o, sx, sy + 1);
         });
       }
       const alas = T.modo_pajaros === 'wyverns' ? ALAS_WYVERN : ALAS_GRULLA;
       const cuadro = [0, 1, 2, 1][Math.floor(t / 5) % 4];
       for (const [cx, cy] of [
-        [((t * 0.22 + 40) % 760) - 60, 126 + 4 * Math.sin(t * 0.03)],
-        [((t * 0.22 + 22) % 760) - 60, 116 + 4 * Math.sin(t * 0.03 + 1)],
-        [((t * 0.20 + 5) % 760) - 60, 138 + 4 * Math.sin(t * 0.025 + 2)],
+        [((t * 0.22 + 40) % 760) - 60 + pxCloud, 126 + 4 * Math.sin(t * 0.03) + pySky],
+        [((t * 0.22 + 22) % 760) - 60 + pxCloud, 116 + 4 * Math.sin(t * 0.03 + 1) + pySky],
+        [((t * 0.20 + 5) % 760) - 60 + pxCloud, 138 + 4 * Math.sin(t * 0.025 + 2) + pySky],
       ]) {
         for (const [dx, dy] of alas[cuadro]) px(T.color_pajaros, 1, cx + dx, cy + dy);
         px(T.color_pajaros, 1, cx, cy + 1);
       }
 
-      if (conAstro && solOp > 0.01) { ctx.globalAlpha = solOp; ctx.drawImage(I.sol, Math.round(solX - 104), Math.round(solY - 104)); }
-      if (conAstro && lunaOp > 0.01) { ctx.globalAlpha = lunaOp; ctx.drawImage(I.luna, Math.round(lunaX - 104), Math.round(lunaY - 104)); }
+      if (conAstro && solOp > 0.01) { ctx.globalAlpha = solOp; ctx.drawImage(I.sol, Math.round(solX - 104 + pxSky), Math.round(solY - 104 + pySky)); }
+      if (conAstro && lunaOp > 0.01) { ctx.globalAlpha = lunaOp; ctx.drawImage(I.luna, Math.round(lunaX - 104 + pxSky), Math.round(lunaY - 104 + pySky)); }
 
       const noche = s.e < 0;
       const opNub = [noche ? 1 - wA : 0, noche ? wA : 1 - wB, wB];
       const fasesN = ['nubes-noche', 'nubes-dorado', 'nubes-dia'];
       D.nubes.forEach((nb, i) => {
         const v = 0.11 + (i % 4) * 0.035;
-        const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2]);
+        const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2] + pxCloud);
         for (let k = 0; k < 3; k++) {
           if (opNub[k] <= 0.01) continue;
           ctx.globalAlpha = opNub[k];
-          ctx.drawImage(I[fasesN[k]], 0, nb[4], nb[2], nb[3], cx, nb[1], nb[2], nb[3]);
+          ctx.drawImage(I[fasesN[k]], 0, nb[4], nb[2], nb[3], cx, nb[1] + pySky, nb[2], nb[3]);
         }
       });
 
@@ -606,6 +1469,15 @@
       else if (T.modo_heroe === 'stranger_azotamentes') { pintaStrangerPrincipal(t, nf); }
       else if (T.modo_heroe === 'stranger_demogorgon') { pintaStrangerDemogorgon(t, nf); }
       else if (T.modo_heroe === 'stranger_reloj') { pintaStrangerReloj(t, nf); }
+      else if (T.modo_heroe === 'demon_rengoku') { pintaDemonRengoku(t, nf); }
+      else if (T.modo_heroe === 'demon_tokito') { pintaDemonTokito(t, nf); }
+      else if (T.modo_heroe === 'demon_glicinias') { pintaDemonGlicinias(t, nf); }
+      else if (T.modo_heroe === 'naruto_baryon') { pintaNarutoBaryon(t, nf); }
+      else if (T.modo_heroe === 'naruto_konoha') { pintaNarutoKonoha(t, nf); }
+      else if (T.modo_heroe === 'naruto_valle') { pintaNarutoValle(t, nf); }
+      else if (T.modo_heroe === 'jujutsu') { pintaJujutsu(t, nf); }
+      else if (T.modo_heroe === 'jujutsu_sec') { pintaJujutsuSec(t, nf); }
+      else if (T.modo_heroe === 'jujutsu_bloq') { pintaJujutsuBloq(t, nf); }
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {
@@ -679,17 +1551,42 @@
       });
       if (nf > 0.25) {
         MOTAS_MANA.forEach((lc, i) => {
-          const fx = lc[0] + 9 * Math.sin(t * (0.021 + i * 0.002) + i * 2.3);
-          const fy = lc[1] + 5 * Math.sin(t * (0.017 + i * 0.0015) + i * 1.1);
-          const b = nf * Math.pow(Math.max(0, Math.sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
+          const fx = lc[0] + 9 * Math.sin(t * (0.021 + i * 0.002) + i * 2.3) + pxSky;
+          const fy = lc[1] + 5 * Math.sin(t * (0.017 + i * 0.0015) + i * 1.1) + pySky;
+          const b = Math.min(1, nf * (1 + aBoost) * Math.pow(Math.max(0, Math.sin(t * (0.05 + i * 0.004) + i * 1.9)), 2));
           px(T.color_fuegos_halo[i % T.color_fuegos_halo.length], 0.28 * b, fx - 1, fy - 1, 3, 3);
           px(T.color_fuegos_centro[i % T.color_fuegos_centro.length], 0.2 + 0.8 * b, fx, fy, 1, 1);
         });
       }
+      if (state.hudStats && state.hudStats.foco && state.foco && state.foco.activo) {
+        const zCol = state.foco.descanso ? '#38bdf8' : '#e6c06e';
+        for (let z = 0; z < 4; z++) {
+          const zx = 320 + Math.round(Math.sin(t * 0.04 + z * 1.57) * 58);
+          const zy = 356 + Math.round(Math.cos(t * 0.05 + z * 1.57) * 8);
+          const zo = 0.25 + 0.35 * Math.sin(t * 0.09 + z);
+          px(zCol, zo, zx, zy, 2, 1);
+        }
+      }
+      pintaEventoEspecial(t);
+      pintaClima(t, wB, nf, fecha);
       ctx.globalAlpha = 1;
 
       if (opts.onRender) opts.onRender(fecha, T);
     }
+
+    const WORLD_THEMES = {
+      'fittoa': ['#e6c06e', '#72c48c', 'rgba(230, 192, 110, 0.34)'],
+      'continente-demoniaco': ['#ff7854', '#f4a261', 'rgba(255, 120, 84, 0.34)'],
+      'hunter-x-hunter': ['#72c48c', '#f3c65f', 'rgba(114, 196, 140, 0.34)'],
+      'black-clover': ['#b888ff', '#ef4444', 'rgba(184, 136, 255, 0.36)'],
+      'spiderman-miles-morales': ['#f43f5e', '#38bdf8', 'rgba(244, 63, 94, 0.38)'],
+      'solo-leveling': ['#a855f7', '#38bdf8', 'rgba(168, 85, 247, 0.42)'],
+      'demon-slayer': ['#fb923c', '#22d3ee', 'rgba(251, 146, 60, 0.38)'],
+      'stranger-things': ['#ef4444', '#a855f7', 'rgba(239, 68, 68, 0.40)'],
+      'harry-potter': ['#eab308', '#38bdf8', 'rgba(234, 179, 8, 0.36)'],
+      'naruto': ['#ff9b38', '#38bdf8', 'rgba(255, 155, 56, 0.40)'],
+      'jujutsu-kaisen': ['#e11d48', '#c084fc', 'rgba(225, 29, 72, 0.40)'],
+    };
 
     const WORLD_AUDIO = {
       'fittoa': ['Lullaby of Fittoa · OST', '84 BPM · FLACO LO-FI', 'VOL 68%'],
@@ -701,6 +1598,8 @@
       'demon-slayer': ['Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI', 'VOL 70%'],
       'stranger-things': ["Kids / Synthwave '83", '104 BPM · ANALÓGICO', 'VOL 74%'],
       'harry-potter': ["Hedwig's Theme · Celesta", '88 BPM · CELESTA', 'VOL 66%'],
+      'naruto': ['Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN', 'VOL 82%'],
+      'jujutsu-kaisen': ['Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH', 'VOL 84%'],
     };
 
     function detectarGpu() {
@@ -748,7 +1647,20 @@
         return;
       }
       hudEl.style.removeProperty('display');
-      hudEl.classList.toggle('is-multicol', visibles > 5);
+      hudEl.classList.remove('is-multicol');
+      hudEl.classList.toggle('is-compact', !!state.hudCompacto);
+
+      const themeCols = WORLD_THEMES[state.tema] || WORLD_THEMES['fittoa'];
+      if (themeCols) {
+        hudEl.style.setProperty('--hud-accent', themeCols[0]);
+        hudEl.style.setProperty('--hud-accent-2', themeCols[1]);
+        hudEl.style.setProperty('--hud-border', themeCols[2]);
+        if (opts.themeRoot !== false && typeof document !== 'undefined' && document.documentElement) {
+          document.documentElement.style.setProperty('--hud-accent', themeCols[0]);
+          document.documentElement.style.setProperty('--hud-accent-2', themeCols[1]);
+          document.documentElement.style.setProperty('--hud-border', themeCols[2]);
+        }
+      }
 
       const toggleCard = (id, visible) => {
         const el = document.getElementById(id);
@@ -788,9 +1700,10 @@
         const elev = astro.elev !== undefined ? astro.elev : astro.e;
         const az = astro.az || 0;
         const faseTxt = cl.fase || astro.fase || (elev < -6 ? 'NOCHE' : elev < 4 ? 'DORADA' : 'DÍA');
-        const condTxt = cl.cond || (elev < -6 ? (astro.lunaVisible ? 'LUNA Y ESTRELLAS' : 'NOCHE PROFUNDA') : elev < 4 ? 'SOL RASANTE · DORADO' : 'CIELO DESPEJADO');
+        const cAct = state._climaActivo && state._climaActivo !== 'normal' ? ` · ${state._climaActivo.toUpperCase()}` : '';
+        const condTxt = (cl.cond || (elev < -6 ? (astro.lunaVisible ? 'LUNA Y ESTRELLAS' : 'NOCHE PROFUNDA') : elev < 4 ? 'SOL RASANTE · DORADO' : 'CIELO DESPEJADO')) + cAct;
         const luzPct = Math.round(clamp01((elev + 18) / 68) * 100);
-        setTxt('hud-clima-meta', faseTxt);
+        setTxt('hud-clima-meta', state.clima === 'auto' ? `${faseTxt} · AUTO` : faseTxt);
         setTxt('hud-clima-elev', `${elev >= 0 ? '+' : ''}${elev.toFixed(1)}°`);
         setTxt('hud-clima-az', `${Math.round(az)}°`);
         setTxt('hud-clima-luz', condTxt);
@@ -818,8 +1731,8 @@
         setTxt('hud-gpu-meta', g.meta || `${state.fps} FPS`);
         setTxt('hud-gpu-nombre', g.nombre || detectarGpu());
         setTxt('hud-gpu-uso', `${uso}%`);
-        setTxt('hud-gpu-res', g.res || '640×400 PIXEL');
-        setTxt('hud-gpu-temp', g.temp || `${Math.round(49 + 3 * Math.sin(state.tick * 0.04))}°C`);
+        setTxt('hud-gpu-res', g.res || (stats && stats.gpu_vram) || '640×400 PIXEL');
+        setTxt('hud-gpu-temp', g.temp || (stats && stats.gpu_temp) || `${Math.round(49 + 3 * Math.sin(state.tick * 0.04))}°C`);
         setBar('hud-gpu-bar', parseFloat(uso) || 0);
       }
 
@@ -834,13 +1747,27 @@
 
       if (vis.audio) {
         const au = (stats && stats.audio) || {};
-        const info = WORLD_AUDIO[state.tema] || ['Ambient Pixel · OST', '90 BPM · STEREO', 'VOL 70%'];
-        const nivel = au.nivel ?? Math.round(48 + 38 * Math.abs(Math.sin(state.tick * 0.24) * Math.cos(state.tick * 0.11)));
-        setTxt('hud-audio-meta', au.estado || 'SONANDO');
-        setTxt('hud-audio-track', au.pista || info[0]);
-        setTxt('hud-audio-bpm', au.detalle || info[1]);
-        setTxt('hud-audio-vol', au.vol || info[2]);
+        const baseInfo = WORLD_AUDIO[state.tema] || ['Ambient Pixel · OST', '90 BPM · STEREO', 'VOL 70%'];
+        const off = ((audioState.trackOffset % TRACK_POOL.length) + TRACK_POOL.length) % TRACK_POOL.length;
+        const info = audioState.trackOffset === 0 ? baseInfo : [TRACK_POOL[off][0], TRACK_POOL[off][1], baseInfo[2] || 'VOL 75%'];
+        const synthOn = audioCtrl.isPlaying();
+        const estado = au.estado || (stats && stats.audio_meta) || (synthOn ? 'SYNTH EN VIVO' : 'AMBIENT OST');
+        const paused = /PAUSA/i.test(estado);
+        const nivel = au.nivel ?? (synthOn ? Math.round(28 + (state.audioEnergy || 0) * 72) : paused ? 18 : Math.round(48 + 38 * Math.abs(Math.sin(state.tick * 0.24) * Math.cos(state.tick * 0.11))));
+        setTxt('hud-audio-meta', estado);
+        setTxt('hud-audio-track', au.pista || (stats && stats.audio_track) || info[0]);
+        setTxt('hud-audio-bpm', au.detalle || (stats && stats.audio_artist) || info[1]);
+        setTxt('hud-audio-vol', au.vol || (au.pista ? (paused ? 'PAUSA' : 'LIVE') : (synthOn ? 'SYNTH ON' : info[2])));
         setBar('hud-audio-bar', nivel);
+        const eq = document.getElementById('hud-eq');
+        if (eq && eq.children.length) {
+          for (let b = 0; b < eq.children.length; b++) {
+            const hPct = paused ? 15 : synthOn
+              ? Math.max(15, Math.min(100, Math.round(25 + (state.audioEnergy || 0) * 65 * (0.5 + 0.5 * Math.abs(Math.sin(state.tick * 0.4 + b))))))
+              : Math.round(20 + 68 * Math.abs(Math.sin(state.tick * 0.28 + b * 0.85)));
+            eq.children[b].style.height = `${hPct}%`;
+          }
+        }
       }
 
       if (vis.dev) {
@@ -852,16 +1779,33 @@
 
       if (vis.foco) {
         const fc = (stats && stats.foco) || {};
-        const secTot = Math.max(0, Math.floor((Date.now() - state.inicioMs) / 1000));
-        const cicloSec = 25 * 60;
-        const rest = cicloSec - (secTot % cicloSec);
+        const nowMs = Date.now();
+        const delta = Math.max(0, Math.floor((nowMs - (state.foco.lastTickMs || nowMs)) / 1000));
+        if (delta >= 1) {
+          state.foco.lastTickMs += delta * 1000;
+          if (state.foco.activo) {
+            state.foco.sesionSec += delta;
+            state.foco.restSec -= delta;
+            if (state.foco.restSec <= 0) {
+              state.foco.descanso = !state.foco.descanso;
+              if (!state.foco.descanso) state.foco.ciclo += 1;
+              state.foco.cicloSec = state.foco.descanso ? 5 * 60 : 25 * 60;
+              state.foco.restSec = state.foco.cicloSec;
+            }
+          }
+        }
+        const rest = Math.max(0, state.foco.restSec);
+        const tot = Math.max(1, state.foco.cicloSec);
         const mm = p2(Math.floor(rest / 60)), ss = p2(rest % 60);
-        const sm = Math.floor(secTot / 60), ssec = p2(secTot % 60);
-        const cicloNum = Math.floor(secTot / cicloSec) + 1;
-        setTxt('hud-foco-meta', fc.meta || `CICLO ${cicloNum} · ZEN`);
+        const sm = Math.floor(state.foco.sesionSec / 60), ssec = p2(state.foco.sesionSec % 60);
+        const modoTxt = state.foco.descanso ? 'DESCANSO' : 'ZEN';
+        const pausaTxt = state.foco.activo ? '' : ' · PAUSA';
+        setTxt('hud-foco-meta', fc.meta || `CICLO ${state.foco.ciclo} · ${modoTxt}${pausaTxt}`);
         setTxt('hud-foco-timer', fc.timer || `${mm}:${ss}`);
         setTxt('hud-foco-sesion', fc.sesion || `${sm}m ${ssec}s activa`);
-        setBar('hud-foco-bar', ((cicloSec - rest) / cicloSec) * 100);
+        setBar('hud-foco-bar', ((tot - rest) / tot) * 100);
+        const btnFoco = document.getElementById('btn-foco-toggle');
+        if (btnFoco) btnFoco.textContent = state.foco.activo ? '⏸' : '▶';
       }
 
       const citas = (T && T.citas) || [];
@@ -873,7 +1817,19 @@
       }
     }
 
-    return { state, cargarTema, render, actualizaHud };
+    return {
+      state,
+      cargarTema,
+      render,
+      actualizaHud,
+      dispararEvento,
+      audioCtrl,
+      toggleFoco,
+      resetFoco,
+      setFocoModo,
+      WORLD_THEMES,
+      WORLD_AUDIO,
+    };
   }
 
   window.PixelZenCanvas = { createRenderer };

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Telemetría ligera para Windows (sin dependencias externas) usada por PixelZen HUD."""
+import base64
 import ctypes
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -13,7 +15,38 @@ _PREV_CPU = None
 _PREV_NET = None
 _CACHE_SLOW = {'t': 0.0, 'data': None}
 _CACHE_GPU = {'t': 0.0, 'nombre': None}
+_CACHE_NV = {'t': 0.0, 'data': None}
+_CACHE_IFACE = {'t': 0.0, 'ip': None, 'iface': 'RED'}
+_CACHE_AUDIO = {'t': 0.0, 'data': {'estado': 'AMBIENTE BSO'}}
 _AUDIO_NAMES = ('Spotify.exe', 'vlc.exe', 'Music.UI.exe', 'wmplayer.exe')
+
+_PS_MEDIA_B64 = base64.b64encode(r'''
+$ErrorActionPreference = 'SilentlyContinue'
+[Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+Add-Type -AssemblyName System.Runtime.WindowsRuntime
+$asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
+$opMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
+$tMgr = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]).Invoke($null, @($opMgr))
+if ($tMgr.Wait(900)) {
+    $out = @()
+    foreach ($s in $tMgr.Result.GetSessions()) {
+        $opInfo = $s.TryGetMediaPropertiesAsync()
+        $tInfo = $asTaskGeneric.MakeGenericMethod([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties]).Invoke($null, @($opInfo))
+        if ($tInfo.Wait(700)) {
+            $info = $tInfo.Result
+            $pb = $s.GetPlaybackInfo()
+            $out += [pscustomobject]@{
+                App    = [string]$s.SourceAppUserModelId
+                Status = [string]$pb.PlaybackStatus
+                Title  = [string]$info.Title
+                Artist = [string]$info.Artist
+            }
+        }
+    }
+    [Console]::OutputEncoding = [Text.Encoding]::UTF8
+    $out | ConvertTo-Json -Compress
+}
+'''.strip().encode('utf-16le')).decode('ascii')
 
 
 class _FILETIME(ctypes.Structure):
@@ -155,12 +188,31 @@ def red_rapida():
 
     if sys.platform == 'win32':
         wlan = _run_quiet(['netsh', 'wlan', 'show', 'interfaces'], timeout=2)
+        ssid_found = False
         for l in wlan.splitlines():
             if 'SSID' in l and 'BSSID' not in l and ':' in l:
                 ssid = l.split(':', 1)[1].strip()
                 if ssid:
                     iface = ssid[:18]
+                    ssid_found = True
                     break
+        if not ssid_found:
+            now_if = time.monotonic()
+            if _CACHE_IFACE['ip'] == ip and now_if - _CACHE_IFACE['t'] < 30:
+                iface = _CACHE_IFACE['iface']
+            else:
+                addr_out = _run_quiet(['netsh', 'interface', 'ipv4', 'show', 'addresses'], timeout=2)
+                cur_if = ''
+                detected = 'ETHERNET'
+                for line in addr_out.splitlines():
+                    m = re.search(r'"([^"]+)"', line)
+                    if m and ip not in line:
+                        cur_if = m.group(1).strip()
+                    elif ip and ip in line and cur_if:
+                        detected = cur_if.upper()[:18]
+                        break
+                _CACHE_IFACE.update({'t': now_if, 'ip': ip, 'iface': detected})
+                iface = detected
     return {'iface': iface, 'ip': ip, 'rx': rx_s, 'tx': tx_s}
 
 
@@ -234,15 +286,104 @@ def gpu_lento():
     return nombre
 
 
+def _nvidia_smi():
+    now = time.monotonic()
+    if now - _CACHE_NV['t'] < 2.5:
+        return _CACHE_NV['data']
+    info = None
+    if sys.platform == 'win32' and shutil.which('nvidia-smi'):
+        out = _run_quiet([
+            'nvidia-smi',
+            '--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total',
+            '--format=csv,noheader,nounits',
+        ], timeout=2)
+        if out:
+            first = out.splitlines()[0].split(',')
+            if len(first) >= 5:
+                try:
+                    info = {
+                        'nombre': first[0].strip()[:28],
+                        'uso': max(0, min(100, int(first[1].strip()))),
+                        'temp': f'{first[2].strip()}°C',
+                        'res': f'VRAM {first[3].strip()}/{first[4].strip()} MB',
+                    }
+                except ValueError:
+                    info = None
+    _CACHE_NV['t'] = now
+    _CACHE_NV['data'] = info
+    return info
+
+
+def _limpia_app_audio(raw):
+    r = raw or ''
+    if 'Spotify' in r:
+        return 'SPOTIFY'
+    if 'Brave' in r:
+        return 'BRAVE'
+    if 'Chrome' in r:
+        return 'CHROME'
+    if 'Edge' in r or 'msedge' in r.lower():
+        return 'EDGE'
+    if 'Firefox' in r:
+        return 'FIREFOX'
+    if 'vlc' in r.lower():
+        return 'VLC'
+    clean = r.split('!')[-1].replace('.exe', '').strip()
+    return (clean[:12] or 'MEDIA').upper()
+
+
 def audio_rapido():
     if sys.platform != 'win32':
         return {'estado': 'AMBIENTE BSO'}
-    out = _run_quiet(['tasklist', '/NH', '/FO', 'CSV'], timeout=2)
-    low = out.lower()
-    for exe in _AUDIO_NAMES:
-        if exe.lower() in low:
-            return {'estado': f'{exe.split(".")[0].upper()} ACTIVO'}
-    return {'estado': 'AMBIENTE BSO'}
+    now = time.monotonic()
+    if _CACHE_AUDIO['data'] and now - _CACHE_AUDIO['t'] < 3.0:
+        return _CACHE_AUDIO['data']
+
+    res = None
+    ps_out = _run_quiet(
+        ['powershell.exe', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-EncodedCommand', _PS_MEDIA_B64],
+        timeout=3,
+    )
+    if ps_out and (ps_out.startswith('{') or ps_out.startswith('[')):
+        try:
+            parsed = json.loads(ps_out)
+            sessions = parsed if isinstance(parsed, list) else [parsed]
+            con_titulo = [s for s in sessions if isinstance(s, dict) and str(s.get('Title', '')).strip()]
+            pick = next((s for s in con_titulo if 'Spotify' in str(s.get('App', '')) and s.get('Status') == 'Playing'), None)
+            if not pick:
+                pick = next((s for s in con_titulo if s.get('Status') == 'Playing'), None)
+            if not pick:
+                pick = next((s for s in con_titulo if 'Spotify' in str(s.get('App', ''))), None)
+            if not pick and con_titulo:
+                pick = con_titulo[0]
+            if pick:
+                app = _limpia_app_audio(pick.get('App', ''))
+                playing = pick.get('Status') == 'Playing'
+                title = str(pick.get('Title', '')).strip()
+                artist = str(pick.get('Artist', '')).strip()
+                res = {
+                    'estado': f'{app} · EN VIVO' if playing else f'{app} · PAUSA',
+                    'pista': title,
+                    'detalle': artist or f'{app} · AUDIO',
+                    'vol': 'LIVE' if playing else 'PAUSA',
+                    'nivel': 76 if playing else 18,
+                }
+        except Exception:
+            res = None
+
+    if res is None:
+        out = _run_quiet(['tasklist', '/NH', '/FO', 'CSV'], timeout=2)
+        low = out.lower()
+        for exe in _AUDIO_NAMES:
+            if exe.lower() in low:
+                res = {'estado': f'{exe.split(".")[0].upper()} ACTIVO'}
+                break
+        if res is None:
+            res = {'estado': 'AMBIENTE BSO'}
+
+    _CACHE_AUDIO['t'] = now
+    _CACHE_AUDIO['data'] = res
+    return res
 
 
 def recolectar(repo_dir=None):
@@ -252,6 +393,11 @@ def recolectar(repo_dir=None):
     cpu = cpu_pct()
     du = shutil.disk_usage(os.path.splitdrive(repo_dir)[0] + os.sep if sys.platform == 'win32' else '/')
     disco = f'{round(100.0 * du.used / du.total)}%'
+    nv = _nvidia_smi()
+    gpu_data = nv if nv else {
+        'nombre': gpu_lento(),
+        'uso': max(6, min(95, round(cpu * 0.65 + 6))),
+    }
     return {
         'sistema': {
             'cpu': cpu,
@@ -261,10 +407,7 @@ def recolectar(repo_dir=None):
             'bat': bateria(),
             'up': uptime_str(),
         },
-        'gpu': {
-            'nombre': gpu_lento(),
-            'uso': max(6, min(95, round(cpu * 0.65 + 6))),
-        },
+        'gpu': gpu_data,
         'audio': audio_rapido(),
         'red': red_rapida(),
         'dev': dev_lento(repo_dir),
