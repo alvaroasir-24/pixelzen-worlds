@@ -1,4 +1,4 @@
-﻿Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms
+﻿Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
 $ErrorActionPreference = 'SilentlyContinue'
 $Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -47,6 +47,9 @@ function Normaliza-Config($c) {
     }
     if ($null -eq $c.fps) {
         $c | Add-Member -NotePropertyName fps -NotePropertyValue 8 -Force
+    }
+    if ($null -eq $c.soloWidgets) {
+        $c | Add-Member -NotePropertyName soloWidgets -NotePropertyValue $false -Force
     }
     if (-not $c.stats) {
         $c | Add-Member -NotePropertyName stats -NotePropertyValue ([pscustomobject]$defStats) -Force
@@ -112,16 +115,16 @@ $xaml = @"
     <Border x:Name="CardClima" Style="{StaticResource CardStyle}">
       <StackPanel>
         <DockPanel Margin="0,0,0,3">
-          <TextBlock Text="☀ ÓRBITA &amp; CLIMA" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
-          <TextBlock x:Name="TxtClimaMeta" Text="DÍA" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+          <TextBlock Text="☀ CLIMA &amp; ÓRBITA" Foreground="#54DED4" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold" Margin="0,0,6,0"/>
+          <TextBlock x:Name="TxtClimaMeta" Text="UBICACIÓN..." Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" HorizontalAlignment="Right" DockPanel.Dock="Right" TextTrimming="CharacterEllipsis"/>
         </DockPanel>
         <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
         <DockPanel Margin="0,0,0,3">
-          <TextBlock x:Name="TxtClimaElev" Text="SOL --°" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" FontWeight="Bold"/>
-          <TextBlock x:Name="TxtClimaAz" Text="AZ --°" Foreground="#54DED4" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+          <TextBlock x:Name="TxtClimaElev" Text="--°C" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10" FontWeight="Bold"/>
+          <TextBlock x:Name="TxtClimaAz" Text="SOL --°" Foreground="#54DED4" FontFamily="Consolas" FontSize="10" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
         </DockPanel>
         <ProgressBar x:Name="BarClima" Height="4" Minimum="0" Maximum="100" Value="50" Foreground="#E6B45A" Background="#1C2844" BorderBrush="#2F4266" Margin="0,1,0,3"/>
-        <TextBlock x:Name="TxtClimaLuz" Text="CIELO DESPEJADO" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="TxtClimaLuz" Text="OBTENIENDO CLIMA REAL..." Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" TextTrimming="CharacterEllipsis"/>
       </StackPanel>
     </Border>
 
@@ -192,8 +195,12 @@ $xaml = @"
         </DockPanel>
         <Border BorderBrush="#2F4266" BorderThickness="0,0,0,1" Margin="0,0,0,4"/>
         <TextBlock x:Name="TxtAudioTrack" Text="--" Foreground="#E6C06E" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-        <TextBlock x:Name="TxtAudioBpm" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Margin="0,1,0,3" TextTrimming="CharacterEllipsis"/>
-        <ProgressBar x:Name="BarAudio" Height="4" Minimum="0" Maximum="100" Value="65" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266"/>
+        <TextBlock x:Name="TxtAudioBpm" Text="--" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9.5" Margin="0,1,0,4" TextTrimming="CharacterEllipsis"/>
+        <DockPanel LastChildFill="True">
+          <TextBlock x:Name="TxtAudioPos" Text="0:00" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" DockPanel.Dock="Left" Margin="0,0,5,0"/>
+          <TextBlock x:Name="TxtAudioDur" Text="0:00" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" DockPanel.Dock="Right" Margin="5,0,0,0"/>
+          <ProgressBar x:Name="BarAudio" Height="5" Minimum="0" Maximum="100" Value="0" Foreground="#72C48C" Background="#1C2844" BorderBrush="#2F4266" VerticalAlignment="Center"/>
+        </DockPanel>
       </StackPanel>
     </Border>
 
@@ -286,11 +293,13 @@ public class PzWinStyle {
 }
 "@
 
+$script:hudHwnd = [IntPtr]::Zero
 $win.Add_SourceInitialized({
     $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
+    $script:hudHwnd = $hwnd
     $ex = [PzWinStyle]::GetWindowLong($hwnd, -20)
-    [PzWinStyle]::SetWindowLong($hwnd, -20, $ex -bor 0x20 -bor 0x80) | Out-Null
-    [PzWinStyle]::SetWindowPos($hwnd, [IntPtr]::new(1), 0, 0, 0, 0, 0x0013) | Out-Null
+    [PzWinStyle]::SetWindowLong($hwnd, -20, ($ex -bor 0x20 -bor 0x80 -bor 0x08000000)) | Out-Null
+    [PzWinStyle]::SetWindowPos($hwnd, [IntPtr]::new(1), 0, 0, 0, 0, (0x0013 -bor 0x0040)) | Out-Null
 })
 
 # Posicionar todas las tarjetas en una unica columna en la parte derecha del monitor principal
@@ -300,12 +309,252 @@ $win.Left = $primary.Right - 296 - 18
 $win.Top = $primary.Top + 14
 
 $el = @{}
-foreach ($n in 'RootPanel','CardTiempo','CardClima','CardSistema','CardGpu','CardRed','CardAudio','CardDev','CardFoco','CardGrimorio','TxtModo','TxtHora','TxtSeg','TxtFecha','TxtTema','TxtClimaMeta','TxtClimaElev','TxtClimaAz','BarClima','TxtClimaLuz','TxtUp','TxtCpu','BarCpu','TxtRam','BarRam','TxtDisco','TxtBat','TxtGpuMeta','TxtGpuNombre','TxtGpuUso','BarGpu','TxtGpuRes','TxtIface','TxtIp','TxtRx','TxtTx','TxtAudioMeta','TxtAudioTrack','TxtAudioBpm','BarAudio','TxtHost','TxtRepo','TxtTc','TxtFocoMeta','TxtFocoTimer','TxtFocoSesion','BarFoco','TxtAu','TxtQSub','TxtQTxt') {
+foreach ($n in 'RootPanel','CardTiempo','CardClima','CardSistema','CardGpu','CardRed','CardAudio','CardDev','CardFoco','CardGrimorio','TxtModo','TxtHora','TxtSeg','TxtFecha','TxtTema','TxtClimaMeta','TxtClimaElev','TxtClimaAz','BarClima','TxtClimaLuz','TxtUp','TxtCpu','BarCpu','TxtRam','BarRam','TxtDisco','TxtBat','TxtGpuMeta','TxtGpuNombre','TxtGpuUso','BarGpu','TxtGpuRes','TxtIface','TxtIp','TxtRx','TxtTx','TxtAudioMeta','TxtAudioTrack','TxtAudioBpm','TxtAudioPos','TxtAudioDur','BarAudio','TxtHost','TxtRepo','TxtTc','TxtFocoMeta','TxtFocoTimer','TxtFocoSesion','BarFoco','TxtAu','TxtQSub','TxtQTxt') {
     $el[$n] = $win.FindName($n)
+}
+
+$script:extWallCache = $null
+$script:lastExtWallPoll = [datetime]::MinValue
+
+function Convert-HsvToHex([double]$h, [double]$s, [double]$v) {
+    $h = (($h % 360.0) + 360.0) % 360.0
+    $s = [Math]::Max(0.0, [Math]::Min(1.0, $s))
+    $v = [Math]::Max(0.0, [Math]::Min(1.0, $v))
+    $c = $v * $s
+    $x = $c * (1.0 - [Math]::Abs((($h / 60.0) % 2.0) - 1.0))
+    $m = $v - $c
+    $rp = 0.0; $gp = 0.0; $bp = 0.0
+    if ($h -lt 60) { $rp = $c; $gp = $x }
+    elseif ($h -lt 120) { $rp = $x; $gp = $c }
+    elseif ($h -lt 180) { $gp = $c; $bp = $x }
+    elseif ($h -lt 240) { $gp = $x; $bp = $c }
+    elseif ($h -lt 300) { $rp = $x; $bp = $c }
+    else { $rp = $c; $bp = $x }
+    $r = [int][Math]::Max(0, [Math]::Min(255, [Math]::Round(($rp + $m) * 255.0)))
+    $g = [int][Math]::Max(0, [Math]::Min(255, [Math]::Round(($gp + $m) * 255.0)))
+    $b = [int][Math]::Max(0, [Math]::Min(255, [Math]::Round(($bp + $m) * 255.0)))
+    return ('#{0:X2}{1:X2}{2:X2}' -f $r, $g, $b)
+}
+
+function Extraer-PaletaImagen([string]$imgPath) {
+    if (-not $imgPath -or -not (Test-Path -LiteralPath $imgPath)) { return $null }
+    $bmp = $null
+    try {
+        $bmp = [System.Drawing.Bitmap]::new($imgPath)
+        $w = $bmp.Width; $hPx = $bmp.Height
+        if ($w -lt 2 -or $hPx -lt 2) { return $null }
+
+        $bins = @()
+        for ($i = 0; $i -lt 12; $i++) {
+            $bins += [pscustomobject]@{ w = 0.0; cosSum = 0.0; sinSum = 0.0; satSum = 0.0 }
+        }
+        $totW = 0.0
+        for ($gx = 0; $gx -lt 16; $gx++) {
+            $px = [int][Math]::Floor(($gx + 0.5) / 16.0 * $w)
+            if ($px -ge $w) { $px = $w - 1 }
+            for ($gy = 0; $gy -lt 16; $gy++) {
+                $py = [int][Math]::Floor(($gy + 0.5) / 16.0 * $hPx)
+                if ($py -ge $hPx) { $py = $hPx - 1 }
+                $col = $bmp.GetPixel($px, $py)
+                $r = $col.R / 255.0; $g = $col.G / 255.0; $b = $col.B / 255.0
+                $mx = [Math]::Max($r, [Math]::Max($g, $b))
+                $mn = [Math]::Min($r, [Math]::Min($g, $b))
+                $d = $mx - $mn
+                if ($mx -lt 0.14) { continue }
+                $sat = if ($mx -gt 0.001) { $d / $mx } else { 0.0 }
+                if ($sat -lt 0.14 -or ($mx -gt 0.94 -and $sat -lt 0.22)) { continue }
+                $hue = 0.0
+                if ($d -gt 0.0001) {
+                    if ($mx -eq $r) { $hue = 60.0 * ((($g - $b) / $d) % 6.0) }
+                    elseif ($mx -eq $g) { $hue = 60.0 * ((($b - $r) / $d) + 2.0) }
+                    else { $hue = 60.0 * ((($r - $g) / $d) + 4.0) }
+                }
+                if ($hue -lt 0.0) { $hue += 360.0 }
+                $binIdx = [int][Math]::Floor($hue / 30.0) % 12
+                $wt = ($sat * $sat + 0.15) * (0.4 + 0.6 * $mx)
+                $rad = $hue * [Math]::PI / 180.0
+                $bins[$binIdx].w += $wt
+                $bins[$binIdx].cosSum += $wt * [Math]::Cos($rad)
+                $bins[$binIdx].sinSum += $wt * [Math]::Sin($rad)
+                $bins[$binIdx].satSum += $wt * $sat
+                $totW += $wt
+            }
+        }
+        if ($totW -le 0.001) { return @('#475569', '#94A3B8', '#CBD5E1') }
+
+        $b1 = 0
+        for ($i = 1; $i -lt 12; $i++) {
+            if ($bins[$i].w -gt $bins[$b1].w) { $b1 = $i }
+        }
+        $h1 = ([Math]::Atan2($bins[$b1].sinSum, $bins[$b1].cosSum) * 180.0 / [Math]::PI + 360.0) % 360.0
+        $s1 = $bins[$b1].satSum / $bins[$b1].w
+
+        $b2 = -1
+        for ($i = 0; $i -lt 12; $i++) {
+            $dist = [Math]::Abs($i - $b1)
+            if ($dist -gt 6) { $dist = 12 - $dist }
+            if ($dist -ge 2) {
+                if ($b2 -lt 0 -or $bins[$i].w -gt $bins[$b2].w) { $b2 = $i }
+            }
+        }
+        if ($b2 -ge 0 -and $bins[$b2].w -ge ($bins[$b1].w * 0.18)) {
+            $h2 = ([Math]::Atan2($bins[$b2].sinSum, $bins[$b2].cosSum) * 180.0 / [Math]::PI + 360.0) % 360.0
+            $s2 = $bins[$b2].satSum / $bins[$b2].w
+        } else {
+            $h2 = ($h1 + 42.0) % 360.0
+            $s2 = 0.68
+        }
+
+        $s1c = [Math]::Max(0.45, [Math]::Min(0.86, $s1))
+        $s2c = [Math]::Max(0.50, [Math]::Min(0.85, $s2))
+        $borderHex = Convert-HsvToHex $h1 ([Math]::Min(0.72, $s1c)) 0.56
+        $acc1Hex   = Convert-HsvToHex $h1 $s1c 0.94
+        $acc2Hex   = Convert-HsvToHex $h2 $s2c 0.90
+        return @($borderHex, $acc1Hex, $acc2Hex)
+    } catch {
+        return $null
+    } finally {
+        if ($bmp) { try { $bmp.Dispose() } catch {} }
+    }
+}
+
+function Obtener-FondoExterno {
+    $ahoraUtc = [DateTime]::UtcNow
+    if ($script:extWallCache -and ($ahoraUtc - $script:lastExtWallPoll).TotalSeconds -lt 4) {
+        return $script:extWallCache
+    }
+    $script:lastExtWallPoll = $ahoraUtc
+    $defPal = @('#3B5278', '#7CF6EE', '#94A3B8')
+
+    $weProc = Get-Process wallpaper64, wallpaper32, webwallpaper32 -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($weProc) {
+        $candCfgs = @()
+        try {
+            $pExe = $weProc.Path
+            if ($pExe) {
+                $d1 = Split-Path -Parent $pExe
+                $candCfgs += (Join-Path $d1 'config.json')
+                $d2 = Split-Path -Parent $d1
+                if ($d2) { $candCfgs += (Join-Path $d2 'config.json') }
+            }
+        } catch {}
+        $candCfgs += 'C:\Program Files (x86)\Steam\steamapps\common\wallpaper_engine\config.json'
+        $candCfgs += 'C:\Program Files\Steam\steamapps\common\wallpaper_engine\config.json'
+        $weCfg = $candCfgs | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+
+        if ($weCfg) {
+            try {
+                $mtime = (Get-Item -LiteralPath $weCfg).LastWriteTimeUtc
+                if ($script:extWallCache -and $script:extWallCache.cfgPath -eq $weCfg -and $script:extWallCache.mtime -eq $mtime) {
+                    return $script:extWallCache
+                }
+                $weJson = Get-Content -LiteralPath $weCfg -Raw -Encoding UTF8 | ConvertFrom-Json
+                $selFile = $null
+                foreach ($uProp in $weJson.PSObject.Properties) {
+                    $gen = $uProp.Value.general
+                    if ($gen -and $gen.wallpaperconfig -and $gen.wallpaperconfig.selectedwallpapers) {
+                        $sw = $gen.wallpaperconfig.selectedwallpapers
+                        if ($sw.Monitor0 -and $sw.Monitor0.file) {
+                            $selFile = [string]$sw.Monitor0.file
+                        } else {
+                            foreach ($mProp in $sw.PSObject.Properties) {
+                                if ($mProp.Value -and $mProp.Value.file) {
+                                    $selFile = [string]$mProp.Value.file
+                                    break
+                                }
+                            }
+                        }
+                        if ($selFile) { break }
+                    }
+                }
+                $title = ''
+                $pal = $null
+                if ($selFile) {
+                    $normFile = ($selFile -replace '/', '\').Trim()
+                    $projDir = Split-Path -Parent $normFile
+                    $projJsonPath = if ($projDir) { Join-Path $projDir 'project.json' } else { $null }
+                    if ($projJsonPath -and (Test-Path -LiteralPath $projJsonPath)) {
+                        try {
+                            $pj = Get-Content -LiteralPath $projJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
+                            if ($pj.title) { $title = ([string]$pj.title).Trim() }
+                            if ($pj.preview) {
+                                $prevPath = Join-Path $projDir (([string]$pj.preview) -replace '/', '\')
+                                $pal = Extraer-PaletaImagen $prevPath
+                            }
+                        } catch {}
+                    }
+                    if (-not $title) {
+                        $baseNom = [System.IO.Path]::GetFileNameWithoutExtension($normFile)
+                        if ($baseNom -and $baseNom -notin @('scene', 'wallpaper', 'index', 'project')) {
+                            $title = $baseNom
+                        }
+                    }
+                    if (-not $pal -and $normFile -match '\.(jpg|jpeg|png|bmp|gif)$') {
+                        $pal = Extraer-PaletaImagen $normFile
+                    }
+                }
+                if (-not $pal) {
+                    $transPath = Join-Path $env:APPDATA 'Microsoft\Windows\Themes\TranscodedWallpaper'
+                    $pal = Extraer-PaletaImagen $transPath
+                }
+                if (-not $pal) { $pal = $defPal }
+                $script:extWallCache = @{
+                    source  = 'W. ENGINE'
+                    title   = $title
+                    palette = $pal
+                    cfgPath = $weCfg
+                    mtime   = $mtime
+                }
+                return $script:extWallCache
+            } catch {}
+        }
+        return @{
+            source  = 'W. ENGINE'
+            title   = ''
+            palette = $defPal
+            cfgPath = ''
+            mtime   = [datetime]::MinValue
+        }
+    }
+
+    $winPath = Join-Path $env:APPDATA 'Microsoft\Windows\Themes\TranscodedWallpaper'
+    if (-not (Test-Path -LiteralPath $winPath)) {
+        try {
+            $regWp = (Get-ItemProperty 'HKCU:\Control Panel\Desktop' -Name WallPaper -ErrorAction SilentlyContinue).WallPaper
+            if ($regWp -and (Test-Path -LiteralPath $regWp)) { $winPath = $regWp }
+        } catch {}
+    }
+    if ($winPath -and (Test-Path -LiteralPath $winPath)) {
+        try {
+            $mtime = (Get-Item -LiteralPath $winPath).LastWriteTimeUtc
+            if ($script:extWallCache -and $script:extWallCache.cfgPath -eq $winPath -and $script:extWallCache.mtime -eq $mtime) {
+                return $script:extWallCache
+            }
+            $pal = Extraer-PaletaImagen $winPath
+            if (-not $pal) { $pal = $defPal }
+            $script:extWallCache = @{
+                source  = 'ESCRITORIO'
+                title   = ''
+                palette = $pal
+                cfgPath = $winPath
+                mtime   = $mtime
+            }
+            return $script:extWallCache
+        } catch {}
+    }
+
+    return @{
+        source  = 'ESCRITORIO'
+        title   = ''
+        palette = $defPal
+        cfgPath = ''
+        mtime   = [datetime]::MinValue
+    }
 }
 
 function Aplica-Visibilidad($c) {
     $st = $c.stats
+    $soloW = [bool]$c.soloWidgets
     $el.CardTiempo.Visibility   = if ($st.tiempo)   { 'Visible' } else { 'Collapsed' }
     $el.CardClima.Visibility    = if ($st.clima)    { 'Visible' } else { 'Collapsed' }
     $el.CardSistema.Visibility  = if ($st.sistema)  { 'Visible' } else { 'Collapsed' }
@@ -314,11 +563,16 @@ function Aplica-Visibilidad($c) {
     $el.CardAudio.Visibility    = if ($st.audio)    { 'Visible' } else { 'Collapsed' }
     $el.CardDev.Visibility      = if ($st.dev)      { 'Visible' } else { 'Collapsed' }
     $el.CardFoco.Visibility     = if ($st.foco)     { 'Visible' } else { 'Collapsed' }
-    $el.CardGrimorio.Visibility = if ($st.grimorio) { 'Visible' } else { 'Collapsed' }
+    $el.CardGrimorio.Visibility = if ($st.grimorio -and (-not $soloW)) { 'Visible' } else { 'Collapsed' }
 
     $win.Width = 296
     $win.Left = $primary.Right - 296 - 18
-    Apply-WorldTheme $c.tema ([bool]$c.compactoHud)
+    if ($soloW) {
+        $ext = Obtener-FondoExterno
+        Apply-WorldTheme ("ext:" + ($ext.palette -join ',')) ([bool]$c.compactoHud) $ext.palette
+    } else {
+        Apply-WorldTheme $c.tema ([bool]$c.compactoHud) $null
+    }
 }
 
 $script:bc = New-Object System.Windows.Media.BrushConverter
@@ -342,11 +596,11 @@ $script:worldThemes = @{
     'cyberpunk-edgerunners'   = @('#713F12', '#FACC15', '#22D3EE')
 }
 
-function Apply-WorldTheme([string]$temaId, [bool]$compacto) {
+function Apply-WorldTheme([string]$temaId, [bool]$compacto, $customPal = $null) {
     if ($temaId -eq $script:lastThemeApplied -and $compacto -eq $script:lastCompactApplied) { return }
     $script:lastThemeApplied = $temaId
     $script:lastCompactApplied = $compacto
-    $pal = $script:worldThemes[$temaId]
+    $pal = if ($customPal -and $customPal.Count -ge 3) { $customPal } else { $script:worldThemes[$temaId] }
     if (-not $pal) { $pal = $script:worldThemes['fittoa'] }
     try {
         $bBorder = $script:bc.ConvertFromString($pal[0])
@@ -365,6 +619,11 @@ function Apply-WorldTheme([string]$temaId, [bool]$compacto) {
         if ($el.TxtTema) { $el.TxtTema.Foreground = $bAcc1 }
         if ($el.TxtSeg) { $el.TxtSeg.Foreground = $bAcc2 }
         if ($el.TxtFocoTimer) { $el.TxtFocoTimer.Foreground = $bAcc1 }
+        if ($el.TxtClimaElev) { $el.TxtClimaElev.Foreground = $bAcc1 }
+        if ($el.TxtClimaAz) { $el.TxtClimaAz.Foreground = $bAcc2 }
+        if ($el.TxtGpuNombre) { $el.TxtGpuNombre.Foreground = $bAcc1 }
+        if ($el.TxtAudioTrack) { $el.TxtAudioTrack.Foreground = $bAcc1 }
+        if ($el.TxtRepo) { $el.TxtRepo.Foreground = $bAcc1 }
         if ($el.BarClima) { $el.BarClima.Foreground = $bAcc1 }
         if ($el.BarAudio) { $el.BarAudio.Foreground = $bAcc2 }
         if ($el.BarFoco) { $el.BarFoco.Foreground = $bAcc1 }
@@ -376,7 +635,10 @@ $script:sessionStart = Get-Date
 $script:gpuNombre = $null
 $script:gpuMetaCache = $null
 $script:mediaRs = $null
-$script:mediaCache = @{ t = [datetime]::MinValue; ok = $false; app = ''; playing = $false; title = ''; artist = '' }
+$script:mediaCache = @{ t = [datetime]::MinValue; ok = $false; app = ''; playing = $false; title = ''; artist = ''; posSec = 0.0; durSec = 0.0; polledAt = [DateTimeOffset]::UtcNow }
+$script:climaRealPath = Join-Path $DataDir 'clima_real.json'
+$script:climaRealCache = $null
+$script:lastClimaFetch = [datetime]::MinValue
 $script:worldAudio = @{
     'fittoa'                  = @('Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI')
     'continente-demoniaco'    = @('Rikarisu Wasteland · OST', '92 BPM · SYNTH AMBIENT')
@@ -411,8 +673,128 @@ function Limpia-AppAudio($raw) {
     return $clean.ToUpper()
 }
 
+function Traducir-WmoClima([int]$code) {
+    switch ($code) {
+        0  { return @{ desc = 'Despejado'; efecto = 'normal' } }
+        1  { return @{ desc = 'Mayormente despejado'; efecto = 'normal' } }
+        2  { return @{ desc = 'Parcialmente nublado'; efecto = 'normal' } }
+        3  { return @{ desc = 'Nublado'; efecto = 'normal' } }
+        45 { return @{ desc = 'Niebla'; efecto = 'niebla' } }
+        48 { return @{ desc = 'Niebla densa'; efecto = 'niebla' } }
+        { $_ -in 51,53,55,56,57 } { return @{ desc = 'Llovizna'; efecto = 'lluvia' } }
+        { $_ -in 61,63,65,66,67,80,81,82 } { return @{ desc = 'Lluvia'; efecto = 'lluvia' } }
+        { $_ -in 71,73,75,77,85,86 } { return @{ desc = 'Nieve'; efecto = 'nieve' } }
+        { $_ -in 95,96,99 } { return @{ desc = 'Tormenta'; efecto = 'tormenta' } }
+        default { return @{ desc = 'Despejado'; efecto = 'normal' } }
+    }
+}
+
+function Obtener-ClimaReal {
+    $ahoraUtc = [DateTime]::UtcNow
+    if ($script:climaRealCache -and ($ahoraUtc - $script:lastClimaFetch).TotalMinutes -lt 10) {
+        return $script:climaRealCache
+    }
+    if ((-not $script:climaRealCache) -and (Test-Path $script:climaRealPath)) {
+        try {
+            $disk = Get-Content $script:climaRealPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($disk -and $disk.ok -and $disk.updatedUtc) {
+                $dt = [DateTime]::Parse([string]$disk.updatedUtc).ToUniversalTime()
+                $script:climaRealCache = $disk
+                $script:lastClimaFetch = $dt
+                if (($ahoraUtc - $dt).TotalMinutes -lt 10) { return $disk }
+            }
+        } catch {}
+    }
+    if ($script:climaRealCache -and ($ahoraUtc - $script:lastClimaFetch).TotalMinutes -lt 10) {
+        return $script:climaRealCache
+    }
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $lat = $null; $lon = $null; $city = ''; $country = ''
+        if ($script:climaRealCache -and $null -ne $script:climaRealCache.lat -and $null -ne $script:climaRealCache.lon) {
+            $lat = [double]$script:climaRealCache.lat
+            $lon = [double]$script:climaRealCache.lon
+            $city = [string]$script:climaRealCache.city
+            $country = [string]$script:climaRealCache.country
+        } else {
+            try {
+                $g1 = Invoke-RestMethod -Uri 'http://ip-api.com/json/?fields=status,country,regionName,city,lat,lon' -TimeoutSec 3
+                if ($g1 -and $g1.status -eq 'success' -and $null -ne $g1.lat) {
+                    $lat = [double]$g1.lat; $lon = [double]$g1.lon
+                    $city = [string]$g1.city; $country = [string]$g1.country
+                }
+            } catch {}
+            if ($null -eq $lat) {
+                try {
+                    $g2 = Invoke-RestMethod -Uri 'https://ipwho.is/' -TimeoutSec 3
+                    if ($g2 -and $g2.success -and $null -ne $g2.latitude) {
+                        $lat = [double]$g2.latitude; $lon = [double]$g2.longitude
+                        $city = [string]$g2.city; $country = [string]$g2.country
+                    }
+                } catch {}
+            }
+            if ($null -eq $lat) {
+                try {
+                    $g3 = Invoke-RestMethod -Uri 'https://ipapi.co/json/' -Headers @{ 'User-Agent' = 'PixelZenWorlds' } -TimeoutSec 3
+                    if ($g3 -and $null -ne $g3.latitude) {
+                        $lat = [double]$g3.latitude; $lon = [double]$g3.longitude
+                        $city = [string]$g3.city; $country = [string]$g3.country_name
+                    }
+                } catch {}
+            }
+        }
+        if ($null -ne $lat -and $null -ne $lon) {
+            $inv = [System.Globalization.CultureInfo]::InvariantCulture
+            $latS = $lat.ToString('0.####', $inv)
+            $lonS = $lon.ToString('0.####', $inv)
+            $om = Invoke-RestMethod -Uri "https://api.open-meteo.com/v1/forecast?latitude=$latS&longitude=$lonS&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day&timezone=auto" -TimeoutSec 3
+            if ($om -and $om.current) {
+                $cur = $om.current
+                $wmo = Traducir-WmoClima ([int]$cur.weather_code)
+                $resClima = [pscustomobject]@{
+                    ok         = $true
+                    city       = if ($city) { $city } else { 'Tu ubicación' }
+                    country    = $country
+                    lat        = $lat
+                    lon        = $lon
+                    temp       = [Math]::Round([double]$cur.temperature_2m, 1)
+                    apparent   = [Math]::Round([double]$cur.apparent_temperature, 1)
+                    hum        = [int][Math]::Round([double]$cur.relative_humidity_2m)
+                    wind       = [Math]::Round([double]$cur.wind_speed_10m, 0)
+                    code       = [int]$cur.weather_code
+                    desc       = $wmo.desc
+                    efecto     = $wmo.efecto
+                    isDay      = [int]$cur.is_day
+                    updatedUtc = $ahoraUtc.ToString('o')
+                }
+                $script:climaRealCache = $resClima
+                $script:lastClimaFetch = $ahoraUtc
+                if (-not (Test-Path $DataDir)) { New-Item -Path $DataDir -ItemType Directory -Force | Out-Null }
+                ($resClima | ConvertTo-Json -Depth 3) | Set-Content -Path $script:climaRealPath -Encoding UTF8 -ErrorAction SilentlyContinue
+                return $resClima
+            }
+        }
+    } catch {}
+    $script:lastClimaFetch = $ahoraUtc.AddMinutes(-8)
+    return $script:climaRealCache
+}
+
+function Format-TiempoCancion([double]$sec) {
+    $tot = [Math]::Max(0, [int][Math]::Floor($sec))
+    if ($tot -ge 3600) {
+        $h = [int][Math]::Floor($tot / 3600)
+        $m = [int][Math]::Floor(($tot % 3600) / 60)
+        $s = $tot % 60
+        return ('{0}:{1:00}:{2:00}' -f $h, $m, $s)
+    }
+    $m = [int][Math]::Floor($tot / 60)
+    $s = $tot % 60
+    return ('{0}:{1:00}' -f $m, $s)
+}
+
 function Elige-MejorSesion($sessions) {
-    $res = @{ ok = $false; app = ''; playing = $false; title = ''; artist = '' }
+    $res = @{ ok = $false; app = ''; playing = $false; title = ''; artist = ''; posSec = 0.0; durSec = 0.0; polledAt = [DateTimeOffset]::UtcNow }
     if (-not $sessions) { return $res }
     $conTitulo = @($sessions | Where-Object { $_.Title -and $_.Title.Trim().Length -gt 0 })
     if ($conTitulo.Count -eq 0) { return $res }
@@ -428,6 +810,21 @@ function Elige-MejorSesion($sessions) {
         $res.playing = ($pick.Status -eq 'Playing')
         $res.title = $pick.Title.Trim()
         $res.artist = if ($pick.Artist) { $pick.Artist.Trim() } else { '' }
+        $pSec = if ($null -ne $pick.PosSec) { [double]$pick.PosSec } else { 0.0 }
+        $dSec = if ($null -ne $pick.DurSec) { [double]$pick.DurSec } else { 0.0 }
+        if ($res.playing -and $pick.LastUpdUtc) {
+            try {
+                $lu = [DateTimeOffset]::Parse([string]$pick.LastUpdUtc)
+                if ($lu.Year -gt 2000) {
+                    $drift = ([DateTimeOffset]::UtcNow - $lu).TotalSeconds
+                    if ($drift -gt 0 -and $drift -lt 1800) { $pSec += $drift }
+                }
+            } catch {}
+        }
+        if ($dSec -gt 0) { $pSec = [Math]::Min($dSec, [Math]::Max(0.0, $pSec)) }
+        $res.posSec = $pSec
+        $res.durSec = $dSec
+        $res.polledAt = [DateTimeOffset]::UtcNow
     }
     return $res
 }
@@ -437,7 +834,7 @@ function Obtener-MediaActual {
     if (($ahora - $script:mediaCache.t).TotalSeconds -lt 2.5) {
         return $script:mediaCache
     }
-    $res = @{ t = $ahora; ok = $false; app = ''; playing = $false; title = ''; artist = '' }
+    $res = @{ t = $ahora; ok = $false; app = ''; playing = $false; title = ''; artist = ''; posSec = 0.0; durSec = 0.0; polledAt = [DateTimeOffset]::UtcNow }
     try {
         $sessions = @()
         if ($PSVersionTable.PSVersion.Major -eq 5) {
@@ -452,6 +849,7 @@ function Obtener-MediaActual {
             $ps.Runspace = $script:mediaRs
             $null = $ps.AddScript({
                 [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+                [Windows.Foundation.IAsyncOperation`1, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
                 Add-Type -AssemblyName System.Runtime.WindowsRuntime
                 $asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
                 $opMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
@@ -465,11 +863,26 @@ function Obtener-MediaActual {
                     if (-not $tInfo.Wait(700)) { continue }
                     $info = $tInfo.Result
                     $pb = $s.GetPlaybackInfo()
+                    $posSec = 0.0; $durSec = 0.0; $lastUpdIso = ''
+                    try {
+                        $tl = $s.GetTimelineProperties()
+                        if ($tl) {
+                            $stOff = if ($tl.StartTime) { $tl.StartTime.TotalSeconds } else { 0.0 }
+                            $durSec = [Math]::Max(0.0, ($tl.EndTime.TotalSeconds - $stOff))
+                            $posSec = [Math]::Max(0.0, ($tl.Position.TotalSeconds - $stOff))
+                            if ($tl.LastUpdatedTime -and $tl.LastUpdatedTime.Year -gt 2000) {
+                                $lastUpdIso = $tl.LastUpdatedTime.ToUniversalTime().ToString('o')
+                            }
+                        }
+                    } catch {}
                     $out += [pscustomobject]@{
-                        App    = [string]$s.SourceAppUserModelId
-                        Status = [string]$pb.PlaybackStatus
-                        Title  = [string]$info.Title
-                        Artist = [string]$info.Artist
+                        App        = [string]$s.SourceAppUserModelId
+                        Status     = [string]$pb.PlaybackStatus
+                        Title      = [string]$info.Title
+                        Artist     = [string]$info.Artist
+                        PosSec     = $posSec
+                        DurSec     = $durSec
+                        LastUpdUtc = $lastUpdIso
                     }
                 }
                 return $out
@@ -479,6 +892,7 @@ function Obtener-MediaActual {
         } else {
             $helper = @'
 [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+[Windows.Foundation.IAsyncOperation`1, Windows.Foundation, ContentType = WindowsRuntime] | Out-Null
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 $asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
 $opMgr = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()
@@ -491,7 +905,19 @@ if ($tMgr.Wait(900)) {
         if ($tInfo.Wait(700)) {
             $info = $tInfo.Result
             $pb = $s.GetPlaybackInfo()
-            $out += [pscustomobject]@{ App = [string]$s.SourceAppUserModelId; Status = [string]$pb.PlaybackStatus; Title = [string]$info.Title; Artist = [string]$info.Artist }
+            $posSec = 0.0; $durSec = 0.0; $lastUpdIso = ''
+            try {
+                $tl = $s.GetTimelineProperties()
+                if ($tl) {
+                    $stOff = if ($tl.StartTime) { $tl.StartTime.TotalSeconds } else { 0.0 }
+                    $durSec = [Math]::Max(0.0, ($tl.EndTime.TotalSeconds - $stOff))
+                    $posSec = [Math]::Max(0.0, ($tl.Position.TotalSeconds - $stOff))
+                    if ($tl.LastUpdatedTime -and $tl.LastUpdatedTime.Year -gt 2000) {
+                        $lastUpdIso = $tl.LastUpdatedTime.ToUniversalTime().ToString('o')
+                    }
+                }
+            } catch {}
+            $out += [pscustomobject]@{ App = [string]$s.SourceAppUserModelId; Status = [string]$pb.PlaybackStatus; Title = [string]$info.Title; Artist = [string]$info.Artist; PosSec = $posSec; DurSec = $durSec; LastUpdUtc = $lastUpdIso }
         }
     }
     $out | ConvertTo-Json -Compress
@@ -521,6 +947,9 @@ if ($tMgr.Wait(900)) {
             $res.playing = $pick.playing
             $res.title = $pick.title
             $res.artist = $pick.artist
+            $res.posSec = $pick.posSec
+            $res.durSec = $pick.durSec
+            $res.polledAt = $pick.polledAt
         }
     } catch {}
 
@@ -570,14 +999,58 @@ function Formato-Tasa($bps) {
     return "{0}B/s" -f [int]$bps
 }
 
+function Actualiza-BarraAudio($m) {
+    if ($m -and $m.ok) {
+        if ($m.durSec -gt 0) {
+            $extra = 0.0
+            if ($m.playing -and $m.polledAt) {
+                $extra = [Math]::Max(0.0, ([DateTimeOffset]::UtcNow - $m.polledAt).TotalSeconds)
+            }
+            $posNow = [Math]::Min([double]$m.durSec, [Math]::Max(0.0, [double]$m.posSec + $extra))
+            $el.TxtAudioPos.Text = Format-TiempoCancion $posNow
+            $el.TxtAudioDur.Text = Format-TiempoCancion ([double]$m.durSec)
+            $el.BarAudio.Value = [Math]::Round([Math]::Max(0.0, [Math]::Min(100.0, ($posNow / [double]$m.durSec) * 100.0)), 1)
+        } else {
+            $el.TxtAudioPos.Text = '0:00'
+            $el.TxtAudioDur.Text = '--:--'
+            $el.BarAudio.Value = if ($m.playing) { 100 } else { 0 }
+        }
+    } else {
+        $el.TxtAudioPos.Text = '0:00'
+        $el.TxtAudioDur.Text = '--:--'
+        $el.BarAudio.Value = 0
+    }
+}
+
+function Aplicar-AudioInactivo {
+    if ($script:cfg.soloWidgets) {
+        $el.TxtAudioMeta.Text = 'AUDIO SISTEMA'
+        $el.TxtAudioTrack.Text = 'Sin música activa'
+        $el.TxtAudioBpm.Text = 'Spotify · Navegador · Sistema'
+    } else {
+        $info = $script:worldAudio[$script:cfg.tema]
+        if (-not $info) { $info = @('Ambient Pixel · OST', '90 BPM · STEREO') }
+        $el.TxtAudioMeta.Text = 'AMBIENTE BSO'
+        $el.TxtAudioTrack.Text = $info[0]
+        $el.TxtAudioBpm.Text = $info[1]
+    }
+    Actualiza-BarraAudio $null
+}
+
 function Refresca-Hud {
     $now = Get-Date
+    if ($win.WindowState -eq 'Minimized') { $win.WindowState = 'Normal' }
     if ((([int]$now.Second) % 3) -eq 0) {
         $script:cfg = Normaliza-Config (Leer-Config)
         if ($script:cfg.hud -eq $false) { $win.Close(); return }
-        $tp = Join-Path $TemasDir "$($script:cfg.tema)\tema.json"
-        if (Test-Path $tp) {
-            try { $script:temaData = Get-Content $tp -Raw -Encoding UTF8 | ConvertFrom-Json } catch {}
+        if (-not $script:cfg.soloWidgets) {
+            $tp = Join-Path $TemasDir "$($script:cfg.tema)\tema.json"
+            if (Test-Path $tp) {
+                try { $script:temaData = Get-Content $tp -Raw -Encoding UTF8 | ConvertFrom-Json } catch {}
+            }
+        }
+        if ($script:hudHwnd -and $script:hudHwnd -ne [IntPtr]::Zero) {
+            [PzWinStyle]::SetWindowPos($script:hudHwnd, [IntPtr]::new(1), 0, 0, 0, 0, (0x0013 -bor 0x0040)) | Out-Null
         }
     }
     Aplica-Visibilidad $script:cfg
@@ -588,8 +1061,22 @@ function Refresca-Hud {
         $el.TxtSeg.Text = $now.ToString('ss')
         $el.TxtFecha.Text = $now.ToString('dddd d MMM yyyy', [System.Globalization.CultureInfo]::GetCultureInfo('es-ES'))
         $modoMap = @{ 'real' = 'REAL'; '90m' = 'CICLO 90M'; 'demo' = 'DEMO 90S'; 'fija' = 'FIJA' }
-        $el.TxtModo.Text = if ($modoMap.ContainsKey($script:cfg.modo)) { $modoMap[$script:cfg.modo] } else { '90M' }
-        $el.TxtTema.Text = if ($script:temaData -and $script:temaData.nombre) { $script:temaData.nombre } else { $script:cfg.tema }
+        if ($script:cfg.soloWidgets) {
+            $ext = Obtener-FondoExterno
+            $el.TxtModo.Text = $ext.source
+            if ($ext.title) {
+                $el.TxtTema.Text = $ext.title
+                $el.TxtTema.Visibility = 'Visible'
+            } else {
+                $el.TxtTema.Text = ''
+                $el.TxtTema.Visibility = 'Collapsed'
+            }
+        } else {
+            $nomTema = if ($script:temaData -and $script:temaData.nombre) { $script:temaData.nombre } else { $script:cfg.tema }
+            $el.TxtModo.Text = if ($modoMap.ContainsKey($script:cfg.modo)) { $modoMap[$script:cfg.modo] } else { '90M' }
+            $el.TxtTema.Text = $nomTema
+            $el.TxtTema.Visibility = 'Visible'
+        }
     }
 
     if ($st.foco) {
@@ -609,35 +1096,38 @@ function Refresca-Hud {
             $hf = [double]$script:cfg.horaFija
             $fSol = $now.Date.AddHours($hf)
         }
-        $s = Calc-Sol $fSol
+        $clReal = Obtener-ClimaReal
+        $latU = if ($clReal -and $null -ne $clReal.lat) { [double]$clReal.lat } else { 40.4 }
+        $lonU = if ($clReal -and $null -ne $clReal.lon) { [double]$clReal.lon } else { -3.7 }
+        $s = Calc-Sol $fSol $latU $lonU
         $elev = $s.e
         $az = $s.az
         $faseTxt = if ($elev -lt -6) { 'NOCHE' } elseif ($elev -lt 4) { 'DORADA' } else { 'DÍA' }
         $clMode = if ($script:cfg.clima) { [string]$script:cfg.clima } else { 'normal' }
-        $clTag = if ($clMode -and $clMode -ne 'normal') { " · " + $clMode.ToUpper() } else { '' }
-        $luzTxt = (if ($elev -lt -6) { 'ESTRELLAS Y LUNA' } elseif ($elev -lt 4) { 'SOL RASANTE · DORADA' } else { 'CIELO DESPEJADO' }) + $clTag
-        $el.TxtClimaMeta.Text = $faseTxt + $clTag
-        $el.TxtClimaElev.Text = "SOL {0:+0.0;-0.0;0.0}°" -f $elev
-        $el.TxtClimaAz.Text = "AZ {0}°" -f [math]::Round($az)
-        $el.TxtClimaLuz.Text = $luzTxt
+        $clTag = if (-not $script:cfg.soloWidgets -and $clMode -and $clMode -ne 'normal') { " · " + $clMode.ToUpper() } else { '' }
+        if ($clReal -and $clReal.ok) {
+            $ciudadUp = ([string]$clReal.city).ToUpper()
+            $el.TxtClimaMeta.Text = "📍 $ciudadUp"
+            $el.TxtClimaElev.Text = ("🌡 {0}°C · HUM {1}%" -f $clReal.temp, $clReal.hum)
+            $el.TxtClimaAz.Text = ("💨 {0} km/h · SOL {1:+0;-0;0}°" -f $clReal.wind, [math]::Round($elev))
+            $el.TxtClimaLuz.Text = ("{0} · {1}{2}" -f ([string]$clReal.desc).ToUpper(), $faseTxt, $clTag)
+        } else {
+            $luzTxt = (if ($elev -lt -6) { 'ESTRELLAS Y LUNA' } elseif ($elev -lt 4) { 'SOL RASANTE · DORADA' } else { 'CIELO DESPEJADO' }) + $clTag
+            $el.TxtClimaMeta.Text = $faseTxt + $clTag
+            $el.TxtClimaElev.Text = "SOL {0:+0.0;-0.0;0.0}°" -f $elev
+            $el.TxtClimaAz.Text = "AZ {0}°" -f [math]::Round($az)
+            $el.TxtClimaLuz.Text = $luzTxt
+        }
         $el.BarClima.Value = [math]::Max(4, [math]::Min(100, (($elev + 18.0) / 68.0) * 100.0))
     }
 
     if ($st.audio -and $script:mediaCache.ok) {
-        if ($script:mediaCache.playing) {
-            $el.BarAudio.Value = 58 + [math]::Round(36 * [math]::Abs([math]::Sin($now.Second * 0.45)))
-        } else {
-            $el.BarAudio.Value = 18
-        }
+        Actualiza-BarraAudio $script:mediaCache
     } elseif ($st.audio) {
-        $info = $script:worldAudio[$script:cfg.tema]
-        if (-not $info) { $info = @('Ambient Pixel · OST', '90 BPM · STEREO') }
-        $el.TxtAudioTrack.Text = $info[0]
-        $el.TxtAudioBpm.Text = $info[1]
-        $el.BarAudio.Value = 52 + [math]::Round(36 * [math]::Abs([math]::Sin($now.Second * 0.45)))
+        Aplicar-AudioInactivo
     }
 
-    if ($st.grimorio -and $script:temaData -and $script:temaData.citas.Count -gt 0) {
+    if ($st.grimorio -and (-not $script:cfg.soloWidgets) -and $script:temaData -and $script:temaData.citas.Count -gt 0) {
         $idx = [math]::Floor([DateTimeOffset]::UtcNow.ToUnixTimeSeconds() / 45) % $script:temaData.citas.Count
         $cita = $script:temaData.citas[$idx]
         $el.TxtAu.Text = $cita.au
@@ -654,12 +1144,9 @@ function Refresca-Hud {
                     $el.TxtAudioMeta.Text = if ($media.playing) { "$($media.app) · EN VIVO" } else { "$($media.app) · PAUSA" }
                     $el.TxtAudioTrack.Text = $media.title
                     $el.TxtAudioBpm.Text = if ($media.artist) { $media.artist } else { "$($media.app) · AUDIO ACTIVO" }
+                    Actualiza-BarraAudio $media
                 } else {
-                    $info = $script:worldAudio[$script:cfg.tema]
-                    if (-not $info) { $info = @('Ambient Pixel · OST', '90 BPM · STEREO') }
-                    $el.TxtAudioMeta.Text = 'AMBIENTE BSO'
-                    $el.TxtAudioTrack.Text = $info[0]
-                    $el.TxtAudioBpm.Text = $info[1]
+                    Aplicar-AudioInactivo
                 }
             } catch {}
         }

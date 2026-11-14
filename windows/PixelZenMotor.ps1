@@ -10,10 +10,20 @@ param(
     [string]$Clima = 'normal',
     [string]$TemaSecundario = '',
     [int]$RotacionMinutos = 0,
-    [bool]$PausaJuego = $true,
-    [bool]$AudioReactivo = $true,
-    [bool]$Hotkeys = $true
+    [object]$PausaJuego = $true,
+    [object]$AudioReactivo = $true,
+    [object]$Hotkeys = $true,
+    [switch]$SelfTest
 )
+
+function ConvertTo-PzBool($val, [bool]$def = $true) {
+    if ($null -eq $val) { return $def }
+    if ($val -is [bool]) { return $val }
+    $s = ([string]$val).Trim().ToLowerInvariant()
+    if ($s -in @('1','true','$true','yes','si','on')) { return $true }
+    if ($s -in @('0','false','$false','no','off')) { return $false }
+    return $def
+}
 
 $ErrorActionPreference = 'Continue'
 Add-Type -AssemblyName System.Drawing, System.Windows.Forms
@@ -31,13 +41,15 @@ function Write-MotorLog([string]$msg) {
 Set-Content -Path $LogFile -Value "=== PixelZenMotor inicio (PID=$PID) ===" -Encoding UTF8 -ErrorAction SilentlyContinue
 
 $PidFile = Join-Path $env:TEMP 'pixelzen_motor.pid'
-if (Test-Path $PidFile) {
-    $old = Get-Content $PidFile -ErrorAction SilentlyContinue
-    if ($old -and $old -ne $PID) {
-        Stop-Process -Id ([int]$old) -Force -ErrorAction SilentlyContinue
+if (-not $SelfTest) {
+    if (Test-Path $PidFile) {
+        $old = Get-Content $PidFile -ErrorAction SilentlyContinue
+        if ($old -and $old -ne $PID) {
+            Stop-Process -Id ([int]$old) -Force -ErrorAction SilentlyContinue
+        }
     }
+    Set-Content -Path $PidFile -Value $PID -Encoding ASCII
 }
-Set-Content -Path $PidFile -Value $PID -Encoding ASCII
 
 $TemasBase = Join-Path $Aqui 'lively\temas'
 $EsInstalada = Test-Path $TemasBase
@@ -235,6 +247,9 @@ public class PzmRenderer {
     readonly ColorMatrix _cm = new ColorMatrix();
     public readonly Bitmap Frame = new Bitmap(640, 400, PixelFormat.Format32bppPArgb);
     public string ClimaMode = "normal";
+    public string RealClimaEfecto = "";
+    public double RealLat = 40.4;
+    public double RealLon = -3.7;
     public string TemaId = "fittoa";
     public bool AudioReactivo = true;
     public double AudioBoost = 0.0;
@@ -1370,6 +1385,7 @@ public class PzmRenderer {
     string ClimaEfectivo(DateTime fecha) {
         string m = string.IsNullOrEmpty(ClimaMode) ? "normal" : ClimaMode;
         if (m != "auto") return m;
+        if (!string.IsNullOrEmpty(RealClimaEfecto)) return RealClimaEfecto;
         int h = fecha.Hour;
         if ((TemaId == "spiderman-miles-morales" && (h >= 20 || h < 5)) || TemaId == "cyberpunk-edgerunners") return "lluvia";
         if (TemaId == "stranger-things" && (h % 2 == 1)) return "tormenta";
@@ -1507,7 +1523,7 @@ public class PzmRenderer {
     public void Render(PzmSceneData S, DateTime fecha, int t) {
         if (S == null || S.CieloNoche == null || S.EscenaNoche == null) return;
         double e, az, H, H0;
-        Solar(fecha, 40.4, -3.7, out e, out az, out H, out H0);
+        Solar(fecha, RealLat, RealLon, out e, out az, out H, out H0);
         double wA = e <= -14 ? 0 : (e >= 0 ? 1 : Suave((e + 14) / 14));
         double wB = e <= 0 ? 0 : (e >= 16 ? 1 : Suave(e / 16));
         double nf = Clamp01((4 - e) / 10);
@@ -2274,7 +2290,10 @@ public static class PzmSystemGuard {
     [DllImport("user32.dll")]
     static extern short GetAsyncKeyState(int vKey);
 
-    static readonly int _selfPid = System.Diagnostics.Process.GetCurrentProcess().Id;
+    [DllImport("kernel32.dll")]
+    static extern uint GetCurrentProcessId();
+
+    static readonly int _selfPid = (int)GetCurrentProcessId();
     static int _lastMask = 0;
 
     public static bool IsFullscreenAppActive() {
@@ -2459,6 +2478,38 @@ function Resolver-RutaVariante([string]$temaDir, [string]$variante) {
     return @{ Dir = $temaDir; ConAstro = $true }
 }
 
+if ($SelfTest) {
+    $r = New-Object PzmRenderer
+    $r.TemaId = $Tema
+    $r.ClimaMode = $Clima
+    $r.AudioReactivo = ConvertTo-PzBool $AudioReactivo $true
+    $ruta = Resolver-RutaVariante (Join-Path $TemasBase $Tema) $FondoPrincipal
+    $sc = Cargar-SceneData $ruta.Dir $ruta.ConAstro
+    if (-not $sc -or -not $sc.CieloNoche -or -not $sc.EscenaNoche) {
+        Write-Error "SELFTEST_FAIL: escena no cargada para $Tema ($($ruta.Dir))"
+        exit 2
+    }
+    $dtTest = if ($Modo -eq 'fija') { (Get-Date).Date.AddHours($Hora) } else { Get-Date }
+    $r.Render($sc, $dtTest, 0)
+    $b0 = New-Object int[] (640 * 400)
+    $bd0 = $r.Frame.LockBits((New-Object System.Drawing.Rectangle(0, 0, 640, 400)), [System.Drawing.Imaging.ImageLockMode]::ReadOnly, [System.Drawing.Imaging.PixelFormat]::Format32bppPArgb)
+    [System.Runtime.InteropServices.Marshal]::Copy($bd0.Scan0, $b0, 0, $b0.Length)
+    $r.Frame.UnlockBits($bd0)
+
+    $r.Render($sc, $dtTest, 12)
+    $b1 = New-Object int[] (640 * 400)
+    $bd1 = $r.Frame.LockBits((New-Object System.Drawing.Rectangle(0, 0, 640, 400)), [System.Drawing.Imaging.ImageLockMode]::ReadOnly, [System.Drawing.Imaging.PixelFormat]::Format32bppPArgb)
+    [System.Runtime.InteropServices.Marshal]::Copy($bd1.Scan0, $b1, 0, $b1.Length)
+    $r.Frame.UnlockBits($bd1)
+
+    $diff = 0
+    for ($i = 0; $i -lt $b0.Length; $i++) { if ($b0[$i] -ne $b1[$i]) { $diff++ } }
+    $sc.DisposeImages()
+    Write-Output "SELFTEST_OK tema=$Tema diff=$diff pj=$(ConvertTo-PzBool $PausaJuego $true) ar=$(ConvertTo-PzBool $AudioReactivo $true) hk=$(ConvertTo-PzBool $Hotkeys $true)"
+    if ($diff -le 0) { exit 3 }
+    exit 0
+}
+
 $script:desktopParent = [IntPtr]::Zero
 $script:desktopAfter = [IntPtr]::Zero
 $script:desktopWorkerBelow = [IntPtr]::Zero
@@ -2478,9 +2529,9 @@ $script:fondoSecAct = if ($FondoSecundario) { $FondoSecundario } else { 'secunda
 $script:climaAct = if ($Clima) { $Clima } else { 'normal' }
 $script:temaSecAct = if ($TemaSecundario) { $TemaSecundario } else { 'igual' }
 $script:rotacionMinAct = [int]$RotacionMinutos
-$script:pausaJuegoAct = [bool]$PausaJuego
-$script:audioAct = [bool]$AudioReactivo
-$script:hotkeysAct = [bool]$Hotkeys
+$script:pausaJuegoAct = ConvertTo-PzBool $PausaJuego $true
+$script:audioAct = ConvertTo-PzBool $AudioReactivo $true
+$script:hotkeysAct = ConvertTo-PzBool $Hotkeys $true
 $script:pauseManual = $false
 $script:autoPausado = $false
 $script:eventoSeqAct = 0
@@ -2507,6 +2558,27 @@ $script:rendSec = New-Object PzmRenderer
 $script:scenePrim = $null
 $script:sceneSec = $null
 $script:forms = @()
+$script:climaRealPath = Join-Path $DataDir 'clima_real.json'
+
+function Sincronizar-ClimaRealMotor {
+    try {
+        if (-not (Test-Path $script:climaRealPath)) { return }
+        $rawCl = Get-Content $script:climaRealPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($rawCl) {
+            if ($rawCl.efecto) {
+                $script:rendPrim.RealClimaEfecto = [string]$rawCl.efecto
+                $script:rendSec.RealClimaEfecto = [string]$rawCl.efecto
+            }
+            if ($null -ne $rawCl.lat -and $null -ne $rawCl.lon) {
+                $script:rendPrim.RealLat = [double]$rawCl.lat
+                $script:rendPrim.RealLon = [double]$rawCl.lon
+                $script:rendSec.RealLat = [double]$rawCl.lat
+                $script:rendSec.RealLon = [double]$rawCl.lon
+            }
+        }
+    } catch {}
+}
+Sincronizar-ClimaRealMotor
 
 function Obtener-TemasLista {
     if (-not (Test-Path $TemasBase)) { return @('fittoa') }
@@ -2694,6 +2766,7 @@ $timer.Add_Tick({
     }
 
     if (($t % 8) -eq 0 -and (Test-Path $ConfigPath)) {
+        if (($t % 64) -eq 0) { Sincronizar-ClimaRealMotor }
         try {
             $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
             if ($wt -ne $script:lastCfgWrite) {
