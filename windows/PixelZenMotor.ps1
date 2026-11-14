@@ -86,6 +86,7 @@ public class PzmSceneData {
     public bool ModoWyvern;
     public bool ModoMiles;
     public bool ModoMilesColgado;
+    public string ModoHeroe = "";
     public bool ModoBrasas;
     public bool SinLago;
     public Color ColorPajaros = Color.FromArgb(40, 48, 72);
@@ -460,6 +461,150 @@ public class PzmRenderer {
         }
     }
 
+    void PintaTormentaStranger(Graphics g, int t, double nf, string modo) {
+        double pulse = 0.04 + 0.05 * Osc(t, 0.08, 0.5);
+        Px(g, Color.FromArgb(255, 30, 60), pulse * (0.6 + 0.4 * nf), 0, 0, 640, 276);
+        int slot = t / 44;
+        int age = t % 44;
+        if (age >= 6) return;
+        double alpha = (1.0 - age / 6.0) * (age % 2 == 0 ? 1.0 : 0.55);
+        Px(g, Color.FromArgb(255, 42, 72), alpha * 0.14, 0, 0, 640, 272);
+        int[] anchors = modo == "stranger_demogorgon"
+            ? new int[] { 385, 428, 472, 340 }
+            : (modo == "stranger_reloj"
+                ? new int[] { 276, 364, 240, 400 }
+                : new int[] { 132, 174, 212, 154 });
+        int lx = anchors[slot % anchors.Length];
+        int yIni = modo == "stranger_azotamentes" ? 54 : 26;
+        Color cBoltOut = Color.FromArgb(255, 40, 72);
+        Color cBoltCore = Color.FromArgb(255, 216, 226);
+        Color cBoltBranch = Color.FromArgb(255, 52, 84);
+        for (int i = 0; i < 120; i += 2) {
+            int jit = Math.Sin(slot * 7.3 + i * 0.47) > 0.25 ? 2 : (Math.Cos(slot * 3.1 + i * 0.61) < -0.25 ? -2 : 0);
+            lx += jit;
+            int ly = yIni + i;
+            if (ly > 268) break;
+            Px(g, cBoltOut, alpha * 0.72, lx - 1, ly, 3, 2);
+            Px(g, cBoltCore, alpha, lx, ly, 1, 2);
+            if (i == 44 || i == 82) {
+                int dir = (slot + i) % 2 == 0 ? 1 : -1;
+                for (int b = 0; b < 22; b += 2) {
+                    Px(g, cBoltBranch, alpha * 0.68, lx + dir * b, ly + b, 2, 2);
+                }
+            }
+        }
+    }
+
+    void PintaStrangerPrincipal(Graphics g, int t, double nf) {
+        Color cSpore = Color.FromArgb(255, 48, 76);
+        Color cShadow = Color.FromArgb(42, 8, 20);
+        for (int i = 0; i < 12; i++) {
+            double ang = t * 0.07 + i * 0.52;
+            int wx = 168 + (int)Math.Round(Math.Cos(ang) * (24 + (i % 4) * 14));
+            int wy = 148 + (int)Math.Round(Math.Sin(ang * 0.8) * 32.0 - ((t * 0.4 + i * 5) % 18.0));
+            Px(g, (i % 2 == 0) ? cSpore : cShadow, 0.48 + 0.35 * nf, wx, wy, 2, 2);
+        }
+
+        int[] oxs = new int[] { 0, -42, -84, -126 };
+        int[] bys = new int[] { 344, 338, 346, 340 };
+        Color[] coats = new Color[] {
+            Color.FromArgb(44, 92, 168), Color.FromArgb(212, 60, 68),
+            Color.FromArgb(226, 136, 50), Color.FromArgb(62, 138, 92)
+        };
+        Color[] hats = new Color[] {
+            Color.FromArgb(230, 66, 66), Color.FromArgb(27, 32, 48),
+            Color.FromArgb(38, 56, 38), Color.FromArgb(84, 56, 132)
+        };
+        Color cTire = Color.FromArgb(29, 32, 44);
+        Color cSpoke = Color.FromArgb(168, 180, 204);
+        Color cFrame = Color.FromArgb(58, 64, 82);
+        Color cHandle = Color.FromArgb(124, 132, 152);
+        Color cPack = Color.FromArgb(24, 26, 36);
+        Color cSkin = Color.FromArgb(222, 178, 146);
+        Color cBeam = Color.FromArgb(255, 240, 184);
+        Color cLamp = Color.FromArgb(255, 248, 212);
+
+        double leadX = ((t * 1.65) % 860.0) - 70.0;
+        int spoke = (t / 2) % 2;
+        for (int idx = 0; idx < 4; idx++) {
+            int cx = (int)Math.Round(leadX + oxs[idx]);
+            if (cx < -35 || cx > 665) continue;
+            int by = bys[idx];
+            int bob = Math.Sin(t * 0.45 + idx * 1.4) > 0.35 ? -1 : 0;
+            for (int w = 0; w < 2; w++) {
+                int wx = w == 0 ? cx - 6 : cx + 6;
+                Px(g, cTire, 0.95, wx - 4, by - 7, 8, 2);
+                Px(g, cTire, 0.95, wx - 4, by - 1, 8, 2);
+                Px(g, cTire, 0.95, wx - 4, by - 6, 2, 6);
+                Px(g, cTire, 0.95, wx + 2, by - 6, 2, 6);
+                Px(g, cSpoke, 0.90, wx + (spoke != 0 ? 0 : -1), by - 4, 1, 1);
+                Px(g, cSpoke, 0.85, wx + (spoke != 0 ? 1 : 0), by - 5, 1, 1);
+            }
+            Px(g, cFrame, 0.95, cx - 6, by - 6, 13, 1);
+            Px(g, cHandle, 0.95, cx + 4, by - 10, 1, 4);
+            Px(g, coats[idx], 0.96, cx - 2, by - 14 + bob, 5, 6);
+            Px(g, cPack, 0.96, cx - 3, by - 13 + bob, 2, 4);
+            Px(g, cSkin, 0.96, cx - 1, by - 16 + bob, 3, 2);
+            Px(g, hats[idx], 0.96, cx - 2, by - 18 + bob, 5, 2);
+            for (int i = 1; i <= 22; i += 2) {
+                int rad = Math.Max(1, i / 5);
+                double opBeam = Math.Max(0.04, (0.34 - i * 0.013) * (0.45 + 0.55 * nf));
+                Px(g, cBeam, opBeam, cx + 7 + i, by - 9 - rad + 1, 2, rad * 2 - 1);
+            }
+            Px(g, cLamp, 0.95, cx + 6, by - 9, 2, 1);
+        }
+    }
+
+    void PintaStrangerDemogorgon(Graphics g, int t, double nf) {
+        double mawP = 0.45 + 0.55 * Osc(t, 0.14, 0.2);
+        Px(g, Color.FromArgb(255, 36, 72), 0.22 * mawP, 412, 314, 13, 13);
+        Px(g, Color.FromArgb(255, 200, 212), 0.65 * mawP, 417, 319, 3, 3);
+        Color cSpA = Color.FromArgb(255, 58, 94);
+        Color cSpB = Color.FromArgb(255, 208, 216);
+        for (int i = 0; i < 10; i++) {
+            int sx = 392 + ((i * 19 + (int)Math.Round(t * 0.5)) % 56);
+            int sy = 342 - ((int)(t * 0.55 + i * 9) % 44);
+            Px(g, (i % 2 == 0) ? cSpA : cSpB, 0.55, sx, sy, 1, 1);
+        }
+        Color[] cols = new Color[] {
+            Color.FromArgb(255, 46, 106), Color.FromArgb(72, 232, 255),
+            Color.FromArgb(255, 212, 72), Color.FromArgb(82, 255, 136)
+        };
+        int active = (t / 6) % 8;
+        for (int i = 0; i < 8; i++) {
+            int lx = 78 + i * 10;
+            int ly = 292 + (i % 2) * 5;
+            bool isLit = (i == active) || (((t / 14 + i) % 5) == 0);
+            double op = (isLit ? 0.95 : 0.30) * (0.55 + 0.45 * nf);
+            Color col = cols[i % 4];
+            Px(g, col, 0.24 * op, lx - 1, ly - 1, 4, 3);
+            Px(g, col, op, lx, ly, 2, 1);
+        }
+    }
+
+    void PintaStrangerReloj(Graphics g, int t, double nf) {
+        double ang = 0.14 * Math.Sin(t * 0.14);
+        int px0 = 320, py0 = 232, len = 56;
+        Color cRod = Color.FromArgb(230, 188, 88);
+        Color cBob = Color.FromArgb(242, 202, 98);
+        Color cHi = Color.FromArgb(255, 244, 190);
+        for (int r = 0; r <= len; r += 2) {
+            int rx = (int)Math.Round(px0 + Math.Sin(ang) * r);
+            int ry = (int)Math.Round(py0 + Math.Cos(ang) * r);
+            Px(g, cRod, 0.96, rx, ry, 1, 2);
+        }
+        int bx = (int)Math.Round(px0 + Math.Sin(ang) * len);
+        int by = (int)Math.Round(py0 + Math.Cos(ang) * len);
+        Px(g, cBob, 0.98, bx - 3, by - 3, 7, 7);
+        Px(g, cHi, 0.90, bx - 1, by - 1, 3, 3);
+        Color cRift = Color.FromArgb(255, 72, 104);
+        for (int k = 0; k < 6; k++) {
+            int cy = 172 + ((t * 2 + k * 33) % 180);
+            int cx = 320 + (int)Math.Round(Math.Sin(cy * 0.15 + t * 0.08) * 14);
+            Px(g, cRift, 0.55 + 0.35 * nf, cx, cy, 2, 2);
+        }
+    }
+
     public void Render(PzmSceneData S, DateTime fecha, int t) {
         if (S == null || S.CieloNoche == null || S.EscenaNoche == null) return;
         double e, az, H, H0;
@@ -540,12 +685,19 @@ public class PzmRenderer {
                 }
             }
 
+            if (S.ModoHeroe != null && S.ModoHeroe.StartsWith("stranger_")) {
+                PintaTormentaStranger(g, t, nf, S.ModoHeroe);
+            }
+
             DrawAlpha(g, S.EscenaNoche, 0, 0, 1.0);
             DrawAlpha(g, S.EscenaDorado, 0, 0, wA);
             DrawAlpha(g, S.EscenaDia, 0, 0, wB);
 
             if (S.ModoMiles) { PintaFerry(g, t, nf); PintaMiles(g, t, nf); }
             else if (S.ModoMilesColgado) { PintaFerry(g, t, nf); PintaMilesColgado(g, t, nf); }
+            else if (S.ModoHeroe == "stranger_azotamentes") { PintaStrangerPrincipal(g, t, nf); }
+            else if (S.ModoHeroe == "stranger_demogorgon") { PintaStrangerDemogorgon(g, t, nf); }
+            else if (S.ModoHeroe == "stranger_reloj") { PintaStrangerReloj(g, t, nf); }
 
             if (S.Chimenea != null && S.Chimenea.Length >= 2) {
                 int hx = S.Chimenea[0], hy = S.Chimenea[1];
@@ -1265,6 +1417,7 @@ function Cargar-SceneData([string]$dir, [bool]$conAstro) {
         $sd.ModoWyvern = ($t.modo_pajaros -eq 'wyverns')
         $sd.ModoMiles = ($t.modo_heroe -eq 'miles_morales')
         $sd.ModoMilesColgado = ($t.modo_heroe -eq 'miles_colgado')
+        $sd.ModoHeroe = if ($t.modo_heroe) { [string]$t.modo_heroe } else { "" }
         $sd.ModoBrasas = ($t.modo_particulas -eq 'brasas_mana')
         $sd.SinLago = [bool]($t.sin_lago)
         $sd.ColorPajaros = [PzmSceneData]::ParseHex($t.color_pajaros, $sd.ColorPajaros)

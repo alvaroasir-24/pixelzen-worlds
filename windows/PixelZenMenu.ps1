@@ -76,9 +76,13 @@ function Cargar-Config {
         fondoBloqueo = 'bloqueo'
         stats = [ordered]@{
             tiempo = $true
+            clima = $true
             sistema = $true
+            gpu = $true
             red = $true
+            audio = $true
             dev = $true
+            foco = $true
             grimorio = $true
         }
     }
@@ -89,7 +93,7 @@ function Cargar-Config {
                 if ($null -ne $raw.$k) { $def[$k] = $raw.$k }
             }
             if ($raw.stats) {
-                foreach ($sk in 'tiempo','sistema','red','dev','grimorio') {
+                foreach ($sk in 'tiempo','clima','sistema','gpu','red','audio','dev','foco','grimorio') {
                     if ($null -ne $raw.stats.$sk) { $def.stats[$sk] = [bool]$raw.stats.$sk }
                 }
             }
@@ -975,7 +979,7 @@ $xaml = @"
                 <TextBlock Text="Transparentes al ratón: puedes hacer clic a través de ellas en tu escritorio. Mira su distribución en el estudio a la derecha." Foreground="#8EA3C4" FontSize="12" Margin="0,2,0,12" TextWrapping="Wrap"/>
 
                 <WrapPanel Margin="0,0,0,14">
-                  <Button x:Name="BtnHudTodas" Content="✦ Mostrar todas" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
+                  <Button x:Name="BtnHudTodas" Content="✦ Mostrar todas (9)" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
                   <Button x:Name="BtnHudMinimo" Content="Modo limpio (Reloj + Frase)" Style="{StaticResource PillBtn}" Margin="0,0,6,6"/>
                   <Button x:Name="BtnHudSoloReloj" Content="Solo Reloj" Style="{StaticResource PillBtn}" Margin="0,0,0,6"/>
                 </WrapPanel>
@@ -988,8 +992,20 @@ $xaml = @"
                 </Border>
                 <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
                   <StackPanel>
+                    <CheckBox x:Name="ChkClima" Content="☀️ Órbita solar y fase lumínica" FontWeight="SemiBold"/>
+                    <TextBlock Text="Elevación del sol, azimut y fase atmosférica actual del mundo." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
                     <CheckBox x:Name="ChkSistema" Content="💻 Rendimiento del PC (CPU, RAM, Disco, Batería)" FontWeight="SemiBold"/>
                     <TextBlock Text="Barras visuales en tiempo real para controlar la carga del equipo." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkGpu" Content="🎮 GPU y motor gráfico" FontWeight="SemiBold"/>
+                    <TextBlock Text="Tarjeta gráfica detectada, FPS activos y carga visual del motor." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
                   </StackPanel>
                 </Border>
                 <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
@@ -1000,8 +1016,20 @@ $xaml = @"
                 </Border>
                 <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
                   <StackPanel>
+                    <CheckBox x:Name="ChkAudio" Content="🎵 Música y banda sonora del mundo" FontWeight="SemiBold"/>
+                    <TextBlock Text="Tema BSO acorde al universo elegido o reproductor activo." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
                     <CheckBox x:Name="ChkDev" Content="🛠️ Información técnica / Programador" FontWeight="SemiBold"/>
                     <TextBlock Text="Nombre del equipo, rama Git actual y entorno detectado." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
+                  </StackPanel>
+                </Border>
+                <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13" Margin="0,0,0,9">
+                  <StackPanel>
+                    <CheckBox x:Name="ChkFoco" Content="⏱️ Temporizador Zen / Sesión (Pomodoro)" FontWeight="SemiBold"/>
+                    <TextBlock Text="Cuenta atrás de 25 minutos por ciclos y tiempo de sesión activa." Foreground="#8EA3C4" FontSize="11.5" Margin="46,0,0,0"/>
                   </StackPanel>
                 </Border>
                 <Border Background="#0E1730" BorderBrush="#23355B" BorderThickness="1" CornerRadius="10" Padding="13">
@@ -1081,25 +1109,41 @@ $xaml = @"
                   <Grid>
                     <Image x:Name="ImgPrev1" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
                     <!-- Simulación de cajitas HUD superpuestas -->
-                    <StackPanel x:Name="MockHudPanel" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6,6,6,0" Width="106">
-                      <Border x:Name="MockTiempo" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,3" Margin="0,0,0,2">
-                        <StackPanel>
-                          <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
-                          <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                      </Border>
-                      <Border x:Name="MockSistema" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
-                        <TextBlock Text="CPU 12%  RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="7"/>
-                      </Border>
-                      <Border x:Name="MockRed" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
-                        <TextBlock Text="WI-FI  ↓ 12K/s" Foreground="#54DED4" FontFamily="Consolas" FontSize="7"/>
-                      </Border>
-                      <Border x:Name="MockDev" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5" Margin="0,0,0,2">
-                        <TextBlock Text="DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="7"/>
-                      </Border>
-                      <Border x:Name="MockGrimorio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2.5">
-                        <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
-                      </Border>
+                    <StackPanel x:Name="MockHudPanel" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6,6,6,0">
+                      <StackPanel x:Name="MockColExtra" Width="88" Margin="0,0,4,0">
+                        <Border x:Name="MockClima" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
+                          <TextBlock Text="☀ SOL +18° DÍA" Foreground="#E6C06E" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Border x:Name="MockGpu" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
+                          <TextBlock Text="▣ GPU 24% 8FPS" Foreground="#66DCE0" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Border x:Name="MockAudio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2" Margin="0,0,0,2">
+                          <TextBlock Text="♪ BSO 88 BPM" Foreground="#72C48C" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                        <Border x:Name="MockFoco" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="4,2">
+                          <TextBlock Text="⧖ ZEN 25:00" Foreground="#54DED4" FontFamily="Consolas" FontSize="6.5" TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                      </StackPanel>
+                      <StackPanel Width="98">
+                        <Border x:Name="MockTiempo" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,3" Margin="0,0,0,2">
+                          <StackPanel>
+                            <TextBlock Text="21:34" Foreground="#F3EAD6" FontFamily="Consolas" FontSize="10.5" FontWeight="Bold"/>
+                            <TextBlock x:Name="TxtMockMundo" Text="Fittoa" Foreground="#E6C06E" FontFamily="Consolas" FontSize="7" TextTrimming="CharacterEllipsis"/>
+                          </StackPanel>
+                        </Border>
+                        <Border x:Name="MockSistema" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
+                          <TextBlock Text="CPU 12%  RAM 48%" Foreground="#72C48C" FontFamily="Consolas" FontSize="6.8"/>
+                        </Border>
+                        <Border x:Name="MockRed" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
+                          <TextBlock Text="WI-FI  ↓ 12K/s" Foreground="#54DED4" FontFamily="Consolas" FontSize="6.8"/>
+                        </Border>
+                        <Border x:Name="MockDev" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2" Margin="0,0,0,2">
+                          <TextBlock Text="DEV · main" Foreground="#A8B8CF" FontFamily="Consolas" FontSize="6.8"/>
+                        </Border>
+                        <Border x:Name="MockGrimorio" Background="#D8090F20" BorderBrush="#8A6E44" BorderThickness="1" CornerRadius="4" Padding="5,2">
+                          <TextBlock Text="«Frase del mundo...»" Foreground="#E6C06E" FontFamily="Consolas" FontSize="6.8" TextTrimming="CharacterEllipsis"/>
+                        </Border>
+                      </StackPanel>
                     </StackPanel>
                     <!-- Sutil simulación barra de tareas Windows -->
                     <Border VerticalAlignment="Bottom" Height="6" Background="#90070B16">
@@ -1230,7 +1274,7 @@ $win.Add_SourceInitialized({
 })
 
 $el = @{}
-foreach ($n in 'TxtMonInfo','BadgeMotor','TxtMotorBadge','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnPresetClasico','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkSistema','ChkRed','ChkDev','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
+foreach ($n in 'TxtMonInfo','BadgeMotor','TxtMotorBadge','BtnMiniTray','BtnSalirTotal','NavMundos','NavPantallas','NavHud','NavSistema','TxtResumen','PageMundos','PagePantallas','PageHud','PageSistema','PanelSeries','ListaSeries','PanelTemasSerie','BtnVolverASeries','TxtSerieTitulo','PanelImagenesTema','BtnVolverDeImagenes','TxtTemaImagenesTitulo','BtnPresetClasico','BtnRepetirPrincipal','BtnRepetirSecundaria','BtnRepetirBloqueo','GridPickerM1','PanelPickerM2','GridPickerM2','ChkBloqueoMenu','GridPickerBloq','BtnIrAPantallasLuz','ListaTarjetasMundos','CardMon1','CardMon2','RbMon1','RbMon2','TxtMon2Detalle','CmbFondoPrincipal','PanelComboSec','CmbFondoSecundaria','ChkBloqueo','PanelComboBloq','CmbFondoBloqueo','CmbModo','PanelHora','BtnFijarDia','BtnFijarDor','BtnFijarNoc','TxtHoraVal','SldHora','ChkHudMaster','BtnHudTodas','BtnHudMinimo','BtnHudSoloReloj','ChkTiempo','ChkClima','ChkSistema','ChkGpu','ChkRed','ChkAudio','ChkDev','ChkFoco','ChkGrimorio','BtnAccesoDirecto','ChkAutoInicio','ChkTrayCerrar','TxtDiag','BtnBuscarUpdate','BtnRestaurar','BtnPrevDia','BtnPrevDor','BtnPrevNoc','TxtPrev1Title','ImgPrev1','MockHudPanel','MockColExtra','MockClima','MockGpu','MockAudio','MockFoco','MockTiempo','TxtMockMundo','MockSistema','MockRed','MockDev','MockGrimorio','PanelPrev2','TxtPrev2Title','ImgPrev2','TxtM2Sub','PanelPrevBloqueo','TxtPrevBloqTitle','ImgPrevBloqueo','TxtBloqSub','TxtEstado','BtnWeb','BtnToggleHudNow','BtnSoloGuardar','BtnAplicar') {
     $el[$n] = $win.FindName($n)
 }
 
@@ -1566,9 +1610,13 @@ $el.RbMon1.IsChecked = ($cfg.monitores -le 1)
 $el.RbMon2.IsChecked = ($cfg.monitores -ge 2)
 $el.ChkHudMaster.IsChecked = [bool]$cfg.hud
 $el.ChkTiempo.IsChecked = [bool]$cfg.stats.tiempo
+$el.ChkClima.IsChecked = [bool]$cfg.stats.clima
 $el.ChkSistema.IsChecked = [bool]$cfg.stats.sistema
+$el.ChkGpu.IsChecked = [bool]$cfg.stats.gpu
 $el.ChkRed.IsChecked = [bool]$cfg.stats.red
+$el.ChkAudio.IsChecked = [bool]$cfg.stats.audio
 $el.ChkDev.IsChecked = [bool]$cfg.stats.dev
+$el.ChkFoco.IsChecked = [bool]$cfg.stats.foco
 $el.ChkGrimorio.IsChecked = [bool]$cfg.stats.grimorio
 $el.SldHora.Value = [double]$cfg.horaFija
 $el.ChkTrayCerrar.IsChecked = [bool]$cfg.trayAlCerrar
@@ -1618,9 +1666,13 @@ function Lee-FormConfig {
         fondoBloqueo = $fb
         stats = [ordered]@{
             tiempo = [bool]$el.ChkTiempo.IsChecked
+            clima = [bool]$el.ChkClima.IsChecked
             sistema = [bool]$el.ChkSistema.IsChecked
+            gpu = [bool]$el.ChkGpu.IsChecked
             red = [bool]$el.ChkRed.IsChecked
+            audio = [bool]$el.ChkAudio.IsChecked
             dev = [bool]$el.ChkDev.IsChecked
+            foco = [bool]$el.ChkFoco.IsChecked
             grimorio = [bool]$el.ChkGrimorio.IsChecked
         }
     }
@@ -1799,14 +1851,20 @@ function Actualiza-Vista {
     $hudOn = [bool]$el.ChkHudMaster.IsChecked
     $el.MockHudPanel.Visibility = if ($hudOn) { 'Visible' } else { 'Collapsed' }
     $el.TxtMockMundo.Text = $tmeta.titulo
-    $el.MockTiempo.Visibility = if ($el.ChkTiempo.IsChecked) { 'Visible' } else { 'Collapsed' }
-    $el.MockSistema.Visibility = if ($el.ChkSistema.IsChecked) { 'Visible' } else { 'Collapsed' }
-    $el.MockRed.Visibility = if ($el.ChkRed.IsChecked) { 'Visible' } else { 'Collapsed' }
-    $el.MockDev.Visibility = if ($el.ChkDev.IsChecked) { 'Visible' } else { 'Collapsed' }
+    $el.MockTiempo.Visibility   = if ($el.ChkTiempo.IsChecked)   { 'Visible' } else { 'Collapsed' }
+    $el.MockClima.Visibility    = if ($el.ChkClima.IsChecked)    { 'Visible' } else { 'Collapsed' }
+    $el.MockSistema.Visibility  = if ($el.ChkSistema.IsChecked)  { 'Visible' } else { 'Collapsed' }
+    $el.MockGpu.Visibility      = if ($el.ChkGpu.IsChecked)      { 'Visible' } else { 'Collapsed' }
+    $el.MockRed.Visibility      = if ($el.ChkRed.IsChecked)      { 'Visible' } else { 'Collapsed' }
+    $el.MockAudio.Visibility    = if ($el.ChkAudio.IsChecked)    { 'Visible' } else { 'Collapsed' }
+    $el.MockDev.Visibility      = if ($el.ChkDev.IsChecked)      { 'Visible' } else { 'Collapsed' }
+    $el.MockFoco.Visibility     = if ($el.ChkFoco.IsChecked)     { 'Visible' } else { 'Collapsed' }
     $el.MockGrimorio.Visibility = if ($el.ChkGrimorio.IsChecked) { 'Visible' } else { 'Collapsed' }
+    $el.MockColExtra.Visibility = if ($el.ChkClima.IsChecked -or $el.ChkGpu.IsChecked -or $el.ChkAudio.IsChecked -or $el.ChkFoco.IsChecked) { 'Visible' } else { 'Collapsed' }
 
     # Habilitar/atenuar checkboxes individuales según interruptor maestro
-    foreach ($cb in $el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio) {
+    $allHudChks = @($el.ChkTiempo, $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco, $el.ChkGrimorio)
+    foreach ($cb in $allHudChks) {
         $cb.IsEnabled = $hudOn
     }
 
@@ -1836,7 +1894,7 @@ function Actualiza-Vista {
 
     # Resumen lateral estructurado
     $modoTxt = switch ($modo) { 'real' { 'Hora real' } 'demo' { 'Pase rápido 90s' } 'fija' { "Fija $($el.TxtHoraVal.Text)" } default { 'Suave 90m' } }
-    $nStats = @($el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio | Where-Object { $_.IsChecked }).Count
+    $nStats = @($allHudChks | Where-Object { $_.IsChecked }).Count
     $hudTxt = if ($hudOn) { "$nStats activas" } else { 'Desactivado' }
     $bloqTxt = if ($usarBloq) { Nombre-EscenaVariante $fbTag } else { 'Desactivado' }
     $el.TxtResumen.Text = "Serie: $($tmeta.serie)`nMundo: $($tmeta.titulo)`nMonitores: $(if ($dosMon) { '2 pantallas' } else { '1 pantalla' })`nBloqueo: $bloqTxt`nLuz: $modoTxt`nCajitas HUD: $hudTxt"
@@ -1907,25 +1965,25 @@ $el.BtnPrevDia.Add_Click({ $script:previewFase = 'dia'; Actualiza-Vista })
 $el.BtnPrevDor.Add_Click({ $script:previewFase = 'dorado'; Actualiza-Vista })
 $el.BtnPrevNoc.Add_Click({ $script:previewFase = 'noche'; Actualiza-Vista })
 
-foreach ($cb in $el.ChkHudMaster, $el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio) {
+foreach ($cb in $el.ChkHudMaster, $el.ChkTiempo, $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco, $el.ChkGrimorio) {
     $cb.Add_Checked({ Actualiza-Vista })
     $cb.Add_Unchecked({ Actualiza-Vista })
 }
 $el.BtnHudTodas.Add_Click({
     $el.ChkHudMaster.IsChecked = $true
-    foreach ($cb in $el.ChkTiempo, $el.ChkSistema, $el.ChkRed, $el.ChkDev, $el.ChkGrimorio) { $cb.IsChecked = $true }
+    foreach ($cb in $el.ChkTiempo, $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco, $el.ChkGrimorio) { $cb.IsChecked = $true }
     Actualiza-Vista
 })
 $el.BtnHudMinimo.Add_Click({
     $el.ChkHudMaster.IsChecked = $true
     $el.ChkTiempo.IsChecked = $true; $el.ChkGrimorio.IsChecked = $true
-    $el.ChkSistema.IsChecked = $false; $el.ChkRed.IsChecked = $false; $el.ChkDev.IsChecked = $false
+    foreach ($cb in $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco) { $cb.IsChecked = $false }
     Actualiza-Vista
 })
 $el.BtnHudSoloReloj.Add_Click({
     $el.ChkHudMaster.IsChecked = $true
     $el.ChkTiempo.IsChecked = $true
-    $el.ChkSistema.IsChecked = $false; $el.ChkRed.IsChecked = $false; $el.ChkDev.IsChecked = $false; $el.ChkGrimorio.IsChecked = $false
+    foreach ($cb in $el.ChkClima, $el.ChkSistema, $el.ChkGpu, $el.ChkRed, $el.ChkAudio, $el.ChkDev, $el.ChkFoco, $el.ChkGrimorio) { $cb.IsChecked = $false }
     Actualiza-Vista
 })
 

@@ -1,117 +1,119 @@
 # PixelZen Worlds
 
 [![Release](https://img.shields.io/github/v/release/davidlpizano/pixelzen-worlds?label=Versi%C3%B3n&color=54ded4)](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)
-[![Plataformas](https://img.shields.io/badge/Plataformas-Windows%2010%2F11%20%7C%20Linux%20GNOME%2046%2B-1e2b4a)](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)
-[![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-e6b45a)](LICENSE)
+[![Mundos](https://img.shields.io/badge/Mundos-9%20%C3%97%203%20pantallas%20(27%20escenas)-e6b45a)](#mundos-incluidos-monitor-1--monitor-2--bloqueo)
+[![Tarjetas HUD](https://img.shields.io/badge/HUD%20Flotante-9%20tarjetas%20click--through-72c48c)](#panel-hud-flotante-9-tarjetas)
+[![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-1e2b4a)](LICENSE)
 
-Aplicación de escritorio y motor modular de fondos pixel art animados en **640×400** (escalado nítido **Nearest-Neighbor**) que cambian con la luz del día (**tiempo real**, **ciclo completo de 24 h en 90 minutos**, **demo 90 s** o **hora fija**), con soporte real de **1 o 2 monitores con continuación de historia** y **panel HUD personalizable** para **Windows 10/11**, **Linux (GNOME Shell 46–50+)** y **visor web** en [`docs/`](docs/).
+Aplicación de escritorio y motor modular de fondos pixel art animados en **640×400** (escalado nítido **Nearest-Neighbor**) con interpolación astronómica solar entre día, hora dorada y noche estrellada (**tiempo real**, **ciclo suave 24 h en 90 minutos**, **demo 90 s** u **hora fija**), continuidad narrativa en **3 pantallas (Monitor Principal, Monitor 2 y Pantalla de Bloqueo)** y **9 tarjetas HUD flotantes** transparentes al ratón para **Windows 10/11**, **Linux (GNOME Shell 46–50+)** y **sitio web interactivo** en [`docs/`](docs/).
 
 > **Basado en [mosqui1988/pixelzen](https://github.com/mosqui1988/pixelzen)** (port GNOME Shell / KDE Plasma bajo licencia `GPL-3.0-or-later`).
 
 ---
 
-## Descarga e instalación (para usuarios · 1 solo archivo)
+## Descarga e instalación rápida
 
-No necesitas clonar el repositorio, ver carpetas técnicas ni instalar Python. Descarga el instalador de tu sistema desde **[GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)**:
+### Windows 10 / 11 (sin archivos `.exe` · compatible con Control inteligente de aplicaciones)
 
-### Windows 10 / 11
-- **Recomendado en Windows 11 (compatible con *Control inteligente de aplicaciones*, sin `.exe`)**: abre **PowerShell** y ejecuta un único comando (no requiere Git ni Python):
-  ```powershell
-  irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
-  ```
-  También puedes descargar **`PixelZenWorlds-Windows.zip`** desde Releases, descomprimirlo y ejecutar `Instalar.bat`.
-- **Alternativa clásica (`.exe` sin firma comercial)**: descarga **`PixelZenWorlds-Setup.exe`** *(si Windows 11 tiene activado el Control inteligente de aplicaciones lo bloqueará al no tener firma digital de pago; usa el método de PowerShell de arriba)*.
+No necesitas clonar el repositorio ni instalar Python para ejecutar el motor nativo (`PixelZenMotor.ps1`) ni el Estudio Desktop (`PixelZenMenu.ps1`). Abre **PowerShell** y ejecuta un único comando:
 
-En ambos casos instala la aplicación limpia en `%LOCALAPPDATA%\PixelZenWorlds\app`, crea el acceso directo **PixelZen Worlds** en el Escritorio y Menú Inicio, y se desinstala desde *Configuración → Aplicaciones*.
+```powershell
+irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
+```
 
-### Linux (Ubuntu 24.04+ / GNOME Shell 46+)
-1. Descarga **`PixelZenWorlds-Linux-Setup.run`**.
-2. Ejecútalo desde la terminal (o dale permisos de ejecución y ábrelo):
-   ```bash
-   chmod +x PixelZenWorlds-Linux-Setup.run
-   ./PixelZenWorlds-Linux-Setup.run
-   ```
-3. Instala la extensión de GNOME, la tipografía *Departure Mono* y añade la app visual **PixelZen Worlds** directamente a tu menú de aplicaciones.
+También puedes usar el instalador web [`docs/Instalar-PixelZenWorlds.bat`](docs/Instalar-PixelZenWorlds.bat) o descargar **`PixelZenWorlds-Windows.zip`** / **`PixelZenWorlds-Setup.exe`** desde **[GitHub Releases](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)**.
 
-> **Actualizar la app:** tanto en Windows como en Linux, pulsa **`Buscar actualización`** dentro de la propia aplicación (o ejecuta el nuevo instalador encima); tus ajustes, mundo y tarjetas HUD se conservan automáticamente.
+El instalador instala la aplicación limpia en `%LOCALAPPDATA%\PixelZenWorlds\app`, crea el acceso directo **PixelZen Worlds** en Escritorio y Menú Inicio, conserva tu configuración al actualizar y registra desinstalación estándar en *Configuración → Aplicaciones*.
+
+### Linux (Ubuntu 24.04+ / GNOME Shell 46–50+)
+
+```bash
+cd linux
+./instalar.sh --90m
+```
+
+O descarga **`PixelZenWorlds-Linux-Setup.run`** desde Releases, dale permisos (`chmod +x`) y ejecútalo para instalar la extensión GNOME Shell, la tipografía *Departure Mono* y la app visual GTK4.
 
 ---
 
-## Qué incluye la aplicación
+## Características principales
 
-* **Galería visual de mundos**: elige fondo viendo su miniatura, título y escenas de Monitor 1 y Monitor 2.
-* **Soporte multimonitor con historia continua**:
-  * **1 monitor**: muestra la escena principal en el monitor principal del sistema.
-  * **2 monitores**: muestra la escena principal en tu **monitor principal** y la **continuación de la historia** en el **2.º monitor** (sin duplicar el sol/luna ni su reflejo entre pantallas).
-* **Ciclo solar automático sin dependencias**:
-  * **Hora real del sistema** (calculada astronómicamente), **Ciclo suave 24 h en 90 min**, **Demo rápida 90 s** u **Hora fija**.
-  * En Windows funciona de forma nativa sin requerir Python; en Linux usa la extensión nativa de GNOME Shell.
-* **Panel HUD configurable**: activa o apaga de forma global o por bloques **Reloj y fase lunar**, **Sistema (CPU/RAM/Disco/Batería)**, **Red y tráfico**, **Info Dev** y **Citas del Grimorio**.
-* **Bandeja del sistema e inicio automático** (Windows) / **Preferencias GNOME y app GTK4** (Linux).
+* **9 Universos × 3 Pantallas (27 escenas / 81 vistas en Día, Dorado y Noche)**:
+  * **Monitor 1 (`principal`)**: escena principal animada detrás de los iconos del escritorio mediante el motor nativo C# GDI+ (`WorkerW` / `NEAREST`) o navegador/Lively/GNOME.
+  * **Monitor 2 (`secundario`)**: continuación geográfica o narrativa del mismo mundo en tiempo real sin duplicar sol ni luna entre pantallas.
+  * **Pantalla de Bloqueo (`bloqueo`)**: tercer escenario ceremonial aplicable automáticamente al bloqueo de Windows desde el estudio.
+* **Ciclo solar astronómico continuo**: calcula elevación y azimut reales del sol (hora real, ciclo de 24 h en 90 min, demo rápida 90 s u hora fija interactiva).
+* **Desktop Studio + Bandeja del sistema** ([`windows/PixelZenMenu.ps1`](windows/PixelZenMenu.ps1)): selector visual por series/mundos/pantallas, vistas previas Día/Dorado/Noche en vivo, presets HUD, inicio automático y buscador de actualizaciones.
+* **Sitio web completo y visor offline** ([`docs/`](docs/) + [`temas-bundle.js`](docs/temas-bundle.js)): demo en vivo para 1, 2 o 3 pantallas simultáneas, galería filtrable de las 27 escenas con visor ampliado y centro de instalación.
 
 ---
 
-## Mundos incluidos (Monitor 1 + Monitor 2)
+## Panel HUD Flotante (9 tarjetas)
 
-| Mundo (`id`) | Monitor 1 (Principal) | Monitor 2 (Continuación) |
+En Windows ([`windows/PixelZenHud.ps1`](windows/PixelZenHud.ps1)) las tarjetas flotan como ventana WPF transparente al ratón (`WS_EX_TRANSPARENT`); en web y Lively ([`src/pixelzen-canvas.js`](src/pixelzen-canvas.js)) se sincronizan mediante HTML5 + [`windows/datos_win.py`](windows/datos_win.py). Cuando hay **más de 5 tarjetas activas**, el HUD cambia automáticamente a **disposición de 2 columnas** para no saturar la altura de pantalla:
+
+| # | Tarjeta | Qué muestra |
 |---|---|---|
-| **Región de Fittoa** (`fittoa`) · *Mushoku Tensei* | ![Fittoa M1](escenas/fittoa/preview/dorado/v3.png) <br/> Aldea de Buena, Mansión Greyrat, lago, arco rúnico y Gran Roble. | ![Fittoa M2](escenas/fittoa/secundario/preview/dorado/v3.png) <br/> Llanuras del Reino de Asura, Capital de Ars y **Base flotante de Perugius (Chaos Breaker)**. |
-| **Continente Demoníaco** (`continente-demoniaco`) · *Mushoku Tensei* | ![Rikarisu M1](escenas/continente-demoniaco/preview/dorado/v3.png) <br/> Ciudadela de Rikarisu, cristales carmesí y portal fracturado. | ![Atofe M2](escenas/continente-demoniaco/secundario/preview/dorado/v3.png) <br/> **Castillo de Atofe** en las tierras demoníacas con **Atoferatofe Raibaku**. |
-| **Isla Ballena** (`hunter-x-hunter`) · *Hunter × Hunter* | ![HxH M1](escenas/hunter-x-hunter/preview/dorado/v3.png) <br/> Cabaña de Mito-san, muelle de Gon, Árbol del Mundo y dirigible. | ![HxH M2](escenas/hunter-x-hunter/secundario/preview/dorado/v3.png) <br/> **Greed Island**: torre/anillo G.I., libro *Book!* y cartas mágicas en el cielo. |
-| **Aldea de Hage** (`black-clover`) · *Black Clover* | ![Hage M1](escenas/black-clover/preview/dorado/v3.png) <br/> Cráneo del Demonio gigante, iglesia de Hage y espada de cinco hojas. | ![Picas M2](escenas/black-clover/secundario/preview/dorado/v3.png) <br/> **Reino de Picas** nevado con el castillo helado y la **Tríada Oscura**. |
-| **Nueva York · Miles Morales** (`spiderman-miles-morales`) · *Marvel* | ![Brooklyn M1](escenas/spiderman-miles-morales/preview/dorado/v3.png) <br/> Puente de Brooklyn, Estatua de la Libertad y Miles balanceándose. | ![Manhattan M2](escenas/spiderman-miles-morales/secundario/preview/dorado/v3.png) <br/> Midtown Manhattan, Empire State, metro elevado y Harlem. |
+| 1 | **✦ Tiempo y Mundo** | Reloj digital con segundero, fecha en español, modo horario y título del mundo |
+| 2 | **☀ Órbita & Clima** | Elevación solar astronómica, azimut, barra de luz diaria y fase (`DÍA / DORADA / NOCHE`) |
+| 3 | **❖ Sistema** | Carga CPU, memoria RAM usada/total con barras, porcentaje de disco, batería/AC y uptime |
+| 4 | **▣ GPU & Motor** | Gráfica detectada (`Win32_VideoController` / registro / WebGL), carga estimada, resolución y FPS |
+| 5 | **◈ Red** | Adaptador activo (Wi-Fi/Ethernet), IP IPv4 y tasas vivas de descarga/subida (`↓ / ↑`) |
+| 6 | **♪ BSO del Mundo** | Banda sonora acorde al universo elegido + BPM y detección de reproductores activos |
+| 7 | **⚔ Entorno Dev** | Nombre del equipo, repositorio y rama Git con estado de cambios, PowerShell/Python y monitores |
+| 8 | **⧖ Foco Zen** | Temporizador Pomodoro en ciclos de 25 minutos con progreso y tiempo acumulado de sesión |
+| 9 | **✧ Grimorio** | Citas icónicas rotativas propias de cada anime o serie |
 
 ---
 
-## Para desarrolladores (estructura, compilación y empaquetado)
+## Mundos incluidos (Monitor 1 + Monitor 2 + Bloqueo)
+
+| Mundo (`id`) | M1 · Monitor Principal | M2 · Monitor 2 (Continuación) | M3 · Pantalla de Bloqueo |
+|---|---|---|---|
+| **Región de Fittoa** (`fittoa`) · *Mushoku Tensei* | ![Fittoa M1](docs/previews/fittoa/dorado.png)<br/>**Aldea de Buena**: Mansión Greyrat, lago, arco rúnico y Gran Roble. | ![Fittoa M2](docs/previews/fittoa/m2-dorado.png)<br/>**Base de Perugius**: Chaos Breaker flotando sobre Ars. | ![Fittoa M3](docs/previews/fittoa/m3-dorado.png)<br/>**Santuario del Teletransporte**: monolito de maná y bosque de Buena. |
+| **Continente Demoníaco** (`continente-demoniaco`) · *Mushoku Tensei* | ![Rikarisu M1](docs/previews/continente-demoniaco/dorado.png)<br/>**Rikarisu**: agujas de basalto, cristales de maná y monolitos carmesí. | ![Fortaleza Basalto M2](docs/previews/continente-demoniaco/m2-dorado.png)<br/>**Fortaleza Basalto**: mesetas volcánicas y Rudeus conjurando *Aqua Heartia*. | ![Obsidiana M3](docs/previews/continente-demoniaco/m3-dorado.png)<br/>**Puerta de Obsidiana**: puente de roca roja y río de magma. |
+| **Isla Ballena y H×H** (`hunter-x-hunter`) · *Hunter × Hunter* | ![HxH M1](docs/previews/hunter-x-hunter/dorado.png)<br/>**Isla Ballena**: Árbol del Mundo, muelle de Gon, cabaña y Aura Nen. | ![Greed Island M2](docs/previews/hunter-x-hunter/m2-dorado.png)<br/>**Greed Island**: torre de Eta y Elena, Gon y Killua sobre la pradera. | ![Torre Celestial M3](docs/previews/hunter-x-hunter/m3-dorado.png)<br/>**Torre Celestial**: Piso 251, metrópolis iluminada y dirigible. |
+| **Reino del Trébol** (`black-clover`) · *Black Clover* | ![Hage M1](docs/previews/black-clover/dorado.png)<br/>**Aldea de Hage**: Cráneo del Demonio, Iglesia, Torre de Grimorios y espada. | ![Picas M2](docs/previews/black-clover/m2-dorado.png)<br/>**Reino de Picas**: fortaleza helada bajo el sello Qliphoth y Asta con *Danma*. | ![Altar Trébol M3](docs/previews/black-clover/m3-dorado.png)<br/>**Altar del Grimorio Real**: ruinas góticas y espada antimagia sobre sello rúnico. |
+| **Miles Morales** (`spiderman-miles-morales`) · *Marvel* | ![Brooklyn M1](docs/previews/spiderman-miles-morales/dorado.png)<br/>**Brooklyn**: Puente, Estatua de la Libertad, Manhattan y Miles con chispas Venom. | ![Midtown M2](docs/previews/spiderman-miles-morales/m2-dorado.png)<br/>**Midtown y Harlem**: metro elevado Tierra-1610, rascacielos y mural Spider-Verse. | ![Harlem M3](docs/previews/spiderman-miles-morales/m3-dorado.png)<br/>**Azotea de Harlem**: Miles vigilando el horizonte nocturno de Manhattan. |
+| **Monarca de las Sombras** (`solo-leveling`) · *Solo Leveling* | ![Monarca M1](docs/previews/solo-leveling/dorado.png)<br/>**Castillo del Monarca**: Sung Jin-Woo, Igris y ejército sombra en el Trono Carmesí. | ![Jeju M2](docs/previews/solo-leveling/m2-dorado.png)<br/>**Isla de Jeju**: colmena costera, huevos bioluminiscentes y **Rey Beru**. | ![Portal M3](docs/previews/solo-leveling/m3-dorado.png)<br/>**Portal del Monarca**: portón Rango S con dagas gemelas de Jin-Woo. |
+| **Kimetsu no Yaiba** (`demon-slayer`) · *Demon Slayer* | ![Tren M1](docs/previews/demon-slayer/dorado.png)<br/>**Tren Infinito**: Rengoku (Respiración de la Llama) vs Akaza junto al tren descarrilado. | ![Herreros M2](docs/previews/demon-slayer/m2-dorado.png)<br/>**Aldea de los Herreros**: sendero del taller entre cedros con Tokito vs Gyokko. | ![Glicinias M3](docs/previews/demon-slayer/m3-dorado.png)<br/>**Santuario de Glicinias**: torii de Fujikasane y katana Nichirin en altar. |
+| **Hawkins y Upside Down** (`stranger-things`) · *Stranger Things* | ![Hawkins M1](docs/previews/stranger-things/dorado.png)<br/>**Hawkins**: tormenta carmesí del Azotamentes sobre Casa Creel y chicos en bici. | ![Byers M2](docs/previews/stranger-things/m2-dorado.png)<br/>**Cabaña Byers**: luces navideñas del abecedario y Demogorgon entre esporas. | ![Reloj M3](docs/previews/stranger-things/m3-dorado.png)<br/>**Reloj de Creel**: maldición de Vecna con grietas escarlata. |
+| **Castillo de Hogwarts** (`harry-potter`) · *Harry Potter* | ![Hogwarts M1](docs/previews/harry-potter/dorado.png)<br/>**Hogwarts y Lago Negro**: torres sobre Escocia, barcas y Quidditch. | ![Hogsmeade M2](docs/previews/harry-potter/m2-dorado.png)<br/>**Hogsmeade y Expreso**: cabañas nevadas, viaducto 5972 y Ciervo Patronus. | ![Anden M3](docs/previews/harry-potter/m3-dorado.png)<br/>**Andén 9¾ y Reliquias**: King's Cross, Hedwig y Varita de Saúco. |
+
+---
+
+## Estructura para desarrolladores y compilación
 
 ```text
 pixelzen-worlds/
-├── VERSION                     # Versión única usada por apps, instaladores y Releases
-├── escenas/                    # Temas modulares (generar.py + tema.json + secundario/)
-│   ├── _plantilla/             # Plantilla lista para crear nuevos mundos
-│   └── <tema>/                 # 5 mundos completos + previews (dia/dorado/noche)
-├── src/                        # Motor procedural en Python (pz_lib.py, capas.py, construir.py)
-├── windows/                    # App visual WPF, motor nativo .NET, HUD e instalador WinForms
-├── linux/                      # App visual GTK4 (pixelzen_app.py), extensión GNOME e instalar.sh
-├── docs/                       # Visor web interactivo sincronizado al compilar
-├── scripts/                    # Empaquetadores (.exe / .run) e instaladores por consola
-├── tests/                      # Suite de verificación automática (verificar.py)
-├── fuentes/                    # Tipografías pixel (OFL)
-└── licencias/                  # Textos de licencias GPL-3.0, MIT y OFL
+├── VERSION                     # Versión de compilación y Releases
+├── escenas/                    # 9 mundos × 3 variantes (generar.py, tema.json, preview/)
+│   ├── _plantilla/             # Plantilla modular base
+│   └── <mundo>/                # principal + secundario/ + bloqueo/
+├── src/                        # Motor procedural (pz_lib.py, pz_detalles.py, construir.py) + pixelzen-canvas.js
+├── windows/                    # Motor nativo C# (PixelZenMotor.ps1), Estudio (PixelZenMenu.ps1), HUD 9 tarjetas y Lively
+├── linux/                      # Extensión GNOME Shell 46-50+, app GTK4 e instalar.sh
+├── docs/                       # Sitio web completo (index.html, styles.css, app.js, temas-bundle.js, previews/)
+├── scripts/                    # Instaladores, empaquetadores (.exe / .run) y sincronizar_todo.ps1
+├── tests/                      # Verificación automática (verificar.py)
+├── fuentes/                    # Departure Mono y Pixelify Sans (OFL)
+└── licencias/                  # GPL-3.0, MIT y OFL
 ```
 
-### Añadir o editar un fondo
+### Compilar escenas, verificar y sincronizar todo
 
-1. Copia la plantilla `escenas/_plantilla` a `escenas/mi-mundo` (y opcionalmente `escenas/mi-mundo/secundario` para el 2.º monitor).
-2. Edita `tema.json` y `generar.py` usando [`src/pz_lib.py`](src/pz_lib.py). Consulta [`escenas/README.md`](escenas/README.md).
-3. Compila todos los destinos (`pack/`, `windows/lively/temas/`, `docs/temas/` y `docs/previews/`):
-   ```bash
-   python3 src/construir.py
-   ```
-   Tanto la app de Windows como las de Linux descubren los nuevos mundos automáticamente desde `tema.json`.
+```powershell
+# Compilar las 27 escenas y 81 previews desde src/:
+python src/construir.py
 
-### Ejecutar pruebas y compilar instaladores localmente
+# Ejecutar la suite de verificación:
+python tests/verificar.py
 
-```bash
-python3 tests/verificar.py
+# Sincronizar compilados en repo, actualizar Desktop\pixelzen-web y subir a GitHub:
+powershell -ExecutionPolicy Bypass -File scripts\sincronizar_todo.ps1
 ```
 
-* **Generar instalador Windows** (`dist/PixelZenWorlds-Setup.exe`):
-  ```powershell
-  powershell -ExecutionPolicy Bypass -File scripts\empaquetar_windows.ps1
-  ```
-* **Generar instalador Linux** (`dist/PixelZenWorlds-Linux-Setup.run`):
-  ```bash
-  ./scripts/empaquetar_linux.sh
-  ```
-* **Publicar nueva Release en GitHub**: actualiza [`VERSION`](VERSION), haz commit y sube una etiqueta `vX.Y.Z`:
-  ```bash
-  git tag -a vX.Y.Z -m "PixelZen Worlds vX.Y.Z"
-  git push origin main --follow-tags
-  ```
-
-Más detalles de cada plataforma en [`windows/LEEME.md`](windows/LEEME.md) y [`linux/LEEME.md`](linux/LEEME.md).
+También puedes copiar `escenas/_plantilla` a `escenas/mi-mundo` (con `secundario/` y `bloqueo/` opcionales) y ejecutar `python src/construir.py` para compilar automáticamente Linux, Windows Lively y el visor web.
 
 ---
 
@@ -119,4 +121,4 @@ Más detalles de cada plataforma en [`windows/LEEME.md`](windows/LEEME.md) y [`l
 
 * **Proyecto base**: [mosqui1988/pixelzen](https://github.com/mosqui1988/pixelzen) (extensión original para GNOME Shell / KDE Plasma).
 * **Fuentes e iconos**: tipografías bajo licencia SIL Open Font License (`OFL`) detalladas en [`licencias/`](licencias/).
-* **Licencia**: distribuido bajo **GPL-3.0-or-later** (ver [LICENSE](LICENSE)).
+* **Licencia**: distribuido bajo **GPL-3.0-or-later** (ver [`LICENSE`](LICENSE)).

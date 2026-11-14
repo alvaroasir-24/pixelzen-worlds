@@ -6,22 +6,15 @@
   let liveStats = null;
   let lastEstadoTxt = '';
 
+  const STAT_KEYS = ['tiempo', 'clima', 'sistema', 'gpu', 'red', 'audio', 'dev', 'foco', 'grimorio'];
   const statsParam = params.get('stats');
-  const hudStatsInit = statsParam ? {
-    tiempo: statsParam.includes('tiempo'),
-    sistema: statsParam.includes('sistema'),
-    red: statsParam.includes('red'),
-    dev: statsParam.includes('dev'),
-    grimorio: statsParam.includes('grimorio'),
-  } : {
-    tiempo: params.get('hud_tiempo') !== '0',
-    sistema: params.get('hud_sistema') !== '0',
-    red: params.get('hud_red') !== '0',
-    dev: params.get('hud_dev') !== '0',
-    grimorio: params.get('hud_grimorio') !== '0',
-  };
+  const hudStatsInit = {};
+  for (const k of STAT_KEYS) {
+    hudStatsInit[k] = statsParam ? statsParam.includes(k) : params.get(`hud_${k}`) !== '0';
+  }
 
-  const pantallaParam = params.get('pantalla') === 'secundaria' ? 'secundaria' : 'principal';
+  const pArg = params.get('pantalla');
+  const pantallaParam = pArg === 'secundaria' ? 'secundaria' : (pArg === 'bloqueo' ? 'bloqueo' : 'principal');
   const mostrarHudParam = params.has('hud')
     ? params.get('hud') !== '0'
     : pantallaParam !== 'secundaria';
@@ -57,7 +50,7 @@
   async function aplicaEstadoJson(cfg) {
     if (!cfg || typeof cfg !== 'object') return;
     const nuevoTema = cfg.tema || state.tema;
-    const nuevaPantalla = cfg.pantalla === 'secundaria' ? 'secundaria' : 'principal';
+    const nuevaPantalla = cfg.pantalla === 'secundaria' ? 'secundaria' : (cfg.pantalla === 'bloqueo' ? 'bloqueo' : 'principal');
     if (cfg.modo) {
       const mIdx = modoToIdx(cfg.modo);
       if (mIdx !== state.modoHora) {
@@ -79,7 +72,7 @@
     }
     if (cfg.hud !== undefined) state.mostrarHud = !!cfg.hud;
     if (cfg.stats && typeof cfg.stats === 'object') {
-      for (const k of ['tiempo', 'sistema', 'red', 'dev', 'grimorio']) {
+      for (const k of STAT_KEYS) {
         if (cfg.stats[k] !== undefined) state.hudStats[k] = !!cfg.stats[k];
       }
     }
@@ -138,7 +131,7 @@
       const nuevo = typeof val === 'string' ? val : (TEMAS_DISPONIBLES[val] || TEMAS_DISPONIBLES[0]);
       if (nuevo !== state.tema) { renderer.cargarTema(nuevo).then(renderer.render); }
     } else if (name === 'pantalla') {
-      const nueva = (val === 1 || val === 'secundaria') ? 'secundaria' : 'principal';
+      const nueva = (val === 2 || val === 'bloqueo') ? 'bloqueo' : ((val === 1 || val === 'secundaria') ? 'secundaria' : 'principal');
       if (nueva !== state.pantalla) { renderer.cargarTema(state.tema, { pantalla: nueva }).then(renderer.render); }
     } else if (name === 'modoHora') {
       state.modoHora = typeof val === 'string' ? modoToIdx(val) : val;
@@ -151,9 +144,13 @@
     else if (name === 'fps') { state.fps = val; reprogramar(); }
     else if (name === 'mostrarHud') state.mostrarHud = !!val;
     else if (name === 'hudTiempo') state.hudStats.tiempo = !!val;
+    else if (name === 'hudClima') state.hudStats.clima = !!val;
     else if (name === 'hudSistema') state.hudStats.sistema = !!val;
+    else if (name === 'hudGpu') state.hudStats.gpu = !!val;
     else if (name === 'hudRed') state.hudStats.red = !!val;
+    else if (name === 'hudAudio') state.hudStats.audio = !!val;
     else if (name === 'hudDev') state.hudStats.dev = !!val;
+    else if (name === 'hudFoco') state.hudStats.foco = !!val;
     else if (name === 'hudGrimorio') state.hudStats.grimorio = !!val;
     renderer.render();
   };

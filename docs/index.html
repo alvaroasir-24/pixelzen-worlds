@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PixelZen · Fondos Pixel Art Dinámicos (Linux &amp; Windows)</title>
-  <meta name="description" content="Fondos pixel art animados de Mushoku Tensei, Hunter x Hunter, Black Clover, Spider-Man Miles Morales, Solo Leveling, Demon Slayer, Stranger Things y Harry Potter con ciclo solar real o de 90 minutos para GNOME y Windows." />
+  <title>PixelZen Worlds · 9 Universos Pixel Art Dinámicos (Windows &amp; Linux)</title>
+  <meta name="description" content="9 mundos pixel art animados en 27 escenarios (Principal, Monitor 2 y Pantalla de Bloqueo) con ciclo solar astronómico, 9 tarjetas HUD flotantes y motor nativo C# para Windows y GNOME." />
   <link rel="icon" type="image/png" href="previews/fittoa/dia.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -13,37 +13,65 @@
     <div class="container topbar-inner">
       <a href="#top" class="brand">
         <span class="brand-glyph">✦</span>
-        <span class="brand-name">PIXELZEN</span>
-        <span class="brand-tag">640×400 PIXEL ENGINE</span>
+        <span class="brand-name">PIXELZEN WORLDS</span>
+        <span class="brand-tag">9 MUNDOS · 27 ESCENAS</span>
       </a>
       <nav class="nav">
-        <a href="#visor">Demo en vivo</a>
-        <a href="#mundos">Mundos</a>
+        <a href="#visor">Visor en vivo</a>
+        <a href="#mundos">Galería</a>
+        <a href="#hud-showcase">9 HUD</a>
         <a href="#arquitectura">Motor</a>
-        <a href="#instalar">Instalar</a>
+        <a href="#instalar" class="nav-cta">Instalar</a>
       </nav>
     </div>
   </header>
 
   <main id="top">
-    <!-- HERO + VISOR INTERACTIVO EN VIVO -->
+    <!-- HERO + VISOR INTERACTIVO -->
     <section class="hero" id="visor">
       <div class="container">
         <div class="hero-intro">
           <div class="badge-row">
-            <span class="badge badge-cyan">GNOME Shell 46–50+</span>
-            <span class="badge badge-gold">Windows · Lively &amp; Python</span>
-            <span class="badge">Python puro · 0 deps gráficas</span>
+            <span class="badge badge-cyan">9 Universos · 27 Escenarios</span>
+            <span class="badge badge-gold">Windows Motor Nativo C# + WPF HUD</span>
+            <span class="badge badge-green">Sin .exe · Portable y Open Source</span>
+            <span class="badge">Linux GNOME 46–50+</span>
           </div>
-          <h1>Paisajes pixel art vivos que siguen al sol</h1>
+          <h1>Mundos pixel art vivos sincronizados con la órbita solar</h1>
           <p class="lead">
-            Motor modular de fondos animados en <strong>640×400</strong> con interpolación astronómica entre día, atardecer dorado y noche estrellada — en tiempo real o en un <strong>ciclo completo de 24 horas en 90 minutos</strong>.
+            Motor modular en <strong>640×400</strong> con interpolación astronómica entre día, hora dorada y noche estrellada,
+            continuidad narrativa en <strong>3 pantallas (Principal, Monitor 2 y Bloqueo)</strong> y <strong>9 tarjetas HUD flotantes</strong> transparentes al ratón.
           </p>
+
+          <div class="hero-metrics">
+            <div class="metric-box">
+              <div class="metric-val">9 Mundos</div>
+              <div class="metric-lbl">Anime, Marvel y Series</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">27 Escenas</div>
+              <div class="metric-lbl">M1 + M2 + Bloqueo (81 vistas)</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">9 Tarjetas HUD</div>
+              <div class="metric-lbl">Reloj, Sol, PC, GPU, Red, BSO, Zen…</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-val">C# GDI+ / JS</div>
+              <div class="metric-lbl">Motor nativo Win + Web + GNOME</div>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <a href="#instalar" class="btn-primary">⬇ Instalar en Windows (1 clic)</a>
+            <a href="#mundos" class="btn-secondary">🗺 Explorar los 9 mundos</a>
+            <a href="https://github.com/davidlpizano/pixelzen-worlds" target="_blank" rel="noopener" class="btn-secondary">⌥ GitHub Oficial</a>
+          </div>
         </div>
 
         <div class="stage-shell" id="stage-shell">
           <div class="stage-bar">
-            <div class="theme-pills" role="tablist" aria-label="Seleccionar fondo">
+            <div class="theme-pills" role="tablist" aria-label="Seleccionar mundo">
               <button class="pill is-active" data-tema="fittoa">Fittoa</button>
               <button class="pill" data-tema="continente-demoniaco">Continente Demoníaco</button>
               <button class="pill" data-tema="hunter-x-hunter">Hunter × Hunter</button>
@@ -55,23 +83,38 @@
               <button class="pill" data-tema="harry-potter">Harry Potter</button>
             </div>
             <div class="stage-actions">
-              <button class="btn-mini" id="btn-hud" title="Mostrar u ocultar tarjeta HUD">HUD: ON</button>
+              <button class="btn-mini" id="btn-hud" title="Mostrar u ocultar tarjetas HUD">HUD: ON</button>
+              <button class="btn-mini" id="btn-modal-active" title="Abrir vista de 3 pantallas">3 Vistas</button>
               <button class="btn-mini" id="btn-fullscreen" title="Ver en pantalla completa">Pantalla completa</button>
             </div>
           </div>
 
-          <div class="options-bar" aria-label="Menú de opciones">
+          <div class="options-bar" aria-label="Configuración de pantallas y HUD">
             <div class="opt-group">
-              <span class="opt-label">MONITORES:</span>
-              <button class="btn-opt" data-monitores="1">1 Monitor</button>
-              <button class="btn-opt is-active" data-monitores="2">2 Monitores (Principal + Continuación)</button>
+              <span class="opt-label">PANTALLAS:</span>
+              <button class="btn-opt" data-monitores="1">1 Monitor (M1)</button>
+              <button class="btn-opt is-active" data-monitores="2">2 Monitores (M1 + M2)</button>
+              <button class="btn-opt" data-monitores="3">Triple (M1 + M2 + Bloqueo)</button>
             </div>
             <div class="opt-group">
-              <span class="opt-label">ESTADÍSTICAS HUD:</span>
+              <span class="opt-label">PERFIL HUD:</span>
+              <button class="btn-opt" data-hud-preset="all">Todas (9)</button>
+              <button class="btn-opt" data-hud-preset="essential">Esencial (4)</button>
+              <button class="btn-opt" data-hud-preset="minimal">Minimal (2)</button>
+            </div>
+          </div>
+
+          <div class="options-bar" aria-label="Tarjetas HUD activas">
+            <div class="opt-group">
+              <span class="opt-label">9 TARJETAS HUD:</span>
               <label class="stat-chk"><input type="checkbox" data-stat="tiempo" checked /> Tiempo</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="clima" checked /> Órbita/Clima</label>
               <label class="stat-chk"><input type="checkbox" data-stat="sistema" checked /> Sistema</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="gpu" checked /> GPU</label>
               <label class="stat-chk"><input type="checkbox" data-stat="red" checked /> Red</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="audio" checked /> BSO</label>
               <label class="stat-chk"><input type="checkbox" data-stat="dev" checked /> Dev</label>
+              <label class="stat-chk"><input type="checkbox" data-stat="foco" checked /> Foco Zen</label>
               <label class="stat-chk"><input type="checkbox" data-stat="grimorio" checked /> Grimorio</label>
             </div>
           </div>
@@ -80,13 +123,24 @@
             <div class="monitor-pane" id="pane-prim">
               <span class="monitor-badge">MONITOR 1 · PRINCIPAL</span>
               <canvas id="lienzo" width="640" height="400"></canvas>
-              <aside class="hud" id="hud">
+              <aside class="hud is-multicol" id="hud">
                 <div class="hud-card" id="card-tiempo">
                   <div class="hud-head"><span>✦ TIEMPO</span><span id="hud-modo">FIJA</span></div>
                   <div class="hud-clock"><span id="hud-hm">18:45</span><small id="hud-s">00</small></div>
                   <div class="hud-date" id="hud-fecha"></div>
                   <div class="hud-sub" id="hud-tema">Región de Fittoa</div>
                 </div>
+
+                <div class="hud-card" id="card-clima">
+                  <div class="hud-head"><span>☀ ÓRBITA &amp; CLIMA</span><span id="hud-clima-meta">DORADA</span></div>
+                  <div class="hud-stat-row">
+                    <span>SOL <strong id="hud-clima-elev">+6.2°</strong></span>
+                    <span>AZ <strong id="hud-clima-az">248°</strong></span>
+                  </div>
+                  <div class="hud-stat-row"><div class="hud-bar"><div class="hud-bar-fill" id="hud-clima-bar"></div></div></div>
+                  <div class="hud-date" id="hud-clima-luz">SOL RASANTE · DORADO</div>
+                </div>
+
                 <div class="hud-card" id="card-sistema">
                   <div class="hud-head"><span>❖ SISTEMA</span><span id="hud-sys-meta">EN LÍNEA</span></div>
                   <div class="hud-stat-row">
@@ -104,395 +158,367 @@
                     <span>BAT <strong id="hud-bat" style="color:#72c48c">AC</strong></span>
                   </div>
                 </div>
-                <div class="hud-card" id="card-red">
-                  <div class="hud-head"><span>◈ RED</span><span id="hud-net-iface">WIFI</span></div>
-                  <div class="hud-stat-row"><span>IP</span><strong id="hud-ip">127.0.0.1</strong></div>
+
+                <div class="hud-card" id="card-gpu">
+                  <div class="hud-head"><span>▣ GPU &amp; MOTOR</span><span id="hud-gpu-meta">10 FPS</span></div>
+                  <div class="hud-sub" id="hud-gpu-nombre" style="margin-top:0">CANVAS 2D · PIXEL</div>
                   <div class="hud-stat-row">
-                    <span style="color:#66dce0">↓ <strong id="hud-rx">1.4 MB/s</strong></span>
-                    <span style="color:#54ded4">↑ <strong id="hud-tx">240 KB/s</strong></span>
+                    <span>USO</span>
+                    <div class="hud-bar"><div class="hud-bar-fill" id="hud-gpu-bar"></div></div>
+                    <strong id="hud-gpu-uso">22%</strong>
+                  </div>
+                  <div class="hud-stat-row">
+                    <span id="hud-gpu-res">640×400 PIXEL</span>
+                    <strong id="hud-gpu-temp" style="color:#72c48c">50°C</strong>
                   </div>
                 </div>
-                <div class="hud-card" id="card-dev">
-                  <div class="hud-head"><span>⚔ DEV</span><span id="hud-dev-host">workspace</span></div>
-                  <div class="hud-sub" id="hud-repo" style="margin-top:0">pixelzen-worlds · main</div>
-                  <div class="hud-date" id="hud-tc">PY 3.12 · JS ES6</div>
+
+                <div class="hud-card" id="card-red">
+                  <div class="hud-head"><span>◈ RED</span><span id="hud-net-iface">WI-FI</span></div>
+                  <div class="hud-stat-row"><span>IP</span><strong id="hud-ip">127.0.0.1</strong></div>
+                  <div class="hud-stat-row">
+                    <span style="color:#66dce0">↓ <span id="hud-rx">1.4 MB/s</span></span>
+                    <span style="color:#54ded4">↑ <span id="hud-tx">240 KB/s</span></span>
+                  </div>
                 </div>
+
+                <div class="hud-card" id="card-audio">
+                  <div class="hud-head"><span>♪ BSO MUNDO</span><span id="hud-audio-meta">SONANDO</span></div>
+                  <div class="hud-sub" id="hud-audio-track" style="margin-top:0">Lullaby of Fittoa · OST</div>
+                  <div class="hud-stat-row">
+                    <span id="hud-audio-bpm">84 BPM · LO-FI</span>
+                    <strong id="hud-audio-vol" style="color:#72c48c">VOL 68%</strong>
+                  </div>
+                  <div class="hud-stat-row"><div class="hud-bar"><div class="hud-bar-fill" id="hud-audio-bar"></div></div></div>
+                </div>
+
+                <div class="hud-card" id="card-dev">
+                  <div class="hud-head"><span>⚔ DEV</span><span id="hud-dev-host">pixelzen-worlds</span></div>
+                  <div class="hud-sub" id="hud-repo" style="margin-top:0">pixelzen-worlds · main</div>
+                  <div class="hud-date" id="hud-tc">PY 3.12 · JS ES6 · C# GDI+</div>
+                </div>
+
+                <div class="hud-card" id="card-foco">
+                  <div class="hud-head"><span>⧖ FOCO ZEN</span><span id="hud-foco-meta">CICLO 1 · ZEN</span></div>
+                  <div class="hud-stat-row">
+                    <strong id="hud-foco-timer" style="font-size:13px;color:#e6b45a">25:00</strong>
+                    <span id="hud-foco-sesion">0m 00s activa</span>
+                  </div>
+                  <div class="hud-stat-row"><div class="hud-bar"><div class="hud-bar-fill" id="hud-foco-bar"></div></div></div>
+                </div>
+
                 <div class="hud-card" id="card-grimorio">
-                  <div class="hud-head"><span>✧ GRIMORIO</span><span id="hud-au">Rudeus</span></div>
-                  <div class="hud-sub" id="hud-qsub">K407 · Aldea de Buena</div>
+                  <div class="hud-head"><span>✧ GRIMORIO</span><span id="hud-au"></span></div>
+                  <div class="hud-sub" id="hud-qsub"></div>
                   <div class="hud-quote" id="hud-qtxt"></div>
                 </div>
               </aside>
             </div>
+
             <div class="monitor-pane" id="pane-sec">
               <span class="monitor-badge monitor-badge-sec" id="badge-sec">MONITOR 2 · CONTINUACIÓN</span>
               <canvas id="lienzo-sec" width="640" height="400"></canvas>
             </div>
-            <div class="canvas-loading" id="canvas-loading">Cargando capas del mundo...</div>
+
+            <div class="monitor-pane" id="pane-bloq">
+              <span class="monitor-badge monitor-badge-bloq" id="badge-bloq">BLOQUEO · ALTAR</span>
+              <canvas id="lienzo-bloq" width="640" height="400"></canvas>
+            </div>
+
+            <div class="canvas-loading" id="canvas-loading">Cargando capas pixel art…</div>
           </div>
 
-          <div class="time-controls">
-            <div class="mode-buttons">
-              <button class="btn-mode" data-modo="90m">Ciclo 90m</button>
-              <button class="btn-mode" data-modo="demo">Demo 90s</button>
+          <div class="time-bar">
+            <div class="time-modes">
               <button class="btn-mode" data-modo="real">Hora real</button>
-              <span class="divider"></span>
-              <button class="btn-phase" data-hora="13.5">Día</button>
-              <button class="btn-phase is-active" data-hora="18.75">Atardecer</button>
-              <button class="btn-phase" data-hora="23.0">Noche</button>
+              <button class="btn-mode" data-modo="90m">Ciclo 90 min</button>
+              <button class="btn-mode" data-modo="demo">Demo 90s</button>
             </div>
-            <label class="scrubber">
-              <span>Hora simulada: <strong id="hora-label">18:45</strong></span>
-              <input type="range" id="hora-slider" min="0" max="23.95" step="0.05" value="18.75" />
-            </label>
+            <div class="time-slider-wrap">
+              <span>Hora del cielo:</span>
+              <input type="range" id="hora-slider" min="0" max="23.9" step="0.25" value="18.75" />
+              <strong id="hora-label">18:45</strong>
+            </div>
+            <div class="time-phases">
+              <button class="btn-phase" data-hora="13">Día</button>
+              <button class="btn-phase is-active" data-hora="18.75">Dorado</button>
+              <button class="btn-phase" data-hora="23">Noche</button>
+            </div>
+          </div>
+
+          <div class="stage-lore">
+            <div><strong id="stage-lore-title">Región de Fittoa · Aldea de Buena</strong> — <span id="stage-lore-desc">M1 Aldea de Buena · M2 Fortaleza de Perugius · M3 Santuario del Teletransporte</span></div>
+            <button class="btn-mini" id="btn-stage-inspect">🔍 Inspeccionar 3 pantallas</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- GALERIA DE LOS 5 MUNDOS -->
+    <!-- GALERÍA DE 9 MUNDOS × 3 ESCENAS -->
     <section class="section" id="mundos">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">ESCENAS INCLUIDAS</span>
-          <h2>Cinco mundos con arquitectura, fauna y partículas propias</h2>
-          <p>Cada escena se compila en capas RGBA independientes (cielo, sol, luna, nubes, paisaje y mapa de luces) para animarse en tiempo real.</p>
+          <span class="eyebrow">9 UNIVERSOS · 27 ESCENARIOS · 81 PREVISUALIZACIONES</span>
+          <h2>Explora cada mundo en Día, Hora Dorada y Noche</h2>
+          <p>Cada universo incluye una escena base (<strong>M1</strong>), continuación para segundo monitor (<strong>M2</strong>) y escena ceremonial de pantalla de bloqueo (<strong>M3</strong>).</p>
+        </div>
+
+        <div class="gallery-toolbar">
+          <div class="filter-group" id="cat-filters">
+            <span class="opt-label">UNIVERSO:</span>
+            <button class="btn-opt is-active" data-cat="all">Todos (9)</button>
+            <button class="btn-opt" data-cat="anime">Anime (6)</button>
+            <button class="btn-opt" data-cat="series">Series &amp; Cine (2)</button>
+            <button class="btn-opt" data-cat="marvel">Marvel (1)</button>
+          </div>
+          <div class="filter-group">
+            <span class="opt-label">VISTA GLOBAL:</span>
+            <button class="btn-opt" data-global-pan="m1">M1 Principal</button>
+            <button class="btn-opt" data-global-pan="m2">M2 Monitor 2</button>
+            <button class="btn-opt" data-global-pan="m3">M3 Bloqueo</button>
+            <button class="btn-opt" data-global-fase="dia">Día</button>
+            <button class="btn-opt" data-global-fase="dorado">Dorado</button>
+            <button class="btn-opt" data-global-fase="noche">Noche</button>
+          </div>
         </div>
 
         <div class="worlds-grid" id="worlds-grid">
-          <article class="world-card" data-world="fittoa">
-            <div class="world-media">
-              <img src="previews/fittoa/dorado.png" alt="Región de Fittoa en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button class="is-active" data-fase="dorado">Dorado</button>
-                <button data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Región de Fittoa</h3>
-                <code>fittoa</code>
-              </div>
-              <p>Aldea de Buena con la Mansión Greyrat, noria, torre de mago, cascada lejana, barca con farol, arco rúnico sobre el lago y Gran Roble con búho nocturno.</p>
-              <div class="world-meta">
-                <span>Grullas</span>
-                <span>Hojas + Maná</span>
-                <span>Mushoku Tensei</span>
-              </div>
-              <button class="btn-try" data-try="fittoa">Probar en el visor ↑</button>
-            </div>
-          </article>
+          <!-- Rellenado dinámicamente desde app.js con metadatos exactos de los 9 mundos -->
+        </div>
+      </div>
+    </section>
 
-          <article class="world-card" data-world="continente-demoniaco">
-            <div class="world-media">
-              <img src="previews/continente-demoniaco/dorado.png" alt="Continente Demoníaco en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button class="is-active" data-fase="dorado">Dorado</button>
-                <button data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Continente Demoníaco</h3>
-                <code>continente-demoniaco</code>
-              </div>
-              <p>Ciudadela escalonada de Rikarisu sobre acantilados de basalto, zigurats con cúpulas con cuernos, aguja de obsidiana, portal fracturado, cristales gigantes y hongos bioluminiscentes.</p>
-              <div class="world-meta">
-                <span>Wyverns</span>
-                <span>Brasas de maná</span>
-                <span>Mushoku Tensei</span>
-              </div>
-              <button class="btn-try" data-try="continente-demoniaco">Probar en el visor ↑</button>
-            </div>
-          </article>
+    <!-- 9 TARJETAS HUD FLOTANTES -->
+    <section class="section section-alt" id="hud-showcase">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">TELEMETRÍA DE ESCRITORIO · CLICK-THROUGH TRANSPARENTE</span>
+          <h2>9 Tarjetas HUD flotantes sobre tu fondo animado</h2>
+          <p>En Windows las tarjetas corren en WPF transparente (<code>WS_EX_TRANSPARENT</code>) para hacer clic a través de ellas, y se reorganizan automáticamente en 2 columnas cuando activas más de 5.</p>
+        </div>
 
-          <article class="world-card" data-world="hunter-x-hunter">
-            <div class="world-media">
-              <img src="previews/hunter-x-hunter/dia.png" alt="Hunter x Hunter Isla Ballena en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button class="is-active" data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Hunter × Hunter · Isla Ballena</h3>
-                <code>hunter-x-hunter</code>
-              </div>
-              <p>Costa verde con molino, cabaña de Mito-san, monolito del Cazador, muelle largo con velero y Gon pescando, roca aleta de ballena, dirigible y el colosal Árbol del Mundo.</p>
-              <div class="world-meta">
-                <span>Aves costeras</span>
-                <span>Aura Nen</span>
-                <span>Hunter × Hunter</span>
-              </div>
-              <button class="btn-try" data-try="hunter-x-hunter">Probar en el visor ↑</button>
-            </div>
+        <div class="hud-showcase-grid">
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>✦ 1. TIEMPO Y MUNDO</span><span class="hud-tag">SIEMPRE VISIBLE</span></div>
+            <p>Reloj digital grande con segundero, fecha completa en español, modo de ciclo solar activo y título del mundo.</p>
+            <div class="hud-sample">21:34:08 · CICLO 90M · Fittoa</div>
           </article>
-
-          <article class="world-card" data-world="black-clover">
-            <div class="world-media">
-              <img src="previews/black-clover/dorado.png" alt="Black Clover Aldea de Hage en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button class="is-active" data-fase="dorado">Dorado</button>
-                <button data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Black Clover · Aldea de Hage</h3>
-                <code>black-clover</code>
-              </div>
-              <p>Iglesia gótica de Hage, Torre de Grimorios con hiedra, Cráneo Gigante del Demonio con la estatua del Primer Rey Mago, Castillo Real lejano y espada Matademonios con grimorio flotante.</p>
-              <div class="world-meta">
-                <span>Anti-aves</span>
-                <span>Antimagia</span>
-                <span>Black Clover</span>
-              </div>
-              <button class="btn-try" data-try="black-clover">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>☀ 2. ÓRBITA &amp; CLIMA</span><span class="hud-tag">NUEVA</span></div>
+            <p>Calcula en tiempo real elevación solar, azimut astronómico y transición exacta entre día, hora dorada y noche.</p>
+            <div class="hud-sample">SOL +14.2° · AZ 218° · HORA DORADA</div>
           </article>
-
-          <article class="world-card world-card-wide" data-world="spiderman-miles-morales">
-            <div class="world-media">
-              <img src="previews/spiderman-miles-morales/noche.png" alt="Spider-Man Miles Morales Brooklyn en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button class="is-active" data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Spider-Man · Miles Morales</h3>
-                <code>spiderman-miles-morales</code>
-              </div>
-              <p>Edificios de ladrillo de Brooklyn con escaleras de incendios y depósitos de agua, cartel neón Spider-Verse, Puente de Brooklyn anclado, Estatua de la Libertad iluminada, ferry de Staten Island, rascacielos de Manhattan reflejados en el East River y Miles Morales balanceándose en el cielo.</p>
-              <div class="world-meta">
-                <span>Palomas urbanas</span>
-                <span>Chispas Venom</span>
-                <span>Spider-Verse</span>
-              </div>
-              <button class="btn-try" data-try="spiderman-miles-morales">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>❖ 3. SISTEMA PC</span><span class="hud-tag">WMI / CTYPES</span></div>
+            <p>Carga de CPU, memoria RAM usada/total con barras visuales, porcentaje de disco principal, batería/AC y uptime.</p>
+            <div class="hud-sample">CPU 16% · RAM 7.4/16G · UP 4h12</div>
           </article>
-
-          <article class="world-card world-card-wide" data-world="solo-leveling">
-            <div class="world-media">
-              <img src="previews/solo-leveling/noche.png" alt="Solo Leveling Castillo del Monarca en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button class="is-active" data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Solo Leveling · Castillo del Monarca</h3>
-                <code>solo-leveling</code>
-              </div>
-              <p>Ciudadela gótica del Trono Carmesí con Sung Jin-Woo proclamándose Monarca de las Sombras, Igris en forma de sombra con su penacho carmesí y su ejército de soldados sombríos; en el segundo monitor, los acantilados de la Isla de Jeju y la colmena custodiada por Beru.</p>
-              <div class="world-meta">
-                <span>Wyverns / Kaisel</span>
-                <span>Llamas sombra</span>
-                <span>Solo Leveling</span>
-              </div>
-              <button class="btn-try" data-try="solo-leveling">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>▣ 4. GPU &amp; MOTOR</span><span class="hud-tag">NUEVA</span></div>
+            <p>Detecta tu tarjeta gráfica real (registro/WMI en Windows o WebGL en web), resolución de salida, carga estimada y FPS.</p>
+            <div class="hud-sample">NVIDIA GTX 1650 · 8 FPS · 640×400</div>
           </article>
-
-          <article class="world-card world-card-wide" data-world="demon-slayer">
-            <div class="world-media">
-              <img src="previews/demon-slayer/noche.png" alt="Demon Slayer Tren Infinito en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button class="is-active" data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Demon Slayer · Tren Infinito</h3>
-                <code>demon-slayer</code>
-              </div>
-              <p>Locomotora a vapor del Tren Infinito bajo luna llena con Rengoku vs Akaza sobre el vagón y dragón de fuego de la Novena Postura; en el segundo monitor, la Aldea de los Herreros rodeada de niebla y aguas termales con Muichiro Tokito enfrentándose a Gyokko.</p>
-              <div class="world-meta">
-                <span>Cuervos Kasugai</span>
-                <span>Brasas / Niebla</span>
-                <span>Kimetsu no Yaiba</span>
-              </div>
-              <button class="btn-try" data-try="demon-slayer">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>◈ 5. RED Y TRÁFICO</span><span class="hud-tag">TIEMPO REAL</span></div>
+            <p>Muestra el adaptador Wi-Fi/Ethernet conectado, IP local IPv4 y tasas vivas de descarga y subida en KB/s o MB/s.</p>
+            <div class="hud-sample">IP 192.168.1.42 · ↓ 1.2M/s ↑ 140K/s</div>
           </article>
-
-          <article class="world-card world-card-wide" data-world="stranger-things">
-            <div class="world-media">
-              <img src="previews/stranger-things/noche.png" alt="Stranger Things Hawkins en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button class="is-active" data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Stranger Things · Hawkins y el Revés</h3>
-                <code>stranger-things</code>
-              </div>
-              <p>Hawkins y la Casa Creel bajo una grieta carmesí del Mundo del Revés con el Mind Flayer acechando en la tormenta y los chicos en bicicleta; en el segundo monitor, la cabaña del bosque de los Byers iluminada con luces navideñas y un Demogorgon entre los pinos.</p>
-              <div class="world-meta">
-                <span>Murciélagos Upside Down</span>
-                <span>Esporas ceniza</span>
-                <span>Hawkins 1986</span>
-              </div>
-              <button class="btn-try" data-try="stranger-things">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>♪ 6. BSO DEL MUNDO</span><span class="hud-tag">NUEVA</span></div>
+            <p>Banda sonora temática curada para cada uno de los 9 universos con BPM y detección de reproductores activos.</p>
+            <div class="hud-sample">KAMADO TANJIRO NO UTA · 78 BPM</div>
           </article>
-
-          <article class="world-card world-card-wide" data-world="harry-potter">
-            <div class="world-media">
-              <img src="previews/harry-potter/noche.png" alt="Harry Potter Hogwarts en PixelZen" loading="lazy" />
-              <div class="phase-switch">
-                <button data-fase="dia">Día</button>
-                <button data-fase="dorado">Dorado</button>
-                <button class="is-active" data-fase="noche">Noche</button>
-                <button class="is-active" data-pan="m1" title="Monitor principal">M1</button>
-                <button data-pan="m2" title="Continuación (monitor 2)">M2</button>
-              </div>
-            </div>
-            <div class="world-body">
-              <div class="world-top">
-                <h3>Harry Potter · Castillo de Hogwarts</h3>
-                <code>harry-potter</code>
-              </div>
-              <p>Castillo de Hogwarts iluminado sobre el Lago Negro con barcas de primer año y Harry en su Saeta de Fuego persiguiendo la Snitch Dorada; en el segundo monitor, Hogsmeade nevado, el viaducto de Glenfinnan con el Expreso de Hogwarts y un Patronus ciervo plateado.</p>
-              <div class="world-meta">
-                <span>Lechuzas nocturnas</span>
-                <span>Chispas Patronus</span>
-                <span>Mundo Mágico</span>
-              </div>
-              <button class="btn-try" data-try="harry-potter">Probar en el visor ↑</button>
-            </div>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>⚔ 7. ENTORNO DEV</span><span class="hud-tag">GIT &amp; TOOLS</span></div>
+            <p>Nombre de equipo, repositorio y rama Git con estado de cambios sin confirmar, versión de PowerShell/Python y monitores.</p>
+            <div class="hud-sample">pixelzen-worlds · main · PY 3.12</div>
+          </article>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>⧖ 8. FOCO ZEN</span><span class="hud-tag">NUEVA</span></div>
+            <p>Temporizador Pomodoro por ciclos de 25 minutos con barra de progreso y contador acumulado de sesión de trabajo o estudio.</p>
+            <div class="hud-sample">CICLO 1 · 24:12 RESTANTES · ZEN</div>
+          </article>
+          <article class="hud-info-card">
+            <div class="hud-info-head"><span>✧ 9. GRIMORIO</span><span class="hud-tag">CITAS LORE</span></div>
+            <p>Citas icónicas de los personajes y localizaciones de cada anime o serie, rotando automáticamente en sincronía con el mundo.</p>
+            <div class="hud-sample">«Mantén tu corazón ardiendo.» · Rengoku</div>
           </article>
         </div>
       </div>
     </section>
 
-    <!-- ARQUITECTURA Y CARACTERÍSTICAS -->
-    <section class="section section-alt" id="arquitectura">
+    <!-- ARQUITECTURA -->
+    <section class="section" id="arquitectura">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">MOTOR Y ARQUITECTURA</span>
-          <h2>Diseñado desde cero en Python puro + JS nativo</h2>
+          <span class="eyebrow">DISEÑO MULTIPLATAFORMA</span>
+          <h2>Motor nativo C# en Windows, Web Canvas y GNOME Shell</h2>
         </div>
+
         <div class="features-grid">
           <div class="feat-card">
-            <div class="feat-icon">☀</div>
-            <h3>Posición solar real o ciclo 90m</h3>
-            <p>Calcula elevación y acimut solar/lunar según tu latitud, o recorre las 24 horas en 90 minutos mediante <code>systemd</code> en Linux y temporizador en Windows.</p>
+            <div class="feat-icon">☉</div>
+            <h3>Física solar astronómica</h3>
+            <p>Calcula declinación, elevación solar y transición suavizada entre cielo diurno, atardecer dorado y cielo nocturno con estrellas parpadeantes.</p>
           </div>
           <div class="feat-card">
-            <div class="feat-icon">▦</div>
-            <h3>Pixel art puro sin dependencias</h3>
-            <p><code>src/pz_lib.py</code> genera cada píxel con tramado Bayer 4×4, ruido fractal y recorte alfa exacto (matte blanco/negro) sin requerir Pillow ni editores externos al compilar.</p>
+            <div class="feat-icon">⚡</div>
+            <h3>Motor Nativo Windows (C# GDI+)</h3>
+            <p>Se inserta detrás de los iconos del escritorio mediante <code>WorkerW</code> y recompone los píxeles en <code>NEAREST</code> sin requerir Python ni WebView2.</p>
           </div>
           <div class="feat-card">
-            <div class="feat-icon">◈</div>
-            <h3>Extensión nativa GNOME 46–50+</h3>
-            <p>Renderiza en <code>Main.layoutManager._backgroundGroup</code> con escalado <code>NEAREST</code>, pausa automática en pantalla completa y tarjeta HUD con métricas reales del sistema.</p>
+            <div class="feat-icon">🖥</div>
+            <h3>Continuidad 3 pantallas</h3>
+            <p>Extiende la historia al segundo monitor y aplica una escena ceremonial automática para tu pantalla de bloqueo de Windows desde <code>PixelZenMenu</code>.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">❄</div>
+            <h3>Clima y héroes dinámicos</h3>
+            <p>Humo en chimeneas, faroles vibrantes, esporas carmesí en Stranger Things, reflejos en el agua y Miles Morales balanceándose sobre Brooklyn.</p>
+          </div>
+          <div class="feat-card">
+            <div class="feat-icon">🐧</div>
+            <h3>Extensión GNOME 46–50+</h3>
+            <p>Renderiza en <code>Main.layoutManager._backgroundGroup</code> con pausa inteligente al abrir apps en pantalla completa.</p>
           </div>
           <div class="feat-card">
             <div class="feat-icon">❖</div>
-            <h3>100% modular y extensible</h3>
-            <p>Copia <code>escenas/_plantilla</code>, edita <code>tema.json</code> y <code>generar.py</code>, y ejecuta <code>python3 src/construir.py</code> para compilar paquetes para Linux y Windows a la vez.</p>
+            <h3>Zero .exe y código abierto</h3>
+            <p>Compilado con <code>src/construir.py</code> hacia Linux, Windows y Web sin binarios opacos, compatible con Control inteligente de aplicaciones de Windows 11.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- INSTALACIÓN -->
-    <section class="section" id="instalar">
+    <!-- CENTRO DE INSTALACIÓN -->
+    <section class="section section-alt" id="instalar">
       <div class="container">
         <div class="section-head">
-          <span class="eyebrow">GUÍA RÁPIDA</span>
-          <h2>Instala y cambia de mundo en segundos</h2>
+          <span class="eyebrow">CENTRO DE INSTALACIÓN</span>
+          <h2>Instala PixelZen Worlds en segundos</h2>
+          <p>Instalador limpio sin archivos <code>.exe</code>: instala en <code>%LOCALAPPDATA%\PixelZenWorlds</code>, añade accesos directos en Escritorio/Menú Inicio y registra desinstalación estándar.</p>
+        </div>
+
+        <div class="install-hero-grid">
+          <div class="install-box">
+            <h3>Instalación rápida para Windows 10 / 11</h3>
+            <p>Descarga e inicia el asistente automático (compatible con Smart App Control y Lively Wallpaper, con motor nativo C# incluido) o ejecuta una sola línea en PowerShell.</p>
+            <div class="install-btn-row">
+              <a href="Instalar-PixelZenWorlds.bat" download="Instalar-PixelZenWorlds.bat" class="btn-primary" id="dl-bat">⬇ Descargar Instalador (.bat)</a>
+              <a href="Instalar-PixelZenWorlds.ps1" download="Instalar-PixelZenWorlds.ps1" class="btn-secondary" id="dl-ps1">⬇ Script PowerShell (.ps1)</a>
+              <button class="btn-secondary" id="btn-copy-oneliner" data-copy="irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex">⧉ Copiar comando 1 línea</button>
+            </div>
+            <div class="install-note">✓ Incluye los 9 mundos (27 escenas), estudio de configuración en bandeja y las 9 tarjetas HUD flotantes.</div>
+          </div>
+
+          <div class="install-box">
+            <h3>Generador de comando personalizado</h3>
+            <div class="config-gen">
+              <label>Mundo inicial
+                <select id="gen-mundo">
+                  <option value="fittoa">Fittoa</option>
+                  <option value="continente-demoniaco">Continente Demoníaco</option>
+                  <option value="hunter-x-hunter">Hunter × Hunter</option>
+                  <option value="black-clover">Black Clover</option>
+                  <option value="spiderman-miles-morales">Miles Morales</option>
+                  <option value="solo-leveling">Solo Leveling</option>
+                  <option value="demon-slayer">Demon Slayer</option>
+                  <option value="stranger-things">Stranger Things</option>
+                  <option value="harry-potter">Harry Potter</option>
+                </select>
+              </label>
+              <label>Ciclo solar
+                <select id="gen-modo">
+                  <option value="90m">Suave 90m</option>
+                  <option value="real">Hora real</option>
+                  <option value="demo">Demo 90s</option>
+                  <option value="21:30">Fija 21:30</option>
+                </select>
+              </label>
+              <label>Monitores
+                <select id="gen-mon">
+                  <option value="2">2 Pantallas (M1+M2)</option>
+                  <option value="1">1 Pantalla (M1)</option>
+                </select>
+              </label>
+            </div>
+            <div class="code-box">
+              <button class="copy-btn" id="gen-copy" data-copy="">Copiar</button>
+              <pre><code id="gen-cmd">python windows/pixelzen_win.py --tema fittoa --90m --monitores 2</code></pre>
+            </div>
+          </div>
         </div>
 
         <div class="install-panel">
           <div class="os-tabs" role="tablist">
-            <button class="os-tab is-active" data-os="linux">Linux (GNOME Shell)</button>
-            <button class="os-tab" data-os="windows">Windows (Lively / Python)</button>
-            <button class="os-tab" data-os="dev">Crear tu propio fondo</button>
+            <button class="os-tab is-active" data-os="windows-one">Windows · PowerShell (1 línea)</button>
+            <button class="os-tab" data-os="windows-cli">Windows · Motor Nativo / Python</button>
+            <button class="os-tab" data-os="linux">Linux (GNOME Shell)</button>
+            <button class="os-tab" data-os="lively">Lively Wallpaper</button>
+            <button class="os-tab" data-os="dev">Crear tu mundo</button>
           </div>
 
-          <div class="os-pane is-active" data-pane="linux">
+          <div class="os-pane is-active" data-pane="windows-one">
             <div class="code-box">
-              <button class="copy-btn" data-copy="cd linux && ./instalar.sh --90m">Copiar</button>
-              <pre><code># 1. Instalar la extensión con ciclo de 24h en 90 minutos
-cd linux
-./instalar.sh --90m
+              <button class="copy-btn" data-copy="irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex">Copiar</button>
+              <pre><code># Abre PowerShell y pega este comando (no requiere Git ni archivos .exe):
+irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1 | iex
 
-# 2. Cambiar entre los 5 fondos disponibles
-./tema.sh --listar
-./tema.sh spiderman-miles-morales
-./tema.sh hunter-x-hunter
-./tema.sh black-clover
-./tema.sh continente-demoniaco
-./tema.sh fittoa
-
-# 3. Controlar la hora del cielo
-./hora.sh 90m      # Ciclo de 24h en 90 minutos
-./hora.sh real     # Hora real del reloj
-./hora.sh demo     # Demo rápida (24h en 90s)
-./hora.sh 21:30    # Congela una hora fija</code></pre>
+# Para instalar activando el arranque automático con Windows:
+$s = irm https://raw.githubusercontent.com/davidlpizano/pixelzen-worlds/main/scripts/instalar.ps1
+&amp; ([scriptblock]::Create($s)) -AutoInicio</code></pre>
             </div>
           </div>
 
-          <div class="os-pane" data-pane="windows">
+          <div class="os-pane" data-pane="windows-cli">
             <div class="code-box">
-              <button class="copy-btn" data-copy="python windows/pixelzen_win.py --tema spiderman-miles-morales --90m">Copiar</button>
-              <pre><code># Opción A: Lively Wallpaper (animado completo + HUD)
-# Abre windows/lively/index.html desde Lively Wallpaper y elige el tema en Personalizar.
+              <button class="copy-btn" data-copy="powershell -ExecutionPolicy Bypass -File windows\PixelZenMenu.ps1">Copiar</button>
+              <pre><code># Estudio gráfico completo (Estudio WPF + Motor C# GDI+ + HUD 9 tarjetas):
+powershell -ExecutionPolicy Bypass -File windows\PixelZenMenu.ps1
 
-# Opción B: Selector interactivo o Python standalone
-windows\ejecutar.bat
+# Solo aplicar fondo y salir a bandeja:
+powershell -ExecutionPolicy Bypass -File windows\PixelZenMenu.ps1 -SoloAplicar
+
+# O desde Python standalone:
 python windows/pixelzen_win.py --listar
-python windows/pixelzen_win.py --tema spiderman-miles-morales --90m
-python windows/pixelzen_win.py --tema black-clover --real</code></pre>
+python windows/pixelzen_win.py --tema solo-leveling --90m</code></pre>
+            </div>
+          </div>
+
+          <div class="os-pane" data-pane="linux">
+            <div class="code-box">
+              <button class="copy-btn" data-copy="cd linux &amp;&amp; ./instalar.sh --90m">Copiar</button>
+              <pre><code># 1. Instalar la extensión GNOME Shell 46-50+ con ciclo de 90 minutos:
+cd linux
+./instalar.sh --90m
+
+# 2. Cambiar entre los 9 mundos disponibles:
+./tema.sh --listar
+./tema.sh demon-slayer
+./tema.sh solo-leveling
+./tema.sh stranger-things
+./tema.sh harry-potter
+
+# 3. Controlar la hora solar:
+./hora.sh 90m   |   ./hora.sh real   |   ./hora.sh demo   |   ./hora.sh 21:30</code></pre>
+            </div>
+          </div>
+
+          <div class="os-pane" data-pane="lively">
+            <div class="code-box">
+              <button class="copy-btn" data-copy="windows\lively\index.html">Copiar</button>
+              <pre><code># Abrir en Lively Wallpaper:
+# Arrastra o añade el archivo: windows\lively\index.html
+# Soporta LivelyProperties.json con los 9 mundos, Pantalla M1/M2/Bloqueo y las 9 tarjetas HUD.</code></pre>
             </div>
           </div>
 
           <div class="os-pane" data-pane="dev">
             <div class="code-box">
-              <button class="copy-btn" data-copy="cp -r escenas/_plantilla escenas/mi-mundo && python3 src/construir.py mi-mundo">Copiar</button>
-              <pre><code># 1. Duplica la plantilla base
-cp -r escenas/_plantilla escenas/mi-mundo
-
-# 2. Personaliza colores, citas y paisaje 640x400
-#    escenas/mi-mundo/tema.json
-#    escenas/mi-mundo/generar.py
-
-# 3. Compila las capas para Linux y Windows
-python3 src/construir.py mi-mundo</code></pre>
+              <button class="copy-btn" data-copy="python src/construir.py">Copiar</button>
+              <pre><code># Duplica una escena o edita escenas/&lt;mundo&gt;/tema.json y generar.py
+# Compila todas las capas para Windows, Lively, Web y Linux en un paso:
+python src/construir.py</code></pre>
             </div>
           </div>
         </div>
@@ -500,17 +526,57 @@ python3 src/construir.py mi-mundo</code></pre>
     </section>
   </main>
 
+  <!-- MODAL LIGHTBOX 3 PANTALLAS -->
+  <div class="modal" id="world-modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow" id="modal-serie" style="margin-bottom:2px">SERIE</span>
+          <h3 id="modal-title">Mundo</h3>
+        </div>
+        <button class="modal-close" id="modal-close" aria-label="Cerrar">✕ Cerrar</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-controls">
+          <div class="filter-group" id="modal-pan-btns">
+            <button class="btn-opt is-active" data-mpan="m1">M1 Principal</button>
+            <button class="btn-opt" data-mpan="m2">M2 Monitor 2</button>
+            <button class="btn-opt" data-mpan="m3">M3 Bloqueo</button>
+          </div>
+          <div class="filter-group" id="modal-fase-btns">
+            <button class="btn-opt" data-mfase="dia">Día</button>
+            <button class="btn-opt is-active" data-mfase="dorado">Dorado</button>
+            <button class="btn-opt" data-mfase="noche">Noche</button>
+          </div>
+        </div>
+        <div class="modal-preview">
+          <img id="modal-img" src="" alt="" />
+        </div>
+        <div>
+          <div class="world-scene-sub" id="modal-sub"></div>
+          <p id="modal-desc" style="color:var(--dim);font-size:13.5px;margin-top:4px"></p>
+        </div>
+        <div class="modal-triptych" id="modal-triptych"></div>
+        <div class="modal-quote" id="modal-quote"></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn-primary" id="modal-try">▶ Probar este mundo en vivo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="container footer-inner">
       <div>
-        <strong>PixelZen</strong> · Proyecto open source bajo licencia <strong>GPL-3.0-or-later</strong>.
+        <strong>PixelZen Worlds</strong> · Proyecto open source bajo licencia <strong>GPL-3.0-or-later</strong> · <a href="https://github.com/davidlpizano/pixelzen-worlds" target="_blank" rel="noopener">davidlpizano/pixelzen-worlds</a>
       </div>
       <div class="footer-meta">
-        Fuentes pixel: <code>Departure Mono</code> &amp; <code>Pixelify Sans</code> (OFL) · Basado en <a href="https://github.com/mosqui1988/pixelzen" target="_blank" rel="noopener">mosqui1988/pixelzen</a>.
+        Fuentes pixel: <code>Departure Mono</code> &amp; <code>Pixelify Sans</code> (OFL) · Inspirado en <a href="https://github.com/mosqui1988/pixelzen" target="_blank" rel="noopener">mosqui1988/pixelzen</a>.
       </div>
     </div>
   </footer>
 
+  <script src="temas-bundle.js"></script>
   <script src="pixelzen-canvas.js"></script>
   <script src="app.js"></script>
 </body>

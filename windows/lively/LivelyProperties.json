@@ -21,7 +21,8 @@
     "text": "Pantalla / Historia",
     "items": [
       "Monitor principal (escena base)",
-      "Segundo monitor (continuación de la historia)"
+      "Segundo monitor (continuación de la historia)",
+      "Pantalla de bloqueo (altar / enclave)"
     ]
   },
   "modoHora": {
@@ -61,20 +62,40 @@
     "value": true,
     "text": "HUD: Tiempo y reloj"
   },
+  "hudClima": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Órbita solar y fase lumínica"
+  },
   "hudSistema": {
     "type": "checkbox",
     "value": true,
     "text": "HUD: Sistema (CPU, RAM, Disco, Batería)"
+  },
+  "hudGpu": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: GPU y motor gráfico"
   },
   "hudRed": {
     "type": "checkbox",
     "value": true,
     "text": "HUD: Red (Interfaz, IP, Tráfico)"
   },
+  "hudAudio": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Música / BSO del mundo"
+  },
   "hudDev": {
     "type": "checkbox",
     "value": true,
     "text": "HUD: Entorno Dev (Git y herramientas)"
+  },
+  "hudFoco": {
+    "type": "checkbox",
+    "value": true,
+    "text": "HUD: Foco Zen (Pomodoro y sesión)"
   },
   "hudGrimorio": {
     "type": "checkbox",

@@ -53,7 +53,7 @@ def corre(gen_script, src_dir, env, *args):
     subprocess.run([sys.executable, gen_script, *args], env=e, check=True, stdout=subprocess.DEVNULL)
 
 
-def construir_tema(tema_dir, destino_dir, tmp_dir, src_dir):
+def construir_tema(tema_dir, destino_dir, tmp_dir, src_dir, preview_root=None):
     """Genera imágenes animadas, datos.json, tema.json y fondo.png para un tema concreto."""
     gen_script = os.path.join(tema_dir, 'generar.py')
     tema_json = os.path.join(tema_dir, 'tema.json')
@@ -86,7 +86,7 @@ def construir_tema(tema_dir, destino_dir, tmp_dir, src_dir):
         with open(os.path.join(tmp_dir, f'blanco-{fase}.pkl'), 'rb') as f:
             b = pickle.load(f)
         png(os.path.join(img_dir, f'escena-{fase}.png'), matte(n, b), W, H, True)
-        shutil.move(os.path.join(tmp_dir, f'nubes-{fase}.png'), os.path.join(img_dir, f'nubes-{fase}.png'))
+        shutil.copyfile(os.path.join(tmp_dir, f'nubes-{fase}.png'), os.path.join(img_dir, f'nubes-{fase}.png'))
 
         if fase == 'noche':
             with open(os.path.join(tmp_dir, 'datos.js')) as f:
@@ -102,13 +102,13 @@ def construir_tema(tema_dir, destino_dir, tmp_dir, src_dir):
         png(os.path.join(img_dir, f'{nombre}.png'), matte(neg, bla), 208, 208, True)
 
     # Vistas previas estáticas (dia, dorado, noche) y fondo.png
-    preview_root = os.path.join(tema_dir, 'preview')
+    preview_root = preview_root or os.path.join(tema_dir, 'preview')
     for fase in ('dia', 'dorado', 'noche'):
         pdir = os.path.join(preview_root, fase)
         os.makedirs(pdir, exist_ok=True)
         corre(gen_script, src_dir, {'PZ_FASE': fase}, pdir)
 
-    shutil.copy(os.path.join(preview_root, 'dia', 'v3.png'), os.path.join(destino_dir, 'fondo.png'))
+    shutil.copyfile(os.path.join(preview_root, 'dia', 'v3.png'), os.path.join(destino_dir, 'fondo.png'))
     if os.path.isfile(tema_json):
-        shutil.copy(tema_json, os.path.join(destino_dir, 'tema.json'))
+        shutil.copyfile(tema_json, os.path.join(destino_dir, 'tema.json'))
     print(f'  [{os.path.basename(tema_dir)}] pack listo en {destino_dir}', flush=True)

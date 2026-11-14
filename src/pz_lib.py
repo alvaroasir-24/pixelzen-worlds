@@ -137,6 +137,31 @@ def render_cielo(lz, sky_pal, skym, fase, hor=HOR, aurora_cols=('#72d8d0', '#a89
                         lz.over(x, y, col_aur, 0.42)
                     if random.random() < dens * 0.016:
                         lz.put(x, y, '#e8f6ff')
+        r_sky = random.Random(319)
+        rm = Ruido(17)
+        for x in range(0, 468, 2):
+            band_y = int(68 + (x - 40) * 0.16 + 18 * math.sin(x * 0.014))
+            for dy in range(-20, 21, 2):
+                y = band_y + dy
+                if 0 <= y < hor - 20 and not en_zona(x, y, 22):
+                    val = (1.0 - abs(dy) / 21.0) ** 1.8 * (0.35 + 0.65 * rm(x * 0.05 + y * 0.04))
+                    if r_sky.random() < val * 0.24:
+                        col_m = aurora_cols[0] if (x + y) % 3 == 0 else aurora_cols[1]
+                        lz.over(x, y, col_m, 0.24 * val)
+                    elif r_sky.random() < val * 0.022:
+                        lz.over(x, y, '#e8f6ff', 0.65)
+        for k in range(22):
+            sx, sy = 142 - k, 28 + int(k * 0.48)
+            if 0 <= sx < lz.w and 0 <= sy < hor and not en_zona(sx, sy, 12):
+                al = (1.0 - k / 22.0) * 0.78
+                lz.over(sx, sy, '#fff8ec' if k < 4 else aurora_cols[0], al)
+    elif fase == 'dorado' and skym == 'normal':
+        c_haze = sky_pal[-1]
+        for y in range(max(0, hor - 42), hor):
+            t_h = (y - (hor - 42)) / 42.0
+            for x in range(0, lz.w, 2):
+                if not en_zona(x, y, 10) and dith(x, y, t_h * 0.26):
+                    lz.over(x, y, c_haze, 0.18 * t_h)
 
     if os.environ.get('PZ_SKYONLY'):
         pickle.dump([r[:] for r in lz.px], open(os.environ['PZ_SKYONLY'], 'wb'))
@@ -299,6 +324,11 @@ def render_nubes(lz, nubes_def, nubes_out, anim):
 
 def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, reflejo_cols=('#f4e8ce', '#8ac6cc'), reflejo_astro=True):
     """Refleja el paisaje superior sobre el agua y añade oleaje y destellos."""
+    try:
+        import pz_detalles
+        pz_detalles.enriquecer_pre_lago(lz, hor=hor)
+    except ImportError:
+        pass
     copia = [list(r) for r in lz.px[:hor + 1]]
     for y in range(hor + 1, lz.h):
         d = y - hor
@@ -312,6 +342,10 @@ def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, re
     for x in range(lz.w):
         if dith(x, hor + 1, 0.45):
             lz.over(x, hor + 1, olas_pal[0], 0.25)
+        if x % 3 == 0 and dith(x, hor + 2, 0.34):
+            lz.over(x, hor + 2, olas_pal[0], 0.20)
+        if x % 5 == 0 and hor + 4 < lz.h and dith(x, hor + 4, 0.28):
+            lz.over(x, hor + 4, olas_pal[1], 0.18)
     rr = random.Random(21)
     for y in range(hor + 2, lz.h, 3):
         d = y - hor
@@ -341,6 +375,11 @@ def render_lago(lz, agua_col, olas_pal, destellos_out, anim, mx=352, hor=HOR, re
 
 def aplica_vineta(lz, vig):
     """Aplica viñeta dithered sutil en las esquinas."""
+    try:
+        import pz_detalles
+        pz_detalles.enriquecer_post_escena(lz)
+    except ImportError:
+        pass
     for y in range(lz.h):
         for x in range(lz.w):
             d = math.hypot((x - lz.w / 2) / (lz.w / 2), (y - lz.h / 2) / (lz.h / 2))

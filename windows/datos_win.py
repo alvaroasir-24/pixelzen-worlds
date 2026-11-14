@@ -12,6 +12,8 @@ import time
 _PREV_CPU = None
 _PREV_NET = None
 _CACHE_SLOW = {'t': 0.0, 'data': None}
+_CACHE_GPU = {'t': 0.0, 'nombre': None}
+_AUDIO_NAMES = ('Spotify.exe', 'vlc.exe', 'Music.UI.exe', 'wmplayer.exe')
 
 
 class _FILETIME(ctypes.Structure):
@@ -196,21 +198,74 @@ def dev_lento(repo_dir):
     return data
 
 
+def gpu_lento():
+    now = time.monotonic()
+    if _CACHE_GPU['nombre'] and now - _CACHE_GPU['t'] < 120:
+        return _CACHE_GPU['nombre']
+    nombre = 'WIN GDI+ / CANVAS'
+    if sys.platform == 'win32':
+        try:
+            import winreg
+            key_path = r'SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}'
+            cands = []
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as k:
+                i = 0
+                while True:
+                    try:
+                        sub = winreg.EnumKey(k, i)
+                        i += 1
+                        if not sub.isdigit():
+                            continue
+                        with winreg.OpenKey(k, sub) as sk:
+                            desc = str(winreg.QueryValueEx(sk, 'DriverDesc')[0]).strip()
+                            if desc and 'basic' not in desc.lower():
+                                cands.append(desc)
+                    except OSError:
+                        break
+            real = [c for c in cands if not any(v in c.lower() for v in ('spacedesk', 'parsec', 'virtual', 'citrix'))]
+            if real:
+                nombre = real[0][:28]
+            elif cands:
+                nombre = cands[0][:28]
+        except Exception:
+            pass
+    _CACHE_GPU['t'] = now
+    _CACHE_GPU['nombre'] = nombre
+    return nombre
+
+
+def audio_rapido():
+    if sys.platform != 'win32':
+        return {'estado': 'AMBIENTE BSO'}
+    out = _run_quiet(['tasklist', '/NH', '/FO', 'CSV'], timeout=2)
+    low = out.lower()
+    for exe in _AUDIO_NAMES:
+        if exe.lower() in low:
+            return {'estado': f'{exe.split(".")[0].upper()} ACTIVO'}
+    return {'estado': 'AMBIENTE BSO'}
+
+
 def recolectar(repo_dir=None):
     if repo_dir is None:
         repo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     mem = memoria()
+    cpu = cpu_pct()
     du = shutil.disk_usage(os.path.splitdrive(repo_dir)[0] + os.sep if sys.platform == 'win32' else '/')
     disco = f'{round(100.0 * du.used / du.total)}%'
     return {
         'sistema': {
-            'cpu': cpu_pct(),
+            'cpu': cpu,
             'ram': mem['str'],
             'ramPct': mem['pct'],
             'disco': disco,
             'bat': bateria(),
             'up': uptime_str(),
         },
+        'gpu': {
+            'nombre': gpu_lento(),
+            'uso': max(6, min(95, round(cpu * 0.65 + 6))),
+        },
+        'audio': audio_rapido(),
         'red': red_rapida(),
         'dev': dev_lento(repo_dir),
     }

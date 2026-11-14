@@ -67,67 +67,67 @@ exporta_sprites_si_aplica(
 )
 render_estrellas(lz, FASE, ANIM, ESTRELLAS, colors=['#d8f4ff', '#c8b8ff', '#8ea8e8'])
 
-MX, MY, MR = 132, 74, 34
+MX, MY, MR = 132, 60, 34
 if not ANIM:
     if FASE == 'noche':
         dibuja_luna_estandar(lz, MX, MY, MR, halo='#9cb8ff', base='#eef6ff', sombra='#c0cee8', crater='#9aa8cc', crater_hi='#b2c0e0')
     elif FASE == 'dorado':
-        dibuja_sol_estandar(lz, 504, 174, 22, halo='#ff9878', centro='#fff0e2', borde='#f46658', rayo='#ff8468')
+        dibuja_sol_estandar(lz, 504, 160, 22, halo='#ff9878', centro='#fff0e2', borde='#f46658', rayo='#ff8468')
     else:
-        dibuja_sol_estandar(lz, 496, 82, 22, halo='#dce4ff', centro='#ffffff', borde='#b8ccff', rayo='#d4e0ff')
+        dibuja_sol_estandar(lz, 496, 70, 22, halo='#dce4ff', centro='#ffffff', borde='#b8ccff', rayo='#d4e0ff')
 
 NUBES_DEF = [
-    (90, 40, 140, PAL['nube'][0], 2),
-    (530, 56, 155, PAL['nube'][1], 2),
-    (160, 118, 165, PAL['nube'][2], 3),
-    (470, 128, 150, PAL['nube'][3], 2),
+    (90, 30, 140, PAL['nube'][0], 2),
+    (530, 44, 155, PAL['nube'][1], 2),
+    (160, 106, 165, PAL['nube'][2], 3),
+    (470, 114, 150, PAL['nube'][3], 2),
 ]
 render_nubes(lz, NUBES_DEF, NUBES, ANIM)
 
-# Horizonte montanoso + muralla baja del santuario dimensional anclada
+# Horizonte montanoso + muralla baja del santuario dimensional anclada (elevado)
 rc = Ruido(755)
 ST_HI, ST_MID, ST_DK, ST_RIM = PAL['stone']
 for x in range(W):
-    ridge = int(244 + 20 * fbm(rc, x * 0.016))
-    for y in range(ridge, HOR + 28):
-        t = (y - ridge) / max(1, (HOR + 28 - ridge))
+    ridge = int(228 + 20 * fbm(rc, x * 0.016))
+    for y in range(ridge, HOR + 12):
+        t = (y - ridge) / max(1, (HOR + 12 - ridge))
         put(x, y, mix(ST_MID, ST_DK, min(1.0, t)))
 
-# Almenas bajas tras la explanada (y=268..298)
+# Almenas bajas tras la explanada (y=252..284)
 for x in range(W):
-    top_w = 270 if (x % 18) < 10 else 276
-    for y in range(top_w, 298):
+    top_w = 254 if (x % 18) < 10 else 260
+    for y in range(top_w, 284):
         put(x, y, ST_RIM if y == top_w else (ST_DK if y % 7 == 0 else ST_MID))
 
-# Explanada ceremonial de losas oscuras (y = 296..400)
+# Explanada ceremonial de losas oscuras (elevada: y = 282..400)
 FA, FB, FL = PAL['floor']
-for y in range(296, H):
-    ty = (y - 296) / float(H - 296)
-    row_t = int((y - 296) / (3.0 + 5.0 * ty))
+for y in range(282, H):
+    ty = (y - 282) / float(H - 282)
+    row_t = int((y - 282) / (3.0 + 5.0 * ty))
     for x in range(W):
         px_p = (x - 320) / (0.38 + 0.92 * ty)
         col_t = int(math.floor(px_p / 24.0))
-        is_j = (abs(px_p - col_t * 24.0) < 1.2) or ((y - 296) % max(4, int(5 + 8 * ty)) == 0)
+        is_j = (abs(px_p - col_t * 24.0) < 1.2) or ((y - 282) % max(4, int(5 + 8 * ty)) == 0)
         put(x, y, FL if is_j else (FA if (col_t + row_t) % 2 == 0 else FB))
 
-# Sello de invocacion circular en la plataforma (cx=320, cy=358)
+# Sello de invocacion circular en la plataforma (cx=320, cy=342)
 P0, P1, P2, P3 = PAL['portal']
 for dy in range(-20, 21):
     for dx in range(-96, 97):
         dist = math.hypot(dx / 94.0, dy / 19.0)
         if 0.86 <= dist <= 1.0 or 0.56 <= dist <= 0.64:
-            put(320 + dx, 358 + dy, P1 if dist < 0.7 else P0)
-for rx_r, ry_r in ((244, 358), (396, 358), (282, 344), (358, 344), (282, 372), (358, 372)):
+            put(320 + dx, 342 + dy, P1 if dist < 0.7 else P0)
+for rx_r, ry_r in ((244, 342), (396, 342), (282, 328), (358, 328), (282, 356), (358, 356)):
     if ANIM:
         RUNAS.append([rx_r, ry_r])
     else:
         glow(rx_r, ry_r, 5, P0, 0.65)
 
 # Gran Porton Dimensional Rango S con base anclada al pedestal/suelo
-for y in range(160, 316):
+for y in range(144, 300):
     for x in range(256, 385):
         nx = (x - 320) / 56.0
-        ny = (y - 238) / 74.0
+        ny = (y - 222) / 74.0
         d = math.hypot(nx, ny)
         if d <= 1.05:
             swirl = math.sin(d * 10.0 + math.atan2(ny, nx) * 3.0)
@@ -142,35 +142,35 @@ for y in range(160, 316):
                 put(x, y, P2 if d < 0.14 else P0)
 
 if ANIM:
-    FAROLES.append([320, 238, 18])
+    FAROLES.append([320, 222, 18])
 else:
-    glow(320, 238, 28, P0, 0.45)
+    glow(320, 222, 28, P0, 0.45)
 
-# Dos Obeliscos Runicos con capiteles anclados firmemente en y=328
+# Dos Obeliscos Runicos con capiteles anclados firmemente en y=314
 for ox in (218, 422):
-    for y in range(146, 329):
-        hw = max(2, int(12 - max(0, (176 - y)) * 0.28))
-        if y > 312:
-            hw += (y - 312) // 2
+    for y in range(132, 315):
+        hw = max(2, int(12 - max(0, (162 - y)) * 0.28))
+        if y > 298:
+            hw += (y - 298) // 2
         for dx in range(-hw, hw + 1):
             c = ST_RIM if dx == -hw else (ST_HI if dx < 0 else ST_DK)
-            if abs(dx) <= 1 and 188 <= y <= 298 and y % 12 < 6:
+            if abs(dx) <= 1 and 172 <= y <= 284 and y % 12 < 6:
                 c = P0 if y % 24 < 12 else P1
             put(ox + dx, y, c)
     if ANIM:
-        RUNAS.append([ox, 210])
-        RUNAS.append([ox, 260])
+        RUNAS.append([ox, 196])
+        RUNAS.append([ox, 246])
 
 # Pedestal de obsidiana + Dagas Gemelas cruzadas de Sung Jin-Woo clavadas en la piedra
-for y in range(340, 368):
-    hw = 24 + (y - 340) // 3
+for y in range(324, 352):
+    hw = 24 + (y - 324) // 3
     for dx in range(-hw, hw + 1):
         put(320 + dx, y, ST_HI if dx < -hw // 2 else (ST_MID if dx < hw // 2 else ST_DK))
 
 for side, col_edge in ((-1, PAL['dag'][1]), (1, PAL['dag'][3])):
     for i in range(46):
         cx_d = 320 + side * int(i * 0.48)
-        cy_d = 344 - i
+        cy_d = 328 - i
         bw = 2 if i < 29 else (5 if i == 30 else 1)
         for dx in range(-bw, bw + 1):
             c_d = '#e6f6ff' if dx == 0 else col_edge
@@ -178,40 +178,54 @@ for side, col_edge in ((-1, PAL['dag'][1]), (1, PAL['dag'][3])):
                 c_d = ST_DK if abs(dx) > 0 else PAL['dag'][2]
             put(cx_d + dx, cy_d, c_d)
     if ANIM:
-        RUNAS.append([320 + side * 12, 318])
+        RUNAS.append([320 + side * 12, 302])
 
-# Dos Caballeros Sombra arrodillados (~22px alto, presencia nítida en el primer plano lateral)
+# Dos Caballeros Sombra de Guardia Alta (~24px, armadura esculpida con yelmo penachado y lanza)
 spr_guardia = [
-    '......KKKKK......',
-    '.....KKKKKKK.....',
-    '.....KKVKVKK.....',
-    '......KKKKK......',
-    '..KKKKKKKKKKKKK..',
-    '.KKKKKKKKKKKKKKK.',
-    'KKK.KKKKKKKKK.KKK',
-    'KK..KKKKKKKKK..KK',
-    '....KKKKKKKKK....',
-    '...KKKKKKKKKKK...',
-    '..KKKKKKKKKKKKK..',
-    '..KKKKK...KKKKK..',
-    '.KKKKK.....KKKKK.',
-    '.KKKK.......KKKK.',
-    '.KKKK.......KKKK.',
+    '.......RRRR.......',
+    '......RMMMMR......',
+    '.....RMMKKMMR.....',
+    '.....RMVVVVMR.....',
+    '......RMMMMR......',
+    '....RRRSSSSRRR....',
+    '..RRMMKKMMKKMMRR..',
+    '.RMKKK.KMMK.KKKMR.',
+    '.RMK...KSSK...KMR.',
+    '.......KMMK.......',
+    '......RMMMMR......',
+    '.....RMMKKMMR.....',
+    '.....RMK..KMR.....',
+    '....RMKK..KKMR....',
+    '....RKK....KKR....',
+    '...RMMK....KMMR...',
+    '...RKK......KKR...',
+    '..RMMK......KMMR..',
+    '..RRRR......RRRR..',
 ]
 for gx, flip in ((144, False), (496, True)):
-    for dx in range(-18, 19):
+    for dx in range(-20, 21):
         for dy in range(-2, 3):
-            if (dx / 18.0) ** 2 + (dy / 2.6) ** 2 <= 1.0:
-                over(gx + dx, 368 + dy, P1, 0.58)
-    # Lanza apoyada junto al caballero
-    wx = gx + (-10 if flip else 10)
-    for y in range(338, 369):
-        put(wx, y, PAL['shad_rim'] if y < 346 else PAL['shad_core'])
-    pinta_sprite(lz, gx, 368, spr_guardia, {'K': PAL['shad_core'], 'V': P0})
+            if (dx / 20.0) ** 2 + (dy / 2.8) ** 2 <= 1.0:
+                over(gx + dx, 354 + dy, P1, 0.58)
+    # Alabarda alta apoyada junto al caballero
+    wx = gx + (-11 if flip else 11)
+    for y in range(320, 355):
+        put(wx, y, '#dce8ff' if y < 328 else (PAL['shad_rim'] if y < 332 else '#241b44'))
+    put(wx + (-1 if flip else 1), 325, P0)
+    put(wx + (-1 if flip else 1), 326, '#dce8ff')
+    pinta_sprite(lz, gx, 354, spr_guardia, {
+        'K': PAL['shad_core'],
+        'M': '#291f4c',
+        'R': PAL['shad_rim'],
+        'S': '#584e90',
+        'V': P0,
+    })
+    for k in range(5):
+        put(gx + (k // 2 if flip else -k // 2), 334 - k, P1)
     if ANIM:
-        RUNAS.append([gx, 356])
+        RUNAS.append([gx, 340])
     else:
-        glow(gx, 356, 4, P0, 0.5)
+        glow(gx, 340, 5, P0, 0.5)
 
 aplica_vineta(lz, PAL['vig'])
 

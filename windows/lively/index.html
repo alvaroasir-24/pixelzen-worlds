@@ -35,6 +35,14 @@
       pointer-events: none;
       color: #f3ead6;
     }
+    #hud.is-multicol {
+      width: min(560px, 46vw);
+      min-width: 470px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+      gap: 8px;
+    }
     .card {
       background: rgba(11, 16, 32, 0.84);
       border: 1px solid #7d6540;
@@ -96,6 +104,17 @@
       <div class="date" id="hud-fecha"></div>
       <div class="sub" id="hud-tema"></div>
     </div>
+    <div class="card" id="card-clima">
+      <div class="card-head"><span>☀ ÓRBITA & CLIMA</span><span id="hud-clima-meta">DÍA</span></div>
+      <div class="stat-row">
+        <span class="stat-k">SOL <strong id="hud-clima-elev" style="color:#e6c06e">--°</strong></span>
+        <span class="stat-k">AZ <strong id="hud-clima-az" style="color:#54ded4">--°</strong></span>
+      </div>
+      <div class="stat-row">
+        <div class="bar-bg"><div class="bar-fill" id="hud-clima-bar"></div></div>
+      </div>
+      <div class="date" id="hud-clima-luz">SOL EN LO ALTO</div>
+    </div>
     <div class="card" id="card-sistema">
       <div class="card-head"><span>❖ SISTEMA</span><span id="hud-sys-meta">WIN</span></div>
       <div class="stat-row">
@@ -113,6 +132,19 @@
         <span class="stat-k">BAT <strong id="hud-bat" style="color:#72c48c">--</strong></span>
       </div>
     </div>
+    <div class="card" id="card-gpu">
+      <div class="card-head"><span>▣ GPU & MOTOR</span><span id="hud-gpu-meta">8 FPS</span></div>
+      <div class="sub" id="hud-gpu-nombre" style="margin-top:0">RENDER PIXEL</div>
+      <div class="stat-row">
+        <span class="stat-k">USO</span>
+        <div class="bar-bg"><div class="bar-fill" id="hud-gpu-bar"></div></div>
+        <span class="stat-v" id="hud-gpu-uso">--%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-k" id="hud-gpu-res">640×400</span>
+        <span class="stat-v" id="hud-gpu-temp" style="color:#72c48c">--°C</span>
+      </div>
+    </div>
     <div class="card" id="card-red">
       <div class="card-head"><span>◈ RED</span><span id="hud-net-iface">--</span></div>
       <div class="stat-row"><span class="stat-k">IP</span><span class="stat-v" id="hud-ip">--</span></div>
@@ -121,10 +153,27 @@
         <span class="stat-k" style="color:#54ded4">↑ <span id="hud-tx">--</span></span>
       </div>
     </div>
+    <div class="card" id="card-audio">
+      <div class="card-head"><span>♪ BSO MUNDO</span><span id="hud-audio-meta">SONANDO</span></div>
+      <div class="sub" id="hud-audio-track" style="margin-top:0">--</div>
+      <div class="stat-row">
+        <span class="stat-k" id="hud-audio-bpm">-- BPM</span>
+        <span class="stat-v" id="hud-audio-vol" style="color:#72c48c">VOL --%</span>
+      </div>
+      <div class="stat-row"><div class="bar-bg"><div class="bar-fill" id="hud-audio-bar"></div></div></div>
+    </div>
     <div class="card" id="card-dev">
       <div class="card-head"><span>⚔ DEV</span><span id="hud-dev-host">workspace</span></div>
       <div class="sub" id="hud-repo" style="margin-top:0">--</div>
       <div class="date" id="hud-tc">--</div>
+    </div>
+    <div class="card" id="card-foco">
+      <div class="card-head"><span>⧖ FOCO ZEN</span><span id="hud-foco-meta">CICLO 1 · ZEN</span></div>
+      <div class="stat-row">
+        <span class="stat-v" id="hud-foco-timer" style="font-size:15px;font-weight:bold;color:#e6c06e">25:00</span>
+        <span class="stat-k" id="hud-foco-sesion">0m 00s</span>
+      </div>
+      <div class="stat-row"><div class="bar-bg"><div class="bar-fill" id="hud-foco-bar"></div></div></div>
     </div>
     <div class="card" id="card-grimorio">
       <div class="card-head"><span>✧ GRIMORIO</span><span id="hud-au"></span></div>

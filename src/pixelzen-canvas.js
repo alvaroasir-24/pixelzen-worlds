@@ -121,11 +121,17 @@
       mostrarHud: true,
       hudStats: {
         tiempo: true,
+        clima: true,
         sistema: true,
+        gpu: true,
         red: true,
+        audio: true,
         dev: true,
+        foco: true,
         grimorio: true,
       },
+      astro: null,
+      _gpuName: '',
       lat: 40.4,
       lon: -3.7,
       tick: 0,
@@ -304,39 +310,200 @@
       }
     }
 
+    function pintaTormentaStranger(t, nf, modo) {
+      const pulse = 0.04 + 0.05 * osc(0.08, 0.5);
+      px('#ff1e3c', pulse * (0.6 + 0.4 * nf), 0, 0, 640, 276);
+      const slot = Math.floor(t / 44);
+      const age = t % 44;
+      if (age >= 6) return;
+      const alpha = (1 - age / 6) * (age % 2 === 0 ? 1 : 0.55);
+      px('#ff2a48', alpha * 0.14, 0, 0, 640, 272);
+      const anchors = modo === 'stranger_demogorgon'
+        ? [385, 428, 472, 340]
+        : modo === 'stranger_reloj'
+          ? [276, 364, 240, 400]
+          : [132, 174, 212, 154];
+      const bx0 = anchors[slot % anchors.length];
+      let lx = bx0;
+      const yIni = modo === 'stranger_azotamentes' ? 54 : 26;
+      for (let i = 0; i < 120; i += 2) {
+        const jit = Math.sin(slot * 7.3 + i * 0.47) > 0.25 ? 2 : (Math.cos(slot * 3.1 + i * 0.61) < -0.25 ? -2 : 0);
+        lx += jit;
+        const ly = yIni + i;
+        if (ly > 268) break;
+        px('#ff2848', alpha * 0.72, lx - 1, ly, 3, 2);
+        px('#ffd8e2', alpha, lx, ly, 1, 2);
+        if (i === 44 || i === 82) {
+          const dir = (slot + i) % 2 === 0 ? 1 : -1;
+          for (let b = 0; b < 22; b += 2) {
+            px('#ff3454', alpha * 0.68, lx + dir * b, ly + b, 2, 2);
+          }
+        }
+      }
+    }
+
+    function pintaStrangerPrincipal(t, nf) {
+      // Zarcillos de tormenta y esporas escarlata girando en torno al Azotamentes
+      for (let i = 0; i < 12; i++) {
+        const ang = t * 0.07 + i * 0.52;
+        const wx = 168 + Math.round(Math.cos(ang) * (24 + (i % 4) * 14));
+        const wy = 148 + Math.round(Math.sin(ang * 0.8) * 32 - ((t * 0.4 + i * 5) % 18));
+        px(i % 2 === 0 ? '#ff304c' : '#2a0814', 0.48 + 0.35 * nf, wx, wy, 2, 2);
+      }
+
+      // Chicos de Hawkins pedaleando en fila por la carretera con haz de faro movil
+      const riders = [
+        [0, 344, '#2c5ca8', '#e64242'],
+        [-42, 338, '#d43c44', '#1b2030'],
+        [-84, 346, '#e28832', '#263826'],
+        [-126, 340, '#3e8a5c', '#543884'],
+      ];
+      const leadX = ((t * 1.65) % 860) - 70;
+      const spoke = Math.floor(t / 2) % 2;
+      riders.forEach(([ox, by, coat, hat], idx) => {
+        const cx = Math.round(leadX + ox);
+        if (cx < -35 || cx > 665) return;
+        const bob = Math.sin(t * 0.45 + idx * 1.4) > 0.35 ? -1 : 0;
+        // Ruedas y radios giratorios
+        for (const wx of [cx - 6, cx + 6]) {
+          px('#1d202c', 0.95, wx - 4, by - 7, 8, 2);
+          px('#1d202c', 0.95, wx - 4, by - 1, 8, 2);
+          px('#1d202c', 0.95, wx - 4, by - 6, 2, 6);
+          px('#1d202c', 0.95, wx + 2, by - 6, 2, 6);
+          px('#a8b4cc', 0.9, wx + (spoke ? 0 : -1), by - 4, 1, 1);
+          px('#a8b4cc', 0.85, wx + (spoke ? 1 : 0), by - 5, 1, 1);
+        }
+        // Cuadro, manillar, mochila y cuerpo del chico
+        px('#3a4052', 0.95, cx - 6, by - 6, 13, 1);
+        px('#7c8498', 0.95, cx + 4, by - 10, 1, 4);
+        px(coat, 0.96, cx - 2, by - 14 + bob, 5, 6);
+        px('#181a24', 0.96, cx - 3, by - 13 + bob, 2, 4);
+        px('#deb292', 0.96, cx - 1, by - 16 + bob, 3, 2);
+        px(hat, 0.96, cx - 2, by - 18 + bob, 5, 2);
+        // Cono de luz delantero proyectado sobre el asfalto
+        for (let i = 1; i <= 22; i += 2) {
+          const rad = Math.max(1, Math.floor(i / 5));
+          const opBeam = Math.max(0.04, (0.34 - i * 0.013) * (0.45 + 0.55 * nf));
+          px('#fff0b8', opBeam, cx + 7 + i, by - 9 - rad + 1, 2, rad * 2 - 1);
+        }
+        px('#fff8d4', 0.95, cx + 6, by - 9, 2, 1);
+      });
+    }
+
+    function pintaStrangerDemogorgon(t, nf) {
+      // Fauces del Demogorgon latiendo en rojo + esporas flotantes
+      const mawP = 0.45 + 0.55 * osc(0.14, 0.2);
+      px('#ff2448', 0.22 * mawP, 412, 314, 13, 13);
+      px('#ffc8d4', 0.65 * mawP, 417, 319, 3, 3);
+      for (let i = 0; i < 10; i++) {
+        const sx = 392 + ((i * 19 + Math.round(t * 0.5)) % 56);
+        const sy = 342 - ((t * 0.55 + i * 9) % 44);
+        px(i % 2 === 0 ? '#ff3a5e' : '#ffd0d8', 0.55, sx, sy, 1, 1);
+      }
+      // Guirnalda de luces del alfabeto de Joyce parpadeando en secuencia
+      const cols = ['#ff2e6a', '#48e8ff', '#ffd448', '#52ff88'];
+      const active = Math.floor(t / 6) % 8;
+      for (let i = 0; i < 8; i++) {
+        const lx = 78 + i * 10;
+        const ly = 292 + (i % 2) * 5;
+        const isLit = i === active || ((Math.floor(t / 14) + i) % 5 === 0);
+        const op = (isLit ? 0.95 : 0.30) * (0.55 + 0.45 * nf);
+        const col = cols[i % 4];
+        px(col, 0.24 * op, lx - 1, ly - 1, 4, 3);
+        px(col, op, lx, ly, 2, 1);
+      }
+    }
+
+    function pintaStrangerReloj(t, nf) {
+      // Pendulo dorado oscilando detras del cristal del reloj de Creel
+      const ang = 0.14 * Math.sin(t * 0.14);
+      const px0 = 320, py0 = 232, len = 56;
+      for (let r = 0; r <= len; r += 2) {
+        const rx = Math.round(px0 + Math.sin(ang) * r);
+        const ry = Math.round(py0 + Math.cos(ang) * r);
+        px('#e6bc58', 0.96, rx, ry, 1, 2);
+      }
+      const bx = Math.round(px0 + Math.sin(ang) * len);
+      const by = Math.round(py0 + Math.cos(ang) * len);
+      px('#f2ca62', 0.98, bx - 3, by - 3, 7, 7);
+      px('#fff4be', 0.90, bx - 1, by - 1, 3, 3);
+      // Chispas escarlata pulsantes en la grieta de Vecna
+      for (let k = 0; k < 6; k++) {
+        const cy = 172 + ((t * 2 + k * 33) % 180);
+        const cx = 320 + Math.round(Math.sin(cy * 0.15 + t * 0.08) * 14);
+        px('#ff4868', 0.55 + 0.35 * nf, cx, cy, 2, 2);
+      }
+    }
+
     async function cargarTema(id, { pantalla } = {}) {
       state.tema = id;
       if (pantalla) state.pantalla = pantalla;
-      const esSec = state.pantalla === 'secundaria';
+      const modo = state.pantalla === 'secundaria'
+        ? 'secundario'
+        : state.pantalla === 'bloqueo'
+          ? 'bloqueo'
+          : 'principal';
       const basePrim = `temas/${id}`;
-      let base = esSec ? `${basePrim}/secundario` : basePrim;
+      const base = modo === 'secundario'
+        ? `${basePrim}/secundario`
+        : modo === 'bloqueo'
+          ? `${basePrim}/bloqueo`
+          : basePrim;
       const names = [
         'cielo-noche', 'cielo-dorado', 'cielo-dia',
         'escena-noche', 'escena-dorado', 'escena-dia',
         'nubes-noche', 'nubes-dorado', 'nubes-dia',
         'sol', 'luna',
       ];
-      async function intentaCarga(dir) {
-        const [datosRes, temaRes] = await Promise.all([
-          fetch(`${dir}/datos.json`),
-          fetch(`${dir}/tema.json`),
+      const bundle = (typeof window !== 'undefined' && window.PIXELZEN_BUNDLE) ? window.PIXELZEN_BUNDLE : null;
+      const bases = (typeof window !== 'undefined' && Array.isArray(window.PIXELZEN_ASSET_BASES) && window.PIXELZEN_ASSET_BASES.length)
+        ? window.PIXELZEN_ASSET_BASES
+        : [''];
+
+      async function loadImageFallback(rel) {
+        let lastErr;
+        for (const prefix of bases) {
+          try {
+            return await loadImage(`${prefix}${rel}`);
+          } catch (err) { lastErr = err; }
+        }
+        throw lastErr || new Error(`No image: ${rel}`);
+      }
+
+      async function readJsonFallback(rel) {
+        let lastErr;
+        for (const prefix of bases) {
+          try {
+            const res = await fetch(`${prefix}${rel}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+          } catch (err) { lastErr = err; }
+        }
+        throw lastErr || new Error(`No json: ${rel}`);
+      }
+
+      async function intentaCarga(dir, keySuffix) {
+        const bKey = keySuffix ? `${id}/${keySuffix}` : id;
+        const [datosPack, ...imgs] = await Promise.all([
+          (async () => {
+            if (bundle && bundle[bKey]) return bundle[bKey];
+            const [datos, tema] = await Promise.all([
+              readJsonFallback(`${dir}/datos.json`),
+              readJsonFallback(`${dir}/tema.json`),
+            ]);
+            return { datos, tema };
+          })(),
+          ...names.map(f => loadImageFallback(`${dir}/images/${f}.png`)),
         ]);
-        if (!datosRes.ok || !temaRes.ok) throw new Error(`HTTP ${datosRes.status}/${temaRes.status}`);
-        const [datos, tema, ...imgs] = await Promise.all([
-          datosRes.json(),
-          temaRes.json(),
-          ...names.map(f => loadImage(`${dir}/images/${f}.png`)),
-        ]);
-        return { datos, tema, imgs };
+        return { datos: datosPack.datos, tema: datosPack.tema, imgs };
       }
 
       let cargado;
       try {
-        cargado = await intentaCarga(base);
+        cargado = await intentaCarga(base, modo === 'principal' ? '' : modo);
       } catch (_err) {
-        if (!esSec) throw _err;
-        base = basePrim;
-        cargado = await intentaCarga(basePrim);
+        if (modo === 'principal') throw _err;
+        cargado = await intentaCarga(basePrim, '');
       }
       if (state.tema !== id) return null;
       const { datos, tema, imgs } = cargado;
@@ -368,6 +535,16 @@
       const lunaX = f >= 0 ? 110 + f * 420 : 320;
       const lunaY = f >= 0 ? 272 - 56 * Math.sin(Math.PI * f) * 3.6 : 300;
       const lunaOp = f >= 0 ? clamp01((-s.e - 1) / 5) : 0;
+      state.astro = {
+        elev: s.e,
+        az: s.az,
+        nf,
+        ef,
+        wA,
+        wB,
+        lunaVisible: lunaOp > 0.05,
+        fase: s.e < -6 ? 'NOCHE' : s.e < 4 ? 'DORADA' : 'DÍA',
+      };
       const cuerpoX = s.e > -1 ? solX : lunaX;
       const cuerpoOp = s.e > -1 ? clamp01((s.e + 2) / 6) : lunaOp;
       const conAstro = state.pantalla !== 'secundaria';
@@ -416,6 +593,9 @@
         }
       });
 
+      const esStranger = T.modo_heroe && T.modo_heroe.startsWith('stranger_');
+      if (esStranger) pintaTormentaStranger(t, nf, T.modo_heroe);
+
       ctx.globalAlpha = 1;
       ctx.drawImage(I['escena-noche'], 0, 0);
       if (wA > 0.01) { ctx.globalAlpha = wA; ctx.drawImage(I['escena-dorado'], 0, 0); }
@@ -423,6 +603,9 @@
 
       if (T.modo_heroe === 'miles_morales') { pintaFerry(t, nf); pintaMiles(t, nf); }
       else if (T.modo_heroe === 'miles_colgado') { pintaFerry(t, nf); pintaMilesColgado(t, nf); }
+      else if (T.modo_heroe === 'stranger_azotamentes') { pintaStrangerPrincipal(t, nf); }
+      else if (T.modo_heroe === 'stranger_demogorgon') { pintaStrangerDemogorgon(t, nf); }
+      else if (T.modo_heroe === 'stranger_reloj') { pintaStrangerReloj(t, nf); }
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {
@@ -508,15 +691,64 @@
       if (opts.onRender) opts.onRender(fecha, T);
     }
 
+    const WORLD_AUDIO = {
+      'fittoa': ['Lullaby of Fittoa · OST', '84 BPM · FLACO LO-FI', 'VOL 68%'],
+      'continente-demoniaco': ['Rikarisu Wasteland · OST', '92 BPM · SYNTH AMBIENT', 'VOL 64%'],
+      'hunter-x-hunter': ['Departure! (Acoustic)', '96 BPM · GUITARRA LO-FI', 'VOL 72%'],
+      'black-clover': ['Haruka Mirai (Piano)', '108 BPM · ORQUESTA', 'VOL 76%'],
+      'spiderman-miles-morales': ['Sunflower · Brooklyn Mix', '90 BPM · BOOM-BAP LO-FI', 'VOL 80%'],
+      'solo-leveling': ['DARK ARIA <LV2> · Sawano', '116 BPM · SINFÓNICO', 'VOL 78%'],
+      'demon-slayer': ['Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI', 'VOL 70%'],
+      'stranger-things': ["Kids / Synthwave '83", '104 BPM · ANALÓGICO', 'VOL 74%'],
+      'harry-potter': ["Hedwig's Theme · Celesta", '88 BPM · CELESTA', 'VOL 66%'],
+    };
+
+    function detectarGpu() {
+      if (state._gpuName) return state._gpuName;
+      let nombre = 'CANVAS 2D · PIXEL';
+      try {
+        if (typeof document !== 'undefined') {
+          const glc = document.createElement('canvas');
+          const gl = glc.getContext('webgl') || glc.getContext('experimental-webgl');
+          if (gl) {
+            const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+            const raw = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '';
+            if (raw) {
+              nombre = String(raw).replace(/ANGLE \((?:[^,]+, )?([^)]+)\).*/, '$1').replace(/Direct3D.*|OpenGL.*/i, '').trim().slice(0, 26) || 'WEBGL ACCEL';
+            } else {
+              nombre = 'WEBGL 2D ACCEL';
+            }
+          }
+        }
+      } catch (_e) {}
+      state._gpuName = nombre;
+      return nombre;
+    }
+
     function actualizaHud(fecha, T, { quoteIntervalMs = 90000, stats = null, hudStats = null } = {}) {
       const hudEl = document.getElementById('hud');
       if (!hudEl) return;
       const hs = hudStats || state.hudStats || {};
-      const activo = state.mostrarHud && (
-        hs.tiempo !== false || !!hs.sistema || !!hs.red || !!hs.dev || hs.grimorio !== false
-      );
-      hudEl.style.display = activo ? 'flex' : 'none';
-      if (!activo) return;
+      const vis = {
+        tiempo: hs.tiempo !== false,
+        clima: !!hs.clima,
+        sistema: !!hs.sistema,
+        gpu: !!hs.gpu,
+        red: !!hs.red,
+        audio: !!hs.audio,
+        dev: !!hs.dev,
+        foco: !!hs.foco,
+        grimorio: hs.grimorio !== false,
+      };
+      const visibles = Object.values(vis).filter(Boolean).length;
+      const activo = state.mostrarHud && visibles > 0;
+      if (!activo) {
+        hudEl.style.display = 'none';
+        hudEl.classList.remove('is-multicol');
+        return;
+      }
+      hudEl.style.removeProperty('display');
+      hudEl.classList.toggle('is-multicol', visibles > 5);
 
       const toggleCard = (id, visible) => {
         const el = document.getElementById(id);
@@ -526,12 +758,20 @@
         const el = document.getElementById(id);
         if (el) el.textContent = val;
       };
+      const setBar = (id, pct) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = `${Math.max(4, Math.min(100, pct))}%`;
+      };
 
-      toggleCard('card-tiempo', hs.tiempo !== false);
-      toggleCard('card-sistema', !!hs.sistema);
-      toggleCard('card-red', !!hs.red);
-      toggleCard('card-dev', !!hs.dev);
-      toggleCard('card-grimorio', hs.grimorio !== false);
+      toggleCard('card-tiempo', vis.tiempo);
+      toggleCard('card-clima', vis.clima);
+      toggleCard('card-sistema', vis.sistema);
+      toggleCard('card-gpu', vis.gpu);
+      toggleCard('card-red', vis.red);
+      toggleCard('card-audio', vis.audio);
+      toggleCard('card-dev', vis.dev);
+      toggleCard('card-foco', vis.foco);
+      toggleCard('card-grimorio', vis.grimorio);
 
       const p2 = v => String(v).padStart(2, '0');
       setTxt('hud-hm', `${p2(fecha.getHours())}:${p2(fecha.getMinutes())}`);
@@ -542,7 +782,22 @@
       }));
       setTxt('hud-tema', (T && T.nombre) || state.tema);
 
-      if (hs.sistema) {
+      if (vis.clima) {
+        const cl = (stats && stats.clima) || {};
+        const astro = state.astro || sol(fecha);
+        const elev = astro.elev !== undefined ? astro.elev : astro.e;
+        const az = astro.az || 0;
+        const faseTxt = cl.fase || astro.fase || (elev < -6 ? 'NOCHE' : elev < 4 ? 'DORADA' : 'DÍA');
+        const condTxt = cl.cond || (elev < -6 ? (astro.lunaVisible ? 'LUNA Y ESTRELLAS' : 'NOCHE PROFUNDA') : elev < 4 ? 'SOL RASANTE · DORADO' : 'CIELO DESPEJADO');
+        const luzPct = Math.round(clamp01((elev + 18) / 68) * 100);
+        setTxt('hud-clima-meta', faseTxt);
+        setTxt('hud-clima-elev', `${elev >= 0 ? '+' : ''}${elev.toFixed(1)}°`);
+        setTxt('hud-clima-az', `${Math.round(az)}°`);
+        setTxt('hud-clima-luz', condTxt);
+        setBar('hud-clima-bar', luzPct);
+      }
+
+      if (vis.sistema) {
         const sis = (stats && stats.sistema) || {};
         const cpu = sis.cpu ?? Math.round(14 + 9 * Math.abs(Math.sin(state.tick * 0.08)));
         const ramTxt = sis.ram ?? `${(6.2 + 0.4 * Math.sin(state.tick * 0.03)).toFixed(1)}/16G`;
@@ -553,13 +808,22 @@
         setTxt('hud-ram', ramTxt);
         setTxt('hud-disco', disco);
         setTxt('hud-bat', bat);
-        const cpuBar = document.getElementById('hud-cpu-bar');
-        if (cpuBar) cpuBar.style.width = `${Math.max(4, Math.min(100, parseFloat(cpu) || 0))}%`;
-        const ramBar = document.getElementById('hud-ram-bar');
-        if (ramBar && sis.ramPct !== undefined) ramBar.style.width = `${Math.max(4, Math.min(100, sis.ramPct))}%`;
+        setBar('hud-cpu-bar', parseFloat(cpu) || 0);
+        if (sis.ramPct !== undefined) setBar('hud-ram-bar', sis.ramPct);
       }
 
-      if (hs.red) {
+      if (vis.gpu) {
+        const g = (stats && stats.gpu) || {};
+        const uso = g.uso ?? Math.round(18 + 8 * Math.abs(Math.sin(state.tick * 0.06 + 1.1)));
+        setTxt('hud-gpu-meta', g.meta || `${state.fps} FPS`);
+        setTxt('hud-gpu-nombre', g.nombre || detectarGpu());
+        setTxt('hud-gpu-uso', `${uso}%`);
+        setTxt('hud-gpu-res', g.res || '640×400 PIXEL');
+        setTxt('hud-gpu-temp', g.temp || `${Math.round(49 + 3 * Math.sin(state.tick * 0.04))}°C`);
+        setBar('hud-gpu-bar', parseFloat(uso) || 0);
+      }
+
+      if (vis.red) {
         const red = (stats && stats.red) || {};
         const conn = typeof navigator !== 'undefined' && navigator.connection ? navigator.connection : null;
         setTxt('hud-net-iface', red.iface || (conn && conn.effectiveType ? `WEB ${conn.effectiveType.toUpperCase()}` : 'ETHERNET / WIFI'));
@@ -568,15 +832,40 @@
         setTxt('hud-tx', red.tx || '240 KB/s');
       }
 
-      if (hs.dev) {
+      if (vis.audio) {
+        const au = (stats && stats.audio) || {};
+        const info = WORLD_AUDIO[state.tema] || ['Ambient Pixel · OST', '90 BPM · STEREO', 'VOL 70%'];
+        const nivel = au.nivel ?? Math.round(48 + 38 * Math.abs(Math.sin(state.tick * 0.24) * Math.cos(state.tick * 0.11)));
+        setTxt('hud-audio-meta', au.estado || 'SONANDO');
+        setTxt('hud-audio-track', au.pista || info[0]);
+        setTxt('hud-audio-bpm', au.detalle || info[1]);
+        setTxt('hud-audio-vol', au.vol || info[2]);
+        setBar('hud-audio-bar', nivel);
+      }
+
+      if (vis.dev) {
         const dev = (stats && stats.dev) || {};
         setTxt('hud-dev-host', dev.host || 'pixelzen-worlds');
         setTxt('hud-repo', dev.repo || 'pixelzen-worlds · main');
-        setTxt('hud-tc', dev.tc || 'PY 3.12 · JS ES6 · CANVAS 640×400');
+        setTxt('hud-tc', dev.tc || 'PY 3.12 · JS ES6 · C# GDI+');
+      }
+
+      if (vis.foco) {
+        const fc = (stats && stats.foco) || {};
+        const secTot = Math.max(0, Math.floor((Date.now() - state.inicioMs) / 1000));
+        const cicloSec = 25 * 60;
+        const rest = cicloSec - (secTot % cicloSec);
+        const mm = p2(Math.floor(rest / 60)), ss = p2(rest % 60);
+        const sm = Math.floor(secTot / 60), ssec = p2(secTot % 60);
+        const cicloNum = Math.floor(secTot / cicloSec) + 1;
+        setTxt('hud-foco-meta', fc.meta || `CICLO ${cicloNum} · ZEN`);
+        setTxt('hud-foco-timer', fc.timer || `${mm}:${ss}`);
+        setTxt('hud-foco-sesion', fc.sesion || `${sm}m ${ssec}s activa`);
+        setBar('hud-foco-bar', ((cicloSec - rest) / cicloSec) * 100);
       }
 
       const citas = (T && T.citas) || [];
-      if (citas.length && hs.grimorio !== false) {
+      if (citas.length && vis.grimorio) {
         const hk = citas[Math.floor(Date.now() / quoteIntervalMs) % citas.length];
         setTxt('hud-au', hk.au || '');
         setTxt('hud-qsub', hk.sub || '');
