@@ -1,7 +1,7 @@
 # PixelZen Worlds
 
 [![Release](https://img.shields.io/github/v/release/davidlpizano/pixelzen-worlds?label=Versi%C3%B3n&color=54ded4)](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)
-[![Mundos](https://img.shields.io/badge/Mundos-11%20%C3%97%203%20pantallas%20(33%20escenas)-e6b45a)](#mundos-incluidos-monitor-1--monitor-2--bloqueo)
+[![Mundos](https://img.shields.io/badge/Mundos-15%20%C3%97%203%20pantallas%20(45%20escenas)-e6b45a)](#mundos-incluidos-monitor-1--monitor-2--bloqueo)
 [![Tarjetas HUD](https://img.shields.io/badge/HUD%20Flotante-9%20tarjetas%20click--through-72c48c)](#panel-hud-flotante-9-tarjetas)
 [![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-1e2b4a)](LICENSE)
 
@@ -38,7 +38,7 @@ O descarga **`PixelZenWorlds-Linux-Setup.run`** desde Releases, dale permisos (`
 
 ## Características principales
 
-* **11 Universos × 3 Pantallas (33 escenas / 99 vistas en Día, Dorado y Noche)**:
+* **15 Universos × 3 Pantallas (45 escenas / 135 vistas en Día, Dorado y Noche)**:
   * **Monitor 1 (`principal`)**: escena principal animada detrás de los iconos del escritorio mediante el motor nativo C# GDI+ (`WorkerW` / `NEAREST`) o navegador/Lively/GNOME.
   * **Monitor 2 (`secundario`)**: continuación geográfica o narrativa del mismo mundo (o mundo independiente elegido en el estudio) sin duplicar sol ni luna entre pantallas.
   * **Pantalla de Bloqueo (`bloqueo`)**: tercer escenario ceremonial aplicable automáticamente al bloqueo de Windows desde el estudio.
@@ -51,7 +51,7 @@ O descarga **`PixelZenWorlds-Linux-Setup.run`** desde Releases, dale permisos (`
   * **Playlist & Atajos globales**: rotación automática de mundos configurable (`5–60 min`) y atajos `Ctrl+Alt+W` (mundo), `H` (HUD), `F` (clima), `P` (pausa), `E` (evento).
 * **Ciclo solar astronómico continuo**: calcula elevación y azimut reales del sol (hora real, ciclo de 24 h en 90 min, demo rápida 90 s u hora fija interactiva).
 * **Desktop Studio + Bandeja del sistema** ([`windows/PixelZenMenu.ps1`](windows/PixelZenMenu.ps1)): selector visual por series/mundos/pantallas, vistas previas Día/Dorado/Noche, menú multimedia/clima en bandeja y buscador de actualizaciones.
-* **Sitio web completo y visor offline** ([`docs/`](docs/) + [`temas-bundle.js`](docs/temas-bundle.js)): demo en vivo para 1–3 pantallas, comparador interactivo en pantalla dividida, exportador **4K / 1080p PNG**, galería filtrable de 33 escenas y centro de instalación.
+* **Sitio web completo y visor offline** ([`docs/`](docs/) + [`temas-bundle.js`](docs/temas-bundle.js)): demo en vivo para 1–3 pantallas, comparador interactivo en pantalla dividida, exportador **4K / 1080p PNG**, galería filtrable de 45 escenas y centro de instalación.
 
 ---
 
@@ -87,7 +87,11 @@ En Windows ([`windows/PixelZenHud.ps1`](windows/PixelZenHud.ps1)) las tarjetas f
 | **Hawkins y Upside Down** (`stranger-things`) · *Stranger Things* | ![Hawkins M1](docs/previews/stranger-things/dorado.png)<br/>**Hawkins**: tormenta carmesí del Azotamentes sobre Casa Creel y chicos en bici. | ![Byers M2](docs/previews/stranger-things/m2-dorado.png)<br/>**Cabaña Byers**: luces navideñas del abecedario y Demogorgon entre esporas. | ![Reloj M3](docs/previews/stranger-things/m3-dorado.png)<br/>**Reloj de Creel**: maldición de Vecna con grietas escarlata. |
 | **Castillo de Hogwarts** (`harry-potter`) · *Harry Potter* | ![Hogwarts M1](docs/previews/harry-potter/dorado.png)<br/>**Hogwarts y Lago Negro**: torres sobre Escocia, barcas y Quidditch. | ![Hogsmeade M2](docs/previews/harry-potter/m2-dorado.png)<br/>**Hogsmeade y Expreso**: cabañas nevadas, viaducto 5972 y Ciervo Patronus. | ![Anden M3](docs/previews/harry-potter/m3-dorado.png)<br/>**Andén 9¾ y Reliquias**: King's Cross, Hedwig y Varita de Saúco. |
 | **Konoha & Modo Baryon** (`naruto`) · *Naruto* | ![Naruto M1](docs/previews/naruto/dorado.png)<br/>**Naruto Modo Baryon**: silueta de Kurama, Naruto con 9 colas Modo Baryon y Baryon Rasengan vs Isshiki y cubos Daikokuten. | ![Konoha M2](docs/previews/naruto/m2-dorado.png)<br/>**Konoha y Monte Hokage**: Monumento Hokage, Ichiraku Ramen, Naruto Hokage y Sasuke sobre el Río Naka. | ![Valle M3](docs/previews/naruto/m3-dorado.png)<br/>**Valle del Fin**: estatuas de Hashirama y Madara flanqueando la cascada con choque de Rasengan vs Chidori. |
-| **Expansión de Dominio** (`jujutsu-kaisen`) · *Jujutsu Kaisen* | ![JJK M1](docs/previews/jujutsu-kaisen/dorado.png)<br/>**Shinjuku**: Santuario Malevolente, Vacío Infinito, Ryomen Sukuna vs Satoru Gojo y choque Púrpura Vacío. | ![JJK M2](docs/previews/jujutsu-kaisen/m2-dorado.png)<br/>**Incidente de Shibuya**: Torre 109, Prisión Confinadora, Yuji Itadori (*Destello Negro*) y Megumi Fushiguro. | ![JJK M3](docs/previews/jujutsu-kaisen/m3-dorado.png)<br/>**Santuario del Dedo**: puente tradicional, puerta Torii bermellón con sellos Ofuda y Dedo de Sukuna. |
+| **Expansión de Dominio** (`jujutsu-kaisen`) · *Jujutsu Kaisen* | ![JJK M1](docs/previews/jujutsu-kaisen/dorado.png)<br/>**Shinjuku**: Sagrario Malevolente de Sukuna con cráneos frente al Vacío Infinito de Gojo y choque Púrpura Vacío. | ![JJK M2](docs/previews/jujutsu-kaisen/m2-dorado.png)<br/>**Incidente de Shibuya**: Torre 109, Prisión Confinadora, Yuji Itadori (*Destello Negro*) y Megumi con el Perro Divino. | ![JJK M3](docs/previews/jujutsu-kaisen/m3-dorado.png)<br/>**Santuario del Dedo**: calzada sagrada, pagoda entre cedros, puerta Torii bermellón con sellos Ofuda y Dedo de Sukuna. |
+| **El Retumbar y la Muralla** (`attack-on-titan`) · *Attack on Titan* | ![AOT M1](docs/previews/attack-on-titan/dorado.png)<br/>**El Retumbar**: Titán Fundador, marcha de Titanes Colosales incandescentes, Mikasa y Levi sobre Shiganshina. | ![AOT M2](docs/previews/attack-on-titan/m2-dorado.png)<br/>**Muralla María**: Titán Colosal entre relámpagos dorados frente a las casas tradicionales de Shiganshina. | ![AOT M3](docs/previews/attack-on-titan/m3-dorado.png)<br/>**Los Caminos**: pilar de La Coordenada en el cielo estrellado y memorial de cuchillas EDM con la bufanda roja. |
+| **Gear 5 & Onigashima** (`one-piece`) · *One Piece* | ![OP M1](docs/previews/one-piece/dorado.png)<br/>**Onigashima**: Calavera gigante, Luffy Gear 5 desatando el Bajrang Gun frente a Kaido Dragón Azul. | ![OP M2](docs/previews/one-piece/m2-dorado.png)<br/>**Thousand Sunny**: el barco de los Mugiwara bajo la luna con Zoro y Sanji sobre la cubierta. | ![OP M3](docs/previews/one-piece/m3-dorado.png)<br/>**Road Poneglyph**: monolito carmesí con glifos antiguos, Sombrero de Paja y Fruta Nika. |
+| **Ultra Instinto en Namek** (`dragon-ball-z`) · *Dragon Ball Z* | ![DBZ M1](docs/previews/dragon-ball-z/dorado.png)<br/>**Namek en Colapso**: Goku Ultra Instinto Dominado chocando su Kamehameha Divino vs Freezer Dorado. | ![DBZ M2](docs/previews/dragon-ball-z/m2-dorado.png)<br/>**Dragón Shenron**: el dragón sagrado ascendiendo entre relámpagos sobre las 7 Bolas de Dragón. | ![DBZ M3](docs/previews/dragon-ball-z/m3-dorado.png)<br/>**Kame House**: isla del Maestro Roshi, Nube Kinton con el Bastón Mágico y la Bola de 4 Estrellas. |
+| **Night City & Sandevistan** (`cyberpunk-edgerunners`) · *Cyberpunk: Edgerunners* | ![Cyber M1](docs/previews/cyberpunk-edgerunners/dorado.png)<br/>**Corpo Plaza**: Arasaka, Quadra Turbo-R, David con estela cromática del Sandevistan y Lucy con su monofilo. | ![Cyber M2](docs/previews/cyberpunk-edgerunners/m2-dorado.png)<br/>**La Luna**: David y Lucy sentados en la azotea frente a la Luna plateada y el monorraíl NCART. | ![Cyber M3](docs/previews/cyberpunk-edgerunners/m3-dorado.png)<br/>**Callejón Afterlife**: mural grafiteado ER en verde ácido e implante espinal Apogee Sandevistan. |
 
 ---
 
@@ -96,7 +100,7 @@ En Windows ([`windows/PixelZenHud.ps1`](windows/PixelZenHud.ps1)) las tarjetas f
 ```text
 pixelzen-worlds/
 ├── VERSION                     # Versión de compilación y Releases
-├── escenas/                    # 11 mundos × 3 variantes (generar.py, tema.json, preview/)
+├── escenas/                    # 15 mundos × 3 variantes (generar.py, tema.json, preview/)
 │   ├── _plantilla/             # Plantilla modular base
 │   └── <mundo>/                # principal + secundario/ + bloqueo/
 ├── src/                        # Motor procedural (pz_lib.py, pz_detalles.py, construir.py) + pixelzen-canvas.js
@@ -112,7 +116,7 @@ pixelzen-worlds/
 ### Compilar escenas, verificar y sincronizar todo
 
 ```powershell
-# Compilar las 33 escenas y 99 previews desde src/:
+# Compilar las 45 escenas y 135 previews desde src/:
 python src/construir.py
 
 # Ejecutar la suite de verificación:

@@ -336,6 +336,10 @@ $script:worldThemes = @{
     'harry-potter'            = @('#7B6020', '#EAB308', '#38BDF8')
     'naruto'                  = @('#8E5120', '#FF9B38', '#38BDF8')
     'jujutsu-kaisen'          = @('#881337', '#E11D48', '#C084FC')
+    'attack-on-titan'         = @('#7C2D12', '#F97316', '#22C55E')
+    'one-piece'               = @('#881337', '#F43F5E', '#FACC15')
+    'dragon-ball-z'           = @('#075985', '#38BDF8', '#FACC15')
+    'cyberpunk-edgerunners'   = @('#713F12', '#FACC15', '#22D3EE')
 }
 
 function Apply-WorldTheme([string]$temaId, [bool]$compacto) {
@@ -385,6 +389,10 @@ $script:worldAudio = @{
     'harry-potter'            = @("Hedwig's Theme · Celesta", '88 BPM · CELESTA')
     'naruto'                  = @('Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN')
     'jujutsu-kaisen'          = @('Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH')
+    'attack-on-titan'         = @('Atæk on Titan · Sawano OST', '138 BPM · CORO ÉPICO')
+    'one-piece'               = @('Drums of Liberation · Nika', '126 BPM · TAMBORES')
+    'dragon-ball-z'           = @('Ultimate Battle · UI OST', '145 BPM · ROCK SINFÓNICO')
+    'cyberpunk-edgerunners'   = @('I Really Want to Stay · OST', '124 BPM · SYNTHWAVE')
 }
 $script:cpuCounter = New-Object System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total")
 $null = $script:cpuCounter.NextValue()

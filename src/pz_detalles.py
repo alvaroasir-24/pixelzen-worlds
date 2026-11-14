@@ -1372,23 +1372,162 @@ def _naruto_bloqueo_post(ctx):
 
 
 def _jujutsu_principal_post(ctx):
-    # Cortes carmesi de Santuario Malevolente y motas infinitas de Gojo sobre el horizonte
-    _sparks(ctx, 210, 246, 58, 28, 16, '#fb7185', '#f43f5e', seed=1111, runa_stride=4)
-    _sparks(ctx, 412, 214, 56, 36, 16, '#38bdf8', '#c084fc', seed=1112, runa_stride=4)
-    _sparks(ctx, 313, 248, 22, 16, 12, '#e879f9', '#f5d0fe', seed=1113, runa_stride=3)
+    # Destellos carmesi del Sagrario Malevolente, Vacio Infinito, choque Purpura Vacio y grietas del suelo
+    _sparks(ctx, 132, 210, 44, 26, 16, '#fb7185', '#f43f5e', seed=1111, runa_stride=3)
+    _sparks(ctx, 446, 146, 54, 34, 18, '#38bdf8', '#c084fc', seed=1112, runa_stride=3)
+    _sparks(ctx, 306, 298, 28, 18, 14, '#e879f9', '#f5d0fe', seed=1113, runa_stride=2)
+    _ground_cracks(ctx, 214, 348, [(2.7, 18), (0.35, 16), (3.0, 14)], '#f43f5e', '#fb7185')
+    _ground_cracks(ctx, 398, 348, [(2.8, 16), (0.4, 18), (0.1, 14)], '#38bdf8', '#c084fc')
+    _rocks(ctx, [(28, 368, 9, 4), (92, 380, 11, 5), (542, 376, 11, 5), (608, 366, 8, 4)], '#4c324e', '#2c1d2e', '#140b18')
 
 
 def _jujutsu_secundario_post(ctx):
-    # Destellos negros sobre Itadori, sello de Prision Confinadora y chispas de Nue
-    _sparks(ctx, 216, 264, 24, 16, 12, '#e11d48', '#fb7185', seed=1121, runa_stride=3)
-    _sparks(ctx, 320, 246, 20, 16, 10, '#f43f5e', '#a855f7', seed=1122, runa_stride=3)
-    _sparks(ctx, 438, 260, 24, 18, 10, '#38bdf8', '#818cf8', seed=1123, runa_stride=3)
+    # Destellos negros sobre Itadori, sello de Prision Confinadora, rayos de Nue y cruce de Shibuya
+    _sparks(ctx, 187, 323, 28, 18, 14, '#e11d48', '#fda4af', seed=1121, runa_stride=2)
+    _sparks(ctx, 314, 282, 26, 18, 12, '#f43f5e', '#a855f7', seed=1122, runa_stride=2)
+    _sparks(ctx, 390, 200, 36, 20, 14, '#38bdf8', '#818cf8', seed=1123, runa_stride=3)
+    _add_farol(ctx, 84, 258, 7, '#fef08a', '#f59e0b')
+    _add_farol(ctx, 444, 258, 7, '#a5f3fc', '#38bdf8')
 
 
 def _jujutsu_bloqueo_post(ctx):
-    # Sellos sagrados y aura del dedo maldito sobre el estanque
-    _sparks(ctx, 320, 230, 34, 20, 14, '#ef4444', '#c084fc', seed=1131, runa_stride=3)
-    _sparks(ctx, 320, 324, 46, 12, 12, '#f87171', '#a855f7', seed=1132, runa_stride=4)
+    # Sellos Ofuda, dedo maldito de Sukuna y cuatro linternas Toro del recinto sagrado
+    _sparks(ctx, 320, 166, 46, 22, 14, '#fde047', '#ef4444', seed=1131, runa_stride=3)
+    _sparks(ctx, 320, 290, 34, 18, 16, '#ef4444', '#c084fc', seed=1132, runa_stride=2)
+    for fx, fy in ((228, 236), (412, 236), (182, 310), (458, 310)):
+        _add_farol(ctx, fx, fy, 8, '#fef08a', '#f97316')
+    _tuft_band(ctx, 10, 138, 386, 36, 8, 18, ['#451a2b', '#2c0f1c', '#180610'], seed=1133)
+    _tuft_band(ctx, 504, 632, 386, 36, 8, 18, ['#451a2b', '#2c0f1c', '#180610'], seed=1134)
+
+
+# =====================================================================
+# 12. ATTACK ON TITAN (principal, secundario, bloqueo)
+# =====================================================================
+
+def _aot_principal_post(ctx):
+    # Brasas del Retumbar, vapor de Titanes Colosales y chispas de acero EDM sobre Shiganshina
+    _sparks(ctx, 294, 134, 64, 28, 18, '#fde047', '#f97316', seed=1211, runa_stride=3)
+    _sparks(ctx, 210, 326, 26, 18, 12, '#bae6fd', '#ef4444', seed=1212, runa_stride=3)
+    _sparks(ctx, 392, 322, 28, 18, 12, '#e2e8f0', '#38bdf8', seed=1213, runa_stride=3)
+    _ground_cracks(ctx, 250, 354, [(2.8, 18), (0.3, 16), (2.4, 12)], '#f97316', '#fde047')
+    _rocks(ctx, [(26, 370, 9, 4), (86, 384, 12, 5), (546, 382, 11, 5), (610, 368, 8, 4)], '#5a4a42', '#3a2e28', '#221814')
+    _tuft_band(ctx, 6, 128, 394, 34, 8, 20, ['#4d382c', '#36241b', '#22150e'], seed=1214)
+
+
+def _aot_secundario_post(ctx):
+    # Relampago dorado del Titan Colosal tras la Muralla Maria y destellos del Cuerpo de Exploracion
+    _sparks(ctx, 202, 120, 48, 34, 20, '#fef08a', '#f59e0b', seed=1221, runa_stride=2)
+    _sparks(ctx, 320, 276, 32, 16, 12, '#fb923c', '#ef4444', seed=1222, runa_stride=3)
+    _add_farol(ctx, 146, 278, 7, '#fde68a', '#f59e0b')
+    _add_farol(ctx, 430, 278, 7, '#fde68a', '#f59e0b')
+    _birds(ctx, [(74, 78), (102, 68), (376, 62)], '#3b2420')
+
+
+def _aot_bloqueo_post(ctx):
+    # Polvo estelar dorado de La Coordenada y memorial de cuchillas EDM bajo el arbol
+    _sparks(ctx, 320, 148, 62, 48, 22, '#67e8f9', '#fde047', seed=1231, runa_stride=2)
+    _sparks(ctx, 320, 320, 36, 18, 14, '#e2e8f0', '#38bdf8', seed=1232, runa_stride=3)
+    _tuft_band(ctx, 12, 160, 384, 42, 8, 20, ['#2e5248', '#1f3b34', '#132420'], seed=1233)
+    _tuft_band(ctx, 488, 632, 384, 42, 8, 20, ['#2e5248', '#1f3b34', '#132420'], seed=1234)
+
+
+# =====================================================================
+# 13. ONE PIECE (principal, secundario, bloqueo)
+# =====================================================================
+
+def _op_principal_post(ctx):
+    # Relampagos de Haki del Rey, Bajrang Gun y aliento igneo de Kaido en Onigashima
+    _sparks(ctx, 236, 306, 36, 22, 16, '#f472b6', '#ef4444', seed=1311, runa_stride=2)
+    _sparks(ctx, 308, 276, 40, 24, 18, '#fef08a', '#f97316', seed=1312, runa_stride=2)
+    _sparks(ctx, 358, 204, 48, 26, 16, '#38bdf8', '#818cf8', seed=1313, runa_stride=3)
+    _ground_cracks(ctx, 204, 348, [(2.8, 16), (0.3, 15)], '#ef4444', '#f472b6')
+    _rocks(ctx, [(22, 368, 10, 5), (84, 382, 12, 5), (546, 380, 11, 5), (612, 366, 9, 4)], '#4a3d5a', '#2e243a', '#181222')
+
+
+def _op_secundario_pre(ctx):
+    _birds(ctx, [(86, 82), (118, 70), (392, 64), (428, 78)], '#1e293b')
+
+
+def _op_secundario_post(ctx):
+    # Linternas del Thousand Sunny, aura verde de Zoro y Diable Jambe azul de Sanji
+    _add_farol(ctx, 276, 234, 7, '#fef08a', '#f59e0b')
+    _add_farol(ctx, 332, 234, 7, '#fef08a', '#f59e0b')
+    _sparks(ctx, 292, 216, 14, 10, 8, '#4ade80', '#22c55e', seed=1321, runa_stride=2)
+    _sparks(ctx, 314, 216, 14, 10, 8, '#38bdf8', '#60a5fa', seed=1322, runa_stride=2)
+    _sparks(ctx, 304, 286, 56, 8, 10, '#e0f2fe', '#38bdf8', seed=1323, runa_stride=4)
+
+
+def _op_bloqueo_post(ctx):
+    # Glifos brillantes del Road Poneglyph carmesi, Sombrero de Paja y Fruta Nika
+    _sparks(ctx, 198, 288, 26, 26, 16, '#38bdf8', '#f43f5e', seed=1331, runa_stride=2)
+    _sparks(ctx, 404, 318, 22, 16, 12, '#e879f9', '#fde047', seed=1332, runa_stride=2)
+    _rocks(ctx, [(34, 364, 9, 4), (528, 370, 10, 5), (598, 358, 8, 4)], '#64748b', '#475569', '#1e293b')
+    _tuft_band(ctx, 8, 122, 386, 30, 7, 16, ['#166534', '#14532d', '#052e16'], seed=1333)
+
+
+# =====================================================================
+# 14. DRAGON BALL Z (principal, secundario, bloqueo)
+# =====================================================================
+
+def _dbz_principal_post(ctx):
+    # Ki plateado del Ultra Instinto, Supernova de Freezer Dorado y choque Kamehameha en Namek
+    _sparks(ctx, 202, 322, 36, 26, 18, '#e0f2fe', '#38bdf8', seed=1411, runa_stride=2)
+    _sparks(ctx, 304, 298, 38, 22, 18, '#fef08a', '#f97316', seed=1412, runa_stride=2)
+    _sparks(ctx, 386, 296, 30, 22, 14, '#f43f5e', '#facc15', seed=1413, runa_stride=2)
+    _ground_cracks(ctx, 202, 348, [(2.8, 18), (0.3, 16), (2.4, 12)], '#f97316', '#fde047')
+    _ground_cracks(ctx, 404, 344, [(2.9, 16), (0.4, 18)], '#ef4444', '#facc15')
+
+
+def _dbz_secundario_pre(ctx):
+    _birds(ctx, [(78, 76), (112, 88), (402, 68)], '#164e63')
+
+
+def _dbz_secundario_post(ctx):
+    # Relampagos verdes-dorados de Shenron y resplandor de las 7 Bolas de Dragon
+    _sparks(ctx, 288, 154, 62, 54, 22, '#fef08a', '#4ade80', seed=1421, runa_stride=2)
+    _sparks(ctx, 288, 275, 58, 12, 16, '#facc15', '#f97316', seed=1422, runa_stride=2)
+    _tuft_band(ctx, 6, 124, 278, 28, 7, 16, ['#22d3ee', '#0891b2', '#164e63'], seed=1423)
+
+
+def _dbz_bloqueo_pre(ctx):
+    _birds(ctx, [(84, 72), (120, 62), (382, 74)], '#334155')
+
+
+def _dbz_bloqueo_post(ctx):
+    # Farol calido de Kame House, aureola dorada de la Bola de 4 Estrellas y brisa en la Nube Kinton
+    _add_farol(ctx, 186, 214, 9, '#fef3c7', '#f59e0b')
+    _sparks(ctx, 422, 256, 24, 18, 14, '#fef08a', '#f97316', seed=1431, runa_stride=2)
+    _sparks(ctx, 242, 128, 28, 12, 10, '#fde68a', '#fbbf24', seed=1432, runa_stride=3)
+
+
+# =====================================================================
+# 15. CYBERPUNK EDGERUNNERS (principal, secundario, bloqueo)
+# =====================================================================
+
+def _cyber_principal_post(ctx):
+    # Chispas cromaticas del Sandevistan, monofilo de Lucy y neones de Arasaka / Quadra
+    _sparks(ctx, 228, 322, 42, 22, 16, '#22d3ee', '#4ade80', seed=1511, runa_stride=2)
+    _sparks(ctx, 328, 308, 38, 18, 14, '#fb7185', '#fde047', seed=1512, runa_stride=2)
+    _sparks(ctx, 160, 82, 24, 16, 10, '#f43f5e', '#fb7185', seed=1513, runa_stride=3)
+    _add_farol(ctx, 41, 320, 8, '#fda4af', '#ef4444')
+    _add_farol(ctx, 136, 320, 7, '#a5f3fc', '#22d3ee')
+
+
+def _cyber_secundario_post(ctx):
+    # Brillo del crater Tycho, monorrail NCART, aura lunar de David & Lucy y balizas de azotea
+    _sparks(ctx, 316, 92, 54, 42, 18, '#e0f2fe', '#38bdf8', seed=1521, runa_stride=3)
+    _sparks(ctx, 162, 222, 44, 10, 12, '#67e8f9', '#06b6d4', seed=1522, runa_stride=3)
+    _sparks(ctx, 315, 274, 28, 16, 10, '#bae6fd', '#f472b6', seed=1523, runa_stride=3)
+    for bx in (42, 148, 240, 396):
+        _add_farol(ctx, bx, 259, 6, '#e0f2fe', '#38bdf8' if bx % 2 == 0 else '#f472b6')
+
+
+def _cyber_bloqueo_post(ctx):
+    # Mural ER en spray acido, letrero Afterlife e implante espinal Apogee Sandevistan
+    _sparks(ctx, 320, 198, 44, 34, 18, '#4ade80', '#facc15', seed=1531, runa_stride=2)
+    _sparks(ctx, 132, 182, 26, 14, 10, '#f43f5e', '#fb7185', seed=1532, runa_stride=3)
+    _sparks(ctx, 320, 317, 38, 14, 16, '#22d3ee', '#4ade80', seed=1533, runa_stride=2)
+    _add_farol(ctx, 34, 272, 9, '#a5f3fc', '#0ea5e9')
 
 
 # =====================================================================
@@ -1398,27 +1537,42 @@ def _jujutsu_bloqueo_post(ctx):
 _PRE_LAGO = {
     ('black-clover', 'principal'): _bc_principal_pre,
     ('continente-demoniaco', 'principal'): _cd_principal_pre,
+    ('dragon-ball-z', 'secundario'): _dbz_secundario_pre,
+    ('dragon-ball-z', 'bloqueo'): _dbz_bloqueo_pre,
     ('fittoa', 'principal'): _fittoa_principal_pre,
     ('fittoa', 'secundario'): _fittoa_secundario_pre,
     ('harry-potter', 'principal'): _hp_principal_pre,
     ('hunter-x-hunter', 'principal'): _hxh_principal_pre,
     ('naruto', 'secundario'): _naruto_secundario_pre,
     ('naruto', 'bloqueo'): _naruto_bloqueo_pre,
+    ('one-piece', 'secundario'): _op_secundario_pre,
     ('solo-leveling', 'secundario'): _sl_secundario_pre,
     ('spiderman-miles-morales', 'principal'): _sm_principal_pre,
     ('spiderman-miles-morales', 'secundario'): _sm_secundario_pre,
 }
 
 _POST_ESCENA = {
+    ('attack-on-titan', 'principal'): _aot_principal_post,
+    ('attack-on-titan', 'secundario'): _aot_secundario_post,
+    ('attack-on-titan', 'bloqueo'): _aot_bloqueo_post,
+    ('cyberpunk-edgerunners', 'principal'): _cyber_principal_post,
+    ('cyberpunk-edgerunners', 'secundario'): _cyber_secundario_post,
+    ('cyberpunk-edgerunners', 'bloqueo'): _cyber_bloqueo_post,
     ('demon-slayer', 'principal'): _ds_principal_post,
     ('demon-slayer', 'secundario'): _ds_secundario_post,
     ('demon-slayer', 'bloqueo'): _ds_bloqueo_post,
+    ('dragon-ball-z', 'principal'): _dbz_principal_post,
+    ('dragon-ball-z', 'secundario'): _dbz_secundario_post,
+    ('dragon-ball-z', 'bloqueo'): _dbz_bloqueo_post,
     ('jujutsu-kaisen', 'principal'): _jujutsu_principal_post,
     ('jujutsu-kaisen', 'secundario'): _jujutsu_secundario_post,
     ('jujutsu-kaisen', 'bloqueo'): _jujutsu_bloqueo_post,
     ('naruto', 'principal'): _naruto_principal_post,
     ('naruto', 'secundario'): _naruto_secundario_post,
     ('naruto', 'bloqueo'): _naruto_bloqueo_post,
+    ('one-piece', 'principal'): _op_principal_post,
+    ('one-piece', 'secundario'): _op_secundario_post,
+    ('one-piece', 'bloqueo'): _op_bloqueo_post,
     ('solo-leveling', 'principal'): _sl_principal_post,
     ('solo-leveling', 'secundario'): _sl_secundario_post,
     ('solo-leveling', 'bloqueo'): _sl_bloqueo_post,

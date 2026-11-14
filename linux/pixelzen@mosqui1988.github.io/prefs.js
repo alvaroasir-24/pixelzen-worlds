@@ -16,6 +16,11 @@ const TEMAS_BASE = [
     {id: 'stranger-things', nombre: 'Stranger Things · Hawkins y el Revés'},
     {id: 'harry-potter', nombre: 'Harry Potter · Castillo de Hogwarts'},
     {id: 'naruto', nombre: 'Naruto · Modo Baryon'},
+    {id: 'jujutsu-kaisen', nombre: 'Jujutsu Kaisen · Expansión de Dominio'},
+    {id: 'attack-on-titan', nombre: 'Attack on Titan · El Retumbar'},
+    {id: 'one-piece', nombre: 'One Piece · Gear 5 & Onigashima'},
+    {id: 'dragon-ball-z', nombre: 'Dragon Ball Z · Ultra Instinto'},
+    {id: 'cyberpunk-edgerunners', nombre: 'Cyberpunk: Edgerunners · Night City'},
 ];
 
 export default class PixelZenPreferences extends ExtensionPreferences {

@@ -429,6 +429,10 @@ function Cargar-Temas {
         'harry-potter'            = @{ serie = 'Harry Potter'; titulo = 'Castillo de Hogwarts' }
         'naruto'                  = @{ serie = 'Naruto'; titulo = 'Konoha & Modo Baryon' }
         'jujutsu-kaisen'          = @{ serie = 'Jujutsu Kaisen'; titulo = 'Expansión de Dominio' }
+        'attack-on-titan'         = @{ serie = 'Attack on Titan'; titulo = 'El Retumbar y la Muralla' }
+        'one-piece'               = @{ serie = 'One Piece'; titulo = 'Gear 5 & Onigashima' }
+        'dragon-ball-z'           = @{ serie = 'Dragon Ball Z'; titulo = 'Ultra Instinto en Namek' }
+        'cyberpunk-edgerunners'   = @{ serie = 'Cyberpunk: Edgerunners'; titulo = 'Night City & Sandevistan' }
     }
     $lista = @()
     if (Test-Path $TemasDir) {

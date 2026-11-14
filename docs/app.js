@@ -106,10 +106,54 @@
       serie: 'Jujutsu Kaisen',
       cat: 'anime',
       titulo: 'Expansión de Dominio',
-      m1: { name: 'Santuario Malevolente vs Vacío Infinito', sub: 'Sukuna vs Gojo · Shinjuku', desc: 'Choque de dominios sobre aguas oscuras con el Santuario Malevolente, el Horizonte de Vacío Infinito, cortes Desmantelar y Púrpura Vacío.' },
-      m2: { name: 'Incidente de Shibuya', sub: 'Prisión Confinadora, Itadori y Fushiguro', desc: 'Cruce nocturno de Shibuya con la Torre 109, el cubo de la Prisión Confinadora levitando, el Destello Negro de Itadori y las Diez Sombras de Megumi.' },
-      m3: { name: 'Santuario del Dedo Maldito', sub: 'Torii Sagrado y Sellos Ofuda', desc: 'Valle de cedros y pagoda iluminados por linternas Toro, puerta Torii bermellón con sellos Ofuda y el Dedo de Ryomen Sukuna sellado.' },
-      cita: '«A lo largo del Cielo y la Tierra, solo yo soy el Honrado.» — Satoru Gojo',
+      m1: { name: 'Santuario Malevolente vs Vacío Infinito', sub: 'Sukuna vs Gojo · Shinjuku', desc: 'Shinjuku partido por el choque de dominios: el monumental Sagrario Malevolente de Sukuna con su boca demoníaca y cráneos frente al Vacío Infinito de Gojo y Púrpura Vacío.' },
+      m2: { name: 'Incidente de Shibuya', sub: 'Prisión Confinadora, Itadori y Fushiguro', desc: 'Cruce nocturno de Shibuya con la Torre 109, la Prisión Confinadora levitando, el Destello Negro de Itadori y Megumi junto al Perro Divino y Nue.' },
+      m3: { name: 'Santuario del Dedo Maldito', sub: 'Torii Sagrado y Sellos Ofuda', desc: 'Calzada sagrada de piedra con pagoda entre cedros, faroles Toro, puerta Torii bermellón con sellos Ofuda y el Dedo de Ryomen Sukuna en su relicario.' },
+      cita: '«En el cielo y en la tierra, solo yo merezco ser honrado.» — Satoru Gojo',
+    },
+    {
+      id: 'attack-on-titan',
+      anime: 'Attack on Titan',
+      serie: 'Attack on Titan',
+      cat: 'anime',
+      titulo: 'El Retumbar y la Muralla',
+      m1: { name: 'El Retumbar', sub: 'Titán Fundador, Colosales, Mikasa y Levi', desc: 'El colosal costillar del Titán Fundador alzándose tras una marcha de Titanes Colosales incandescentes mientras Mikasa y Levi combaten entre los tejados de Shiganshina.' },
+      m2: { name: 'Caída de Shiganshina', sub: 'Año 845 · Titán Colosal en Muralla María', desc: 'El Titán Colosal asomando entre relámpagos dorados sobre los muros de la Muralla María frente a las casas tradicionales del distrito de Shiganshina.' },
+      m3: { name: 'Los Caminos (La Coordenada)', sub: 'Árbol Luminoso y Memorial EDM', desc: 'El pilar resplandeciente de La Coordenada ramificándose por el cielo estrellado sobre la colina de Eren y el memorial de cuchillas EDM con la bufanda roja.' },
+      cita: '«Si ganas, vives. Si pierdes, mueres. Si no luchas, no puedes ganar.» — Eren Jaeger',
+    },
+    {
+      id: 'one-piece',
+      anime: 'One Piece',
+      serie: 'One Piece',
+      cat: 'anime',
+      titulo: 'Gear 5 & Onigashima',
+      m1: { name: 'Gear 5 vs Kaido Dragón', sub: 'Tejado de Onigashima · Dios del Sol Nika', desc: 'Duelo legendario en el tejado de la cúpula de calavera de Onigashima: Luffy en Gear 5 desatando el Bajrang Gun frente al dragón azul de Kaido y su aliento ígneo.' },
+      m2: { name: 'Thousand Sunny bajo la Luna', sub: 'Nuevo Mundo · Zoro y Sanji en cubierta', desc: 'El Thousand Sunny navegando bajo el reflejo lunar con su mascarón leonino, las velas del Sombrero de Paja y el aura de Zoro y Sanji.' },
+      m3: { name: 'Road Poneglyph Carmesí', sub: 'Sombrero de Paja y Fruta Hito-Hito: Nika', desc: 'Acantilado junto al mar con el monolítico Road Poneglyph carmesí de glifos brillantes junto al Sombrero de Paja y la Fruta del Diablo de Nika.' },
+      cita: '«¡Escucha bien los Tambores de la Liberación! ¡Soy quien siempre lucha libremente!» — Monkey D. Luffy',
+    },
+    {
+      id: 'dragon-ball-z',
+      anime: 'Dragon Ball Z',
+      serie: 'Dragon Ball Z',
+      cat: 'anime',
+      titulo: 'Ultra Instinto en Namek',
+      m1: { name: 'Ultra Instinto vs Freezer Dorado', sub: 'Namek al borde del colapso · Choque de Ki', desc: 'Planeta Namek agrietado por magma bajo dos soles: Son Goku Ultra Instinto Dominado chocando su Kamehameha Divino contra la Supernova de Freezer Dorado.' },
+      m2: { name: 'Dragón Sagrado Shenron', sub: 'Namek · 7 Bolas de Dragón invocadas', desc: 'Las siete Bolas de Dragón brillando junto a aldeas y árboles Ajisa mientras el inmenso dragón Shenron asciende rodeado de relámpagos dorados.' },
+      m3: { name: 'Kame House y Bola de 4 Estrellas', sub: 'Isla del Maestro Roshi · Nube Kinton', desc: 'La icónica isla de Kame House entre palmeras bajo la luna, la Nube Kinton junto al Bastón Mágico y la Bola de 4 Estrellas del abuelo Gohan.' },
+      cita: '«El poder surge en respuesta a una necesidad, no a un deseo.» — Son Goku',
+    },
+    {
+      id: 'cyberpunk-edgerunners',
+      anime: 'Cyberpunk: Edgerunners',
+      serie: 'Cyberpunk: Edgerunners',
+      cat: 'anime',
+      titulo: 'Night City & Sandevistan',
+      m1: { name: 'Corpo Plaza · Lluvia de Neón', sub: 'David Martinez & Lucy · Quadra Turbo-R', desc: 'Las calles lluviosas de Night City bajo la torre Arasaka con el Quadra Turbo-R, David activando la estela cromática del Sandevistan y Lucy desplegando su monofilo.' },
+      m2: { name: 'La Luna sobre Night City', sub: 'Azotea y tren elevado NCART', desc: 'David y Lucy sentados hombro con hombro en lo alto de la ciudad frente a la inmensidad plateada de la Luna mientras el monorraíl NCART cruza los rascacielos.' },
+      m3: { name: 'Callejón Afterlife & Sandevistan', sub: 'Mural ER e Implante Apogee', desc: 'Callejón húmedo tras el Afterlife con el emblema grafiteado ER iluminado en verde ácido y el implante espinal Apogee Sandevistan latiendo en el banco.' },
+      cita: '«No hace falta que salves el mundo entero… basta con llevarte hasta la luna.» — David Martinez',
     },
   ];
 
@@ -443,7 +487,7 @@
   wireHud('btn-foco-reset', () => renderer.resetFoco());
   wireHud('btn-foco-mode', () => renderer.setFocoModo(!state.foco.descanso));
 
-  /* GALERÍA DINÁMICA DE 11 MUNDOS × 3 ESCENAS */
+  /* GALERÍA DINÁMICA DE 15 MUNDOS × 3 ESCENAS */
   const gridEl = document.getElementById('worlds-grid');
   const cardCtrl = {};
   const PREVIEW_FALLBACK_BASE = 'file:///C:/Users/david/.gemini/antigravity-cli/brain/8747b389-799a-4632-897a-f7f55a4233c0/scratch/out_root/docs/';
@@ -703,7 +747,7 @@
     for (const w of WORLDS) {
       const opt = document.createElement('option');
       opt.value = w.id;
-      opt.textContent = `${w.anime} · ${w.titulo}`;
+      opt.textContent = `${w.anime || w.serie} · ${w.titulo}`;
       cmpMundo.appendChild(opt);
     }
     cmpMundo.value = cmpState.id;

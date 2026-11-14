@@ -1076,54 +1076,53 @@ public class PzmRenderer {
         Color cDarkP = Color.FromArgb(147, 51, 234);
 
         for (int a = 0; a < 10; a++) {
-            double ang = (a * Math.PI * 2.0) / 10.0 + t * 0.05;
-            double rX = 33 + Math.Round(Math.Sin(t * 0.1 + a) * 2.0);
-            Px(g, a % 2 == 0 ? cCyan : cPurp, 0.65 * al, 452 + Math.Round(Math.Cos(ang) * rX), 162 + Math.Round(Math.Sin(ang) * 17), 2, 1);
+            double ang = (a * Math.PI * 2.0) / 10.0 + t * 0.06;
+            double rX = 36 + Math.Round(Math.Sin(t * 0.1 + a) * 2.0);
+            Px(g, a % 2 == 0 ? cCyan : cPurp, 0.68 * al, 446 + Math.Round(Math.Cos(ang) * rX), 146 + Math.Round(Math.Sin(ang) * 12), 2, 1);
         }
-        Px(g, Color.White, 0.45 * al * pulse, 450, 161, 4, 2);
+        Px(g, Color.White, 0.42 * al * pulse, 444, 145, 4, 2);
 
         double eyeAl = Math.Min(1.0, (0.55 + 0.45 * Math.Sin(t * 0.16)) * al);
-        Px(g, cPink, 0.85 * eyeAl, 151, 217, 2, 2);
-        Px(g, cPink, 0.85 * eyeAl, 159, 217, 2, 2);
-        Px(g, cRed, 0.50 * al, 146, 260 + (t % 3 == 0 ? -1 : 0), 20, 2);
+        Px(g, cPink, 0.88 * eyeAl, 125, 189, 2, 2);
+        Px(g, cPink, 0.88 * eyeAl, 139, 189, 2, 2);
+        Px(g, cRed, 0.55 * al, 120, 232 + (t % 3 == 0 ? -1 : 0), 24, 2);
         for (int s = 0; s < 5; s++) {
-            int sy = 200 + ((s * 17 + t * 3) % 68);
-            int sx = 122 + ((s * 29) % 68);
-            Px(g, s % 2 == 0 ? cRed : cPink, 0.7 * al, sx, sy, 6, 1);
+            int sy = 188 + ((s * 17 + t * 3) % 68);
+            int sx = 98 + ((s * 29) % 68);
+            Px(g, s % 2 == 0 ? cRed : cPink, 0.72 * al, sx, sy, 5, 1);
         }
 
-        Px(g, cPink, 0.55 * al, 244, 250 - (t % 3), 2, 4);
-        Px(g, Color.FromArgb(239, 68, 68), 0.55 * al, 252, 247 - ((t + 1) % 3), 2, 4);
+        Px(g, cPink, 0.60 * al, 214, 314 - (t % 3), 2, 4);
+        Px(g, Color.FromArgb(239, 68, 68), 0.60 * al, 224, 318 - ((t + 1) % 3), 2, 4);
         for (int k = 0; k < 4; k++) {
-            int prog = (t * 3 + k * 7) % 28;
-            int sx0 = 264 + prog;
-            int sy0 = 240 + ((k * 7) % 18) - (int)Math.Round(prog * 0.25);
+            int prog = (t * 3 + k * 7) % 36;
+            int sx0 = 242 + prog;
+            int sy0 = 294 + ((k * 7) % 18) - (int)Math.Round(prog * 0.18);
             for (int d = 0; d < 7; d++) {
                 Px(g, d > 4 ? Color.White : cRed, 0.88 * al, sx0 + d, sy0 + ((k % 2 == 0) ? (d / 2) : -(d / 2)), 1, 1);
             }
         }
 
-        Px(g, Color.FromArgb(56, 189, 248), 0.65 * al, 374, 249 - ((t + 2) % 3), 2, 4);
-        double rOrb = 9 + Math.Round(Math.Sin(t * 0.2) * 2.0);
+        Px(g, Color.FromArgb(56, 189, 248), 0.68 * al, 396, 316 - ((t + 2) % 3), 2, 4);
+        double rOrb = 10 + Math.Round(Math.Sin(t * 0.2) * 2.0);
         double rAng = t * 0.22;
-        Px(g, cPink, 0.90 * al, 313 + Math.Round(Math.Cos(rAng) * rOrb), 248 + Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
-        Px(g, Color.FromArgb(56, 189, 248), 0.90 * al, 313 - Math.Round(Math.Cos(rAng) * rOrb), 248 - Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
+        Px(g, cPink, 0.90 * al, 306 + Math.Round(Math.Cos(rAng) * rOrb), 298 + Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
+        Px(g, Color.FromArgb(56, 189, 248), 0.90 * al, 306 - Math.Round(Math.Cos(rAng) * rOrb), 298 - Math.Round(Math.Sin(rAng) * rOrb * 0.6), 3, 3);
 
         int coreR = (int)Math.Round(4 + 3 * pulse + aB * 8);
-        Px(g, cDarkP, 0.40 * al, 313 - coreR - 4, 248 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
-        Px(g, cCore, 0.72 * al, 313 - coreR, 248 - coreR, coreR * 2, coreR * 2);
-        Px(g, Color.FromArgb(253, 244, 255), 0.96 * al, 311, 246, 5, 5);
+        Px(g, cDarkP, 0.40 * al, 306 - coreR - 4, 298 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
+        Px(g, cCore, 0.72 * al, 306 - coreR, 298 - coreR, coreR * 2, coreR * 2);
+        Px(g, Color.FromArgb(253, 244, 255), 0.96 * al, 304, 296, 5, 5);
 
-        int wave = 8 + ((t * 2) % 22);
-        double wAl = Math.Max(0.08, (1.0 - (wave - 8) / 22.0) * 0.75 * al);
+        int wave = 8 + ((t * 2) % 24);
+        double wAl = Math.Max(0.08, (1.0 - (wave - 8) / 24.0) * 0.75 * al);
         for (int a = 0; a < 12; a++) {
             double ang = (a * Math.PI * 2.0) / 12.0 + t * 0.08;
-            Px(g, a % 2 == 0 ? cCore : cCyan, wAl, 313 + Math.Round(Math.Cos(ang) * wave), 248 + Math.Round(Math.Sin(ang) * wave * 0.7), 2, 2);
+            Px(g, a % 2 == 0 ? cCore : cCyan, wAl, 306 + Math.Round(Math.Cos(ang) * wave), 298 + Math.Round(Math.Sin(ang) * wave * 0.7), 2, 2);
         }
 
-        int rw = 10 + (int)Math.Round(4 * pulse);
-        Px(g, cPurp, 0.42 * al, 313 - rw, 312, rw * 2, 2);
-        Px(g, Color.FromArgb(244, 63, 94), 0.35 * al, 146, 314, 20, 2);
+        int rw = 12 + (int)Math.Round(4 * pulse);
+        Px(g, cPurp, 0.42 * al, 306 - rw, 342, rw * 2, 2);
     }
 
     void PintaJujutsuSec(Graphics g, int t, double nf) {
@@ -1131,56 +1130,234 @@ public class PzmRenderer {
         double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
         int bob = (int)Math.Round(Math.Sin(t * 0.12) * 2.0);
 
-        Px(g, Color.FromArgb(234, 179, 8), 0.45 * al, 312, 238 + bob, 16, 16);
+        Px(g, Color.FromArgb(234, 179, 8), 0.45 * al, 306, 274 + bob, 16, 16);
         if (t % 29 != 0) {
-            Px(g, Color.FromArgb(255, 248, 232), 0.92 * al, 318, 244 + bob, 4, 4);
-            Px(g, Color.FromArgb(225, 29, 72), 0.95 * al, 319, 245 + bob, 2, 2);
+            Px(g, Color.FromArgb(255, 248, 232), 0.92 * al, 312, 280 + bob, 4, 4);
+            Px(g, Color.FromArgb(225, 29, 72), 0.95 * al, 313, 281 + bob, 2, 2);
         }
         for (int c = 0; c < 4; c++) {
             double ang = c * Math.PI * 0.5 + t * 0.07;
-            Px(g, Color.FromArgb(250, 204, 21), 0.78 * al, 320 + Math.Round(Math.Cos(ang) * 14), 246 + bob + Math.Round(Math.Sin(ang) * 11), 2, 2);
+            Px(g, Color.FromArgb(250, 204, 21), 0.78 * al, 314 + Math.Round(Math.Cos(ang) * 14), 282 + bob + Math.Round(Math.Sin(ang) * 11), 2, 2);
         }
 
         bool bfPulse = (t % 16) < 4;
-        Px(g, Color.FromArgb(9, 9, 11), 0.90, 224, 247, 7, 7);
-        Px(g, bfPulse ? Color.White : Color.FromArgb(251, 113, 133), 0.92 * al, 226, 249, 3, 3);
+        Px(g, Color.FromArgb(9, 9, 11), 0.90, 184, 320, 7, 7);
+        Px(g, bfPulse ? Color.White : Color.FromArgb(251, 113, 133), 0.92 * al, 186, 322, 3, 3);
         for (int b = 0; b < 6; b++) {
             double ang = t * 0.45 + b * 1.05;
             int dist = 5 + ((t * 2 + b * 3) % 10);
-            Px(g, b % 2 == 0 ? Color.FromArgb(225, 29, 72) : Color.FromArgb(17, 24, 39), 0.88, 227 + Math.Round(Math.Cos(ang) * dist), 250 + Math.Round(Math.Sin(ang) * dist), 2, 1);
+            Px(g, b % 2 == 0 ? Color.FromArgb(225, 29, 72) : Color.FromArgb(17, 24, 39), 0.88, 187 + Math.Round(Math.Cos(ang) * dist), 323 + Math.Round(Math.Sin(ang) * dist), 2, 1);
         }
 
         for (int s = 0; s < 5; s++) {
-            int sy = 272 - ((t * 2 + s * 6) % 24);
-            int sx = 414 + (int)Math.Round(Math.Sin(t * 0.1 + s) * 8) + (s - 2) * 4;
+            int sy = 342 - ((t * 2 + s * 6) % 24);
+            int sx = 398 + (int)Math.Round(Math.Sin(t * 0.1 + s) * 8) + (s - 2) * 4;
             Px(g, s % 2 == 0 ? Color.FromArgb(56, 189, 248) : Color.FromArgb(30, 41, 59), 0.72 * al, sx, sy, 2, 2);
         }
-        Px(g, Color.FromArgb(16, 185, 129), 0.90 * al, 434, 263, 2, 1);
+        Px(g, Color.FromArgb(56, 189, 248), 0.90 * al, 446, 314, 2, 1);
+        if ((t % 14) < 3) {
+            Px(g, Color.FromArgb(186, 230, 253), 0.86 * al, 388 + (t % 5), 202, 2, 14);
+        }
     }
 
     void PintaJujutsuBloq(Graphics g, int t, double nf) {
         double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
         double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
         int sway = (int)Math.Round(Math.Sin(t * 0.09) * 1.5);
-        int[] ofudas = new int[] { 298, 310, 330, 342 };
+        int[] ofudas = new int[] { 284, 298, 312, 328, 342, 356 };
         for (int i = 0; i < ofudas.Length; i++) {
             int ox = ofudas[i];
-            Px(g, Color.FromArgb(254, 243, 199), 0.88 * al, ox + sway, 157, 2, 5);
-            Px(g, Color.FromArgb(239, 68, 68), 0.78 * al, ox + sway, 159, 1, 2);
+            Px(g, Color.FromArgb(254, 243, 199), 0.88 * al, ox + sway, 162, 2, 5);
+            Px(g, Color.FromArgb(239, 68, 68), 0.78 * al, ox + sway, 164, 1, 2);
         }
 
         double pulse = 0.65 + 0.35 * Math.Sin(t * 0.14);
-        Px(g, Color.FromArgb(225, 29, 72), 0.36 * al * pulse, 313, 223, 14, 14);
-        Px(g, Color.FromArgb(251, 113, 133), 0.85 * al * pulse, 318, 227 + (t % 6 < 3 ? 0 : -1), 4, 7);
-        Px(g, Color.FromArgb(254, 242, 242), 0.88 * al, 319, 228, 2, 2);
+        Px(g, Color.FromArgb(225, 29, 72), 0.38 * al * pulse, 313, 283, 14, 14);
+        Px(g, Color.FromArgb(251, 113, 133), 0.88 * al * pulse, 318, 287 + (t % 6 < 3 ? 0 : -1), 4, 7);
+        Px(g, Color.FromArgb(254, 242, 242), 0.88 * al, 319, 288, 2, 2);
 
         for (int w = 0; w < 6; w++) {
-            double prog = (t * 1.2 + w * 9) % 44;
-            int wx = 286 + w * 13 + (int)Math.Round(Math.Sin(t * 0.08 + w) * 3);
-            int wy = 266 - (int)Math.Round(prog);
-            Px(g, w % 2 == 0 ? Color.FromArgb(168, 85, 247) : Color.FromArgb(244, 63, 94), Math.Max(0.15, (1.0 - prog / 44.0) * 0.80 * al), wx, wy, 2, 2);
+            double prog = (t * 1.2 + w * 9) % 42;
+            int wx = 290 + w * 12 + (int)Math.Round(Math.Sin(t * 0.08 + w) * 3);
+            int wy = 306 - (int)Math.Round(prog);
+            Px(g, w % 2 == 0 ? Color.FromArgb(168, 85, 247) : Color.FromArgb(244, 63, 94), Math.Max(0.15, (1.0 - prog / 42.0) * 0.80 * al), wx, wy, 2, 2);
         }
-        Px(g, Color.FromArgb(225, 29, 72), 0.35 * al * pulse, 312, 318, 16, 2);
+        int[] fx = new int[] { 228, 412, 182, 458 };
+        int[] fy = new int[] { 236, 236, 310, 310 };
+        for (int i = 0; i < fx.Length; i++) {
+            Px(g, Color.FromArgb(254, 240, 138), 0.65 * al * (0.7 + 0.3 * Math.Sin(t * 0.2 + fx[i])), fx[i] - 1, fy[i] - 1, 3, 3);
+        }
+    }
+
+    void PintaAotRumbling(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        double pulse = 0.70 + 0.30 * Math.Sin(t * 0.14);
+        Px(g, Color.FromArgb(74, 222, 128), 0.92 * al * pulse, 289, 134, 2, 2);
+        Px(g, Color.FromArgb(74, 222, 128), 0.92 * al * pulse, 297, 134, 2, 2);
+        int[] txs = new int[] { 48, 124, 218, 376, 450, 174 };
+        for (int i = 0; i < 6; i++) {
+            int py = 248 - ((t * 2 + i * 11) % 52);
+            int pxX = txs[i] + (int)Math.Round(Math.Sin(t * 0.08 + i) * 6);
+            Px(g, i % 2 == 0 ? Color.FromArgb(251, 146, 60) : Color.FromArgb(203, 213, 225), 0.55 * al, pxX, py, 3, 2);
+        }
+        for (int a = 0; a < 8; a++) {
+            double ang = (a * Math.PI * 2.0) / 8.0 + t * 0.42;
+            Px(g, a % 2 == 0 ? Color.FromArgb(248, 250, 252) : Color.FromArgb(56, 189, 248), 0.85 * al, 392 + Math.Round(Math.Cos(ang) * 18), 322 + Math.Round(Math.Sin(ang) * 14), 3, 2);
+        }
+        Px(g, Color.FromArgb(239, 68, 68), 0.85 * al, 206 + (t % 3) - 1, 315, 6, 2);
+    }
+
+    void PintaAotShiganshina(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.60 + 0.40 * nf + aB);
+        double pulse = 0.65 + 0.35 * Math.Sin(t * 0.18);
+        Px(g, Color.FromArgb(254, 240, 138), 0.92 * al * pulse, 190, 116, 3, 2);
+        Px(g, Color.FromArgb(254, 240, 138), 0.92 * al * pulse, 212, 116, 3, 2);
+        if ((t % 18) < 5) {
+            for (int k = 0; k < 8; k++) {
+                Px(g, k % 2 == 0 ? Color.FromArgb(254, 240, 138) : Color.FromArgb(249, 115, 22), 0.88 * al, 200 + (int)Math.Round(Math.Sin(t + k) * 6), 24 + k * 9, 2, 7);
+            }
+        }
+        for (int s = 0; s < 5; s++) {
+            int sy = 194 - ((t + s * 9) % 34);
+            Px(g, Color.FromArgb(226, 232, 240), 0.40 * al, 148 + s * 28 + (int)Math.Round(Math.Sin(t * 0.06 + s) * 4), sy, 6, 3);
+        }
+        Px(g, Color.FromArgb(239, 68, 68), 0.80 * al, 320 + (int)Math.Round(Math.Sin(t * 0.2) * 3), 270 - (t % 8), 2, 4);
+    }
+
+    void PintaAotPaths(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.60 + 0.40 * nf + aB);
+        double pulse = 0.70 + 0.30 * Math.Sin(t * 0.11);
+        Px(g, Color.FromArgb(224, 242, 254), 0.45 * al * pulse, 316, 134, 8, 120);
+        for (int i = 0; i < 8; i++) {
+            int gy = 250 - ((t * 2 + i * 16) % 140);
+            int gx = 320 + (int)Math.Round(Math.Sin(t * 0.09 + i * 1.3) * (gy < 140 ? 38 : 7));
+            Px(g, i % 2 == 0 ? Color.FromArgb(253, 224, 71) : Color.FromArgb(103, 232, 249), 0.82 * al, gx, gy, 2, 2);
+        }
+        Px(g, Color.FromArgb(248, 250, 252), 0.72 * al * pulse, 319, 312, 2, 6);
+    }
+
+    void PintaOpGear5(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.60 + 0.40 * nf + aB);
+        double pulse = 0.68 + 0.32 * Math.Sin(t * 0.16);
+        for (int h = 0; h < 6; h++) {
+            double ang = t * 0.32 + h * 1.04;
+            int dist = 8 + ((t * 2 + h * 4) % 16);
+            Px(g, h % 2 == 0 ? Color.FromArgb(244, 63, 94) : Color.FromArgb(9, 9, 11), 0.90 * al, 212 + Math.Round(Math.Cos(ang) * dist), 322 + Math.Round(Math.Sin(ang) * dist), 2, 2);
+        }
+        int cr = (int)Math.Round(5 + 3 * pulse + aB * 8);
+        Px(g, Color.FromArgb(251, 146, 60), 0.65 * al, 308 - cr, 276 - cr, cr * 2, cr * 2);
+        Px(g, Color.White, 0.94 * al, 306, 274, 4, 4);
+        Px(g, Color.FromArgb(254, 240, 138), 0.90 * al * pulse, 352, 199, 2, 2);
+        for (int f = 0; f < 5; f++) {
+            double u = ((t * 0.12 + f * 0.2) % 1.0);
+            Px(g, u < 0.5 ? Color.FromArgb(239, 68, 68) : Color.FromArgb(253, 224, 71), 0.88 * al, Math.Round(338 - u * 30), Math.Round(214 + u * 62), 3, 3);
+        }
+    }
+
+    void PintaOpSunny(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.30 : 0.0;
+        double al = Math.Min(1.0, 0.55 + 0.45 * nf + aB);
+        int bob = (int)Math.Round(Math.Sin(t * 0.08));
+        Px(g, Color.FromArgb(254, 240, 138), 0.78 * al, 275, 233 + bob, 3, 3);
+        Px(g, Color.FromArgb(254, 240, 138), 0.78 * al, 331, 233 + bob, 3, 3);
+        Px(g, Color.FromArgb(74, 222, 128), 0.85 * al, 291, 215 + bob, 3, 3);
+        Px(g, Color.FromArgb(56, 189, 248), 0.85 * al, 313, 215 + bob, 3, 3);
+        Px(g, Color.FromArgb(224, 242, 254), 0.50 * al, 256 + ((t * 2) % 92), 282, 12, 1);
+    }
+
+    void PintaOpPoneglyph(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        for (int p = 0; p < 6; p++) {
+            int idx = (t + p * 5) % 24;
+            Px(g, Color.FromArgb(253, 224, 71), 0.85 * al, 180 + (idx % 5) * 7, 248 + (idx / 5) * 14, 2, 2);
+        }
+        for (int m = 0; m < 4; m++) {
+            double ang = t * 0.16 + m * 1.57;
+            Px(g, Color.FromArgb(232, 121, 249), 0.82 * al, 404 + Math.Round(Math.Cos(ang) * 13), 318 + Math.Round(Math.Sin(ang) * 9), 2, 2);
+        }
+    }
+
+    void PintaDbzUi(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.62 + 0.38 * nf + aB);
+        double pulse = 0.70 + 0.30 * Math.Sin(t * 0.2);
+        for (int u = 0; u < 6; u++) {
+            int uy = 344 - ((t * 2 + u * 7) % 36);
+            int ux = 202 + (int)Math.Round(Math.Sin(t * 0.25 + u) * 14);
+            Px(g, u % 2 == 0 ? Color.FromArgb(224, 242, 254) : Color.FromArgb(56, 189, 248), 0.85 * al, ux, uy, 2, 3);
+        }
+        Px(g, Color.FromArgb(56, 189, 248), 0.78 * al * pulse, 232 + (t % 12) * 5, 315 - (t % 12) * 1.4, 8, 3);
+        int sr = (int)Math.Round(5 + 3 * pulse + aB * 6);
+        Px(g, Color.FromArgb(249, 115, 22), 0.65 * al, 386 - sr, 296 - sr, sr * 2, sr * 2);
+        Px(g, Color.FromArgb(254, 240, 138), 0.92 * al * pulse, 302, 296, 5, 5);
+    }
+
+    void PintaDbzNamek(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        int activeIdx = (t / 4) % 7;
+        for (int b = 0; b < 7; b++) {
+            Px(g, b == activeIdx ? Color.White : Color.FromArgb(253, 224, 71), (b == activeIdx ? 0.95 : 0.55) * al, 239 + b * 16, 274, 3, 3);
+        }
+        Px(g, Color.FromArgb(239, 68, 68), 0.90 * al, 282, 120, 2, 2);
+        for (int k = 0; k < 5; k++) {
+            int ky = 250 - ((t * 3 + k * 24) % 160);
+            Px(g, Color.FromArgb(253, 224, 71), 0.72 * al, 278 + (int)Math.Round(Math.Sin(t * 0.1 + k) * 18), ky, 2, 5);
+        }
+    }
+
+    void PintaDbzKame(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.30 : 0.0;
+        double al = Math.Min(1.0, 0.55 + 0.45 * nf + aB);
+        Px(g, Color.FromArgb(254, 243, 199), 0.78 * al, 185, 213, 4, 4);
+        Px(g, Color.FromArgb(253, 224, 71), 0.85 * al * (0.6 + 0.4 * Math.Sin(t * 0.14)), 421, 255, 3, 3);
+        Px(g, Color.FromArgb(252, 231, 243), Math.Max(0.15, (1.0 - (t % 20) / 20.0) * 0.50), 206 + (int)Math.Round(Math.Sin(t * 0.2) * 3), 176 - (t % 20), 3, 2);
+        Px(g, Color.FromArgb(253, 230, 138), 0.65 * al, 234 + (t % 16), 130, 2, 2);
+    }
+
+    void PintaCyberSandevistan(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.60 + 0.40 * nf + aB);
+        Color[] cols = new Color[] { Color.FromArgb(74, 222, 128), Color.FromArgb(34, 211, 238), Color.FromArgb(244, 63, 94) };
+        for (int s = 0; s < 3; s++) {
+            Px(g, cols[s], 0.52 * al, 178 + s * 16 - ((t + s) % 3), 314, 10, 14);
+        }
+        Px(g, Color.FromArgb(34, 211, 238), 0.90 * al, 227, 316 + (t % 4), 2, 6);
+        double mU = ((t * 3) % 40) / 40.0;
+        Px(g, Color.FromArgb(253, 224, 71), 0.92 * al, Math.Round(370 - mU * 82), Math.Round(328 - Math.Sin(mU * Math.PI * 1.35) * 26), 3, 2);
+        Px(g, Color.FromArgb(239, 68, 68), 0.80 * al * (0.7 + 0.3 * Math.Sin(t * 0.25)), 40, 319, 6, 2);
+        Px(g, Color.FromArgb(56, 189, 248), 0.82 * al, (92 + (t * 2)) % 460, 116, 4, 2);
+    }
+
+    void PintaCyberMoon(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.30 : 0.0;
+        double al = Math.Min(1.0, 0.58 + 0.42 * nf + aB);
+        Px(g, Color.FromArgb(56, 189, 248), 0.85 * al, (96 + t * 2) % 440, 221, 18, 3);
+        int[] bxs = new int[] { 42, 148, 240, 396 };
+        for (int i = 0; i < bxs.Length; i++) {
+            int bx = bxs[i];
+            Px(g, (t + bx) % 16 < 8 ? Color.FromArgb(56, 189, 248) : Color.FromArgb(244, 114, 182), 0.88 * al, bx, 259, 2, 2);
+        }
+        for (int p = 0; p < 4; p++) {
+            Px(g, Color.FromArgb(186, 230, 253), 0.72 * al, 300 + p * 10 + (int)Math.Round(Math.Sin(t * 0.1 + p) * 4), 290 - ((t + p * 8) % 30), 2, 2);
+        }
+    }
+
+    void PintaCyberBloq(Graphics g, int t, double nf) {
+        double aB = AudioReactivo ? AudioBoost * 0.35 : 0.0;
+        double al = Math.Min(1.0, 0.60 + 0.40 * nf + aB);
+        int activeSeg = (t / 2) % 7;
+        for (int s = 0; s < 7; s++) {
+            Color sc = s == activeSeg ? Color.White : (s % 2 == 0 ? Color.FromArgb(34, 211, 238) : Color.FromArgb(74, 222, 128));
+            Px(g, sc, (s == activeSeg ? 0.96 : 0.68) * al, 285 + s * 11, 315, 3, 5);
+        }
+        if ((t % 19) != 0) Px(g, Color.FromArgb(244, 63, 94), 0.78 * al, 96, 166, 72, 1);
+        Px(g, Color.FromArgb(74, 222, 128), 0.60 * al * (0.6 + 0.4 * Math.Sin(t * 0.15)), 316, 194, 8, 8);
     }
 
     public void TriggerEvento(string tipo, int tick) {
@@ -1194,8 +1371,10 @@ public class PzmRenderer {
         string m = string.IsNullOrEmpty(ClimaMode) ? "normal" : ClimaMode;
         if (m != "auto") return m;
         int h = fecha.Hour;
-        if (TemaId == "spiderman-miles-morales" && (h >= 20 || h < 5)) return "lluvia";
+        if ((TemaId == "spiderman-miles-morales" && (h >= 20 || h < 5)) || TemaId == "cyberpunk-edgerunners") return "lluvia";
         if (TemaId == "stranger-things" && (h % 2 == 1)) return "tormenta";
+        if (TemaId == "dragon-ball-z" && (h % 3 == 0)) return "tormenta";
+        if (TemaId == "attack-on-titan") return "ceniza";
         if (TemaId == "demon-slayer" || TemaId == "harry-potter" || TemaId == "jujutsu-kaisen") return "niebla";
         if (TemaId == "fittoa" && (h < 7 || h >= 22)) return "niebla";
         return "normal";
@@ -1300,6 +1479,18 @@ public class PzmRenderer {
                 double sx = (((x0 + Math.Sin(t * 0.04 + i * 0.7) * 14 + t * 0.15) % 640) + 640) % 640;
                 double sy = (y0 + t * sp) % 394;
                 Px(g, (i % 4 == 0) ? Color.FromArgb(224, 242, 254) : Color.White, alphaBase, sx, sy, sz, sz);
+            }
+        } else if (modo == "ceniza") {
+            double alphaBase = 0.64 + 0.25 * nf;
+            for (int i = 0; i < 68; i++) {
+                int x0 = (i * 61 + 29) % 640;
+                int y0 = (i * 97 + 13) % 390;
+                double sp = 0.75 + (i % 4) * 0.35;
+                int sz = (i % 5 == 0) ? 2 : 1;
+                double sx = (((x0 + t * 0.45 + Math.Sin(t * 0.05 + i * 0.7) * 10) % 640) + 640) % 640;
+                double sy = (((y0 - t * sp * 0.85) % 394) + 394) % 394;
+                Color cc = (i % 5 == 0) ? Color.FromArgb(251, 146, 60) : ((i % 2 == 0) ? Color.FromArgb(254, 215, 170) : Color.FromArgb(148, 163, 184));
+                Px(g, cc, alphaBase, sx, sy, sz, 1);
             }
         } else if (modo == "niebla") {
             Color col = wB > 0.5 ? Color.FromArgb(248, 250, 252) : Color.FromArgb(203, 213, 225);
@@ -1415,6 +1606,18 @@ public class PzmRenderer {
             else if (S.ModoHeroe == "jujutsu") { PintaJujutsu(g, t, nf); }
             else if (S.ModoHeroe == "jujutsu_sec") { PintaJujutsuSec(g, t, nf); }
             else if (S.ModoHeroe == "jujutsu_bloq") { PintaJujutsuBloq(g, t, nf); }
+            else if (S.ModoHeroe == "aot_rumbling") { PintaAotRumbling(g, t, nf); }
+            else if (S.ModoHeroe == "aot_shiganshina") { PintaAotShiganshina(g, t, nf); }
+            else if (S.ModoHeroe == "aot_paths") { PintaAotPaths(g, t, nf); }
+            else if (S.ModoHeroe == "op_gear5") { PintaOpGear5(g, t, nf); }
+            else if (S.ModoHeroe == "op_sunny") { PintaOpSunny(g, t, nf); }
+            else if (S.ModoHeroe == "op_poneglyph") { PintaOpPoneglyph(g, t, nf); }
+            else if (S.ModoHeroe == "dbz_ui") { PintaDbzUi(g, t, nf); }
+            else if (S.ModoHeroe == "dbz_namek") { PintaDbzNamek(g, t, nf); }
+            else if (S.ModoHeroe == "dbz_kame") { PintaDbzKame(g, t, nf); }
+            else if (S.ModoHeroe == "cyber_sandevistan") { PintaCyberSandevistan(g, t, nf); }
+            else if (S.ModoHeroe == "cyber_moon") { PintaCyberMoon(g, t, nf); }
+            else if (S.ModoHeroe == "cyber_bloq") { PintaCyberBloq(g, t, nf); }
 
             if (S.Chimenea != null && S.Chimenea.Length >= 2) {
                 int hx = S.Chimenea[0], hy = S.Chimenea[1];

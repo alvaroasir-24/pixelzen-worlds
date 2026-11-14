@@ -892,61 +892,59 @@
       const al = Math.min(1, 0.55 + 0.45 * nf + aBoost);
       const pulse = 0.72 + 0.28 * Math.sin(t * 0.14);
 
-      // 1. Horizonte de Vacío Infinito pulsando detrás (452, 162)
+      // 1. Agujero negro de Vacío Infinito pulsando detrás (446, 146)
       for (let a = 0; a < 10; a++) {
-        const ang = (a * Math.PI * 2) / 10 + t * 0.05;
-        const rX = 33 + Math.round(Math.sin(t * 0.1 + a) * 2);
-        const rY = 17;
-        px(a % 2 === 0 ? '#7dd3fc' : '#c084fc', 0.65 * al, 452 + Math.round(Math.cos(ang) * rX), 162 + Math.round(Math.sin(ang) * rY), 2, 1);
+        const ang = (a * Math.PI * 2) / 10 + t * 0.06;
+        const rX = 36 + Math.round(Math.sin(t * 0.1 + a) * 2);
+        const rY = 12;
+        px(a % 2 === 0 ? '#7dd3fc' : '#c084fc', 0.68 * al, 446 + Math.round(Math.cos(ang) * rX), 146 + Math.round(Math.sin(ang) * rY), 2, 1);
       }
-      px('#ffffff', 0.45 * al * pulse, 450, 161, 4, 2);
+      px('#ffffff', 0.42 * al * pulse, 444, 145, 4, 2);
 
-      // 2. Santuario Malevolente (156, 224) — llamas rituales y aura de cráneo
+      // 2. Santuario Malevolente (132, 210) — ojos demoníacos, boca y ascuas del santuario
       const eyeAl = Math.min(1, (0.55 + 0.45 * Math.sin(t * 0.16)) * al);
-      px('#fb7185', 0.85 * eyeAl, 151, 217, 2, 2);
-      px('#fb7185', 0.85 * eyeAl, 159, 217, 2, 2);
-      px('#ff2848', 0.50 * al, 146, 260 + (t % 3 === 0 ? -1 : 0), 20, 2);
+      px('#fb7185', 0.88 * eyeAl, 125, 189, 2, 2);
+      px('#fb7185', 0.88 * eyeAl, 139, 189, 2, 2);
+      px('#ff2848', 0.55 * al, 120, 232 + (t % 3 === 0 ? -1 : 0), 24, 2);
       for (let s = 0; s < 5; s++) {
-        const sy = 200 + ((s * 17 + t * 3) % 68);
-        const sx = 122 + ((s * 29) % 68);
-        px(s % 2 === 0 ? '#ff4468' : '#fda4af', 0.7 * al, sx, sy, 6, 1);
+        const sy = 188 + ((s * 17 + t * 3) % 68);
+        const sx = 98 + ((s * 29) % 68);
+        px(s % 2 === 0 ? '#ff4468' : '#fda4af', 0.72 * al, sx, sy, 5, 1);
       }
 
-      // 3. Cortes Desmantelar de Sukuna hacia Gojo y aura carmesí (248..298)
-      px('#fb7185', 0.55 * al, 244, 250 - (t % 3), 2, 4);
-      px('#ef4444', 0.55 * al, 252, 247 - ((t + 1) % 3), 2, 4);
+      // 3. Cortes Desmantelar de Sukuna (214, 348) hacia Gojo (398, 348) y aura azul
+      px('#fb7185', 0.60 * al, 214, 314 - (t % 3), 2, 4);
+      px('#ef4444', 0.60 * al, 224, 318 - ((t + 1) % 3), 2, 4);
       for (let k = 0; k < 4; k++) {
-        const prog = ((t * 3 + k * 7) % 28);
-        const sx0 = 264 + prog;
-        const sy0 = 240 + ((k * 7) % 18) - Math.round(prog * 0.25);
+        const prog = ((t * 3 + k * 7) % 36);
+        const sx0 = 242 + prog;
+        const sy0 = 294 + ((k * 7) % 18) - Math.round(prog * 0.18);
         for (let d = 0; d < 7; d++) {
           px(d > 4 ? '#ffffff' : '#ff3355', 0.88 * al, sx0 + d, sy0 + (k % 2 === 0 ? d >> 1 : -(d >> 1)), 1, 1);
         }
       }
 
-      // 4. Rojo/Azul de Gojo y Choque Púrpura Vacío (313, 248)
-      px('#38bdf8', 0.65 * al, 374, 249 - ((t + 2) % 3), 2, 4);
-      const rOrb = 9 + Math.round(Math.sin(t * 0.2) * 2);
+      // 4. Rojo/Azul de Gojo y Choque Púrpura Vacío (306, 298)
+      px('#38bdf8', 0.68 * al, 396, 316 - ((t + 2) % 3), 2, 4);
+      const rOrb = 10 + Math.round(Math.sin(t * 0.2) * 2);
       const rAng = t * 0.22;
-      px('#fb7185', 0.90 * al, 313 + Math.round(Math.cos(rAng) * rOrb), 248 + Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
-      px('#38bdf8', 0.90 * al, 313 - Math.round(Math.cos(rAng) * rOrb), 248 - Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
+      px('#fb7185', 0.90 * al, 306 + Math.round(Math.cos(rAng) * rOrb), 298 + Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
+      px('#38bdf8', 0.90 * al, 306 - Math.round(Math.cos(rAng) * rOrb), 298 - Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
 
       const coreR = Math.round(4 + 3 * pulse + aBoost * 8);
-      px('#9333ea', 0.40 * al, 313 - coreR - 4, 248 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
-      px('#e879f9', 0.72 * al, 313 - coreR, 248 - coreR, coreR * 2, coreR * 2);
-      px('#fdf4ff', 0.96 * al, 311, 246, 5, 5);
+      px('#9333ea', 0.40 * al, 306 - coreR - 4, 298 - coreR - 2, coreR * 2 + 8, coreR * 2 + 4);
+      px('#e879f9', 0.72 * al, 306 - coreR, 298 - coreR, coreR * 2, coreR * 2);
+      px('#fdf4ff', 0.96 * al, 304, 296, 5, 5);
 
-      const wave = 8 + ((t * 2) % 22);
-      const wAl = Math.max(0.08, (1 - (wave - 8) / 22) * 0.75 * al);
+      const wave = 8 + ((t * 2) % 24);
+      const wAl = Math.max(0.08, (1 - (wave - 8) / 24) * 0.75 * al);
       for (let a = 0; a < 12; a++) {
         const ang = (a * Math.PI * 2) / 12 + t * 0.08;
-        px(a % 2 === 0 ? '#e879f9' : '#7dd3fc', wAl, 313 + Math.round(Math.cos(ang) * wave), 248 + Math.round(Math.sin(ang) * wave * 0.7), 2, 2);
+        px(a % 2 === 0 ? '#e879f9' : '#7dd3fc', wAl, 306 + Math.round(Math.cos(ang) * wave), 298 + Math.round(Math.sin(ang) * wave * 0.7), 2, 2);
       }
 
-      // Reflejo Púrpura en las aguas negras del santuario (y=310..330)
-      const rw = 10 + Math.round(4 * pulse);
-      px('#c084fc', 0.42 * al, 313 - rw, 312, rw * 2, 2);
-      px('#f43f5e', 0.35 * al, 156 - 10, 314, 20, 2);
+      const rw = 12 + Math.round(4 * pulse);
+      px('#c084fc', 0.42 * al, 306 - rw, 342, rw * 2, 2);
     }
 
     function pintaJujutsuSec(t, nf) {
@@ -954,34 +952,37 @@
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
       const bob = Math.round(Math.sin(t * 0.12) * 2);
 
-      // 1. Prisión Confinadora (320, 246) — ojo parpadeante y aura áurea/carmesí
-      px('#eab308', 0.45 * al, 312, 238 + bob, 16, 16);
+      // 1. Prisión Confinadora (314, 282)
+      px('#eab308', 0.45 * al, 306, 274 + bob, 16, 16);
       if (t % 29 !== 0) {
-        px('#fff8e8', 0.92 * al, 318, 244 + bob, 4, 4);
-        px('#e11d48', 0.95 * al, 319, 245 + bob, 2, 2);
+        px('#fff8e8', 0.92 * al, 312, 280 + bob, 4, 4);
+        px('#e11d48', 0.95 * al, 313, 281 + bob, 2, 2);
       }
       for (let c = 0; c < 4; c++) {
         const ang = c * Math.PI * 0.5 + t * 0.07;
-        px('#facc15', 0.78 * al, 320 + Math.round(Math.cos(ang) * 14), 246 + bob + Math.round(Math.sin(ang) * 11), 2, 2);
+        px('#facc15', 0.78 * al, 314 + Math.round(Math.cos(ang) * 14), 282 + bob + Math.round(Math.sin(ang) * 11), 2, 2);
       }
 
-      // 2. Destello Negro de Yuji Itadori (216, 278 -> puño 226, 250)
+      // 2. Destello Negro de Yuji Itadori (puño 187, 323)
       const bfPulse = (t % 16) < 4;
-      px('#09090b', 0.90, 224, 247, 7, 7);
-      px(bfPulse ? '#ffffff' : '#fb7185', 0.92 * al, 226, 249, 3, 3);
+      px('#09090b', 0.90, 184, 320, 7, 7);
+      px(bfPulse ? '#ffffff' : '#fb7185', 0.92 * al, 186, 322, 3, 3);
       for (let b = 0; b < 6; b++) {
         const ang = t * 0.45 + b * 1.05;
         const dist = 5 + ((t * 2 + b * 3) % 10);
-        px(b % 2 === 0 ? '#e11d48' : '#111827', 0.88, 227 + Math.round(Math.cos(ang) * dist), 250 + Math.round(Math.sin(ang) * dist), 2, 1);
+        px(b % 2 === 0 ? '#e11d48' : '#111827', 0.88, 187 + Math.round(Math.cos(ang) * dist), 323 + Math.round(Math.sin(ang) * dist), 2, 1);
       }
 
-      // 3. Sombras y Perro Divino de Megumi Fushiguro (422, 278)
+      // 3. Sombras de Megumi (402, 348), Perro Divino (446, 314) y rayos de Nue (390, 200)
       for (let s = 0; s < 5; s++) {
-        const sy = 272 - ((t * 2 + s * 6) % 24);
-        const sx = 414 + Math.round(Math.sin(t * 0.1 + s) * 8) + (s - 2) * 4;
+        const sy = 342 - ((t * 2 + s * 6) % 24);
+        const sx = 398 + Math.round(Math.sin(t * 0.1 + s) * 8) + (s - 2) * 4;
         px(s % 2 === 0 ? '#38bdf8' : '#1e293b', 0.72 * al, sx, sy, 2, 2);
       }
-      px('#10b981', 0.90 * al, 434, 263, 2, 1);
+      px('#38bdf8', 0.90 * al, 446, 314, 2, 1);
+      if ((t % 14) < 3) {
+        px('#bae6fd', 0.86 * al, 388 + (t % 5), 202, 2, 14);
+      }
     }
 
     function pintaJujutsuBloq(t, nf) {
@@ -989,26 +990,227 @@
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
       const sway = Math.round(Math.sin(t * 0.09) * 1.5);
 
-      // 1. Sellos Ofuda bajo el Torii oscilando suavemente con el viento espiritual
-      for (const ox of [298, 310, 330, 342]) {
-        px('#fef3c7', 0.88 * al, ox + sway, 157, 2, 5);
-        px('#ef4444', 0.78 * al, ox + sway, 159, 1, 2);
+      for (const ox of [284, 298, 312, 328, 342, 356]) {
+        px('#fef3c7', 0.88 * al, ox + sway, 162, 2, 5);
+        px('#ef4444', 0.78 * al, ox + sway, 164, 1, 2);
       }
 
-      // 2. Altar con el Dedo de Ryomen Sukuna (320, 230)
       const pulse = 0.65 + 0.35 * Math.sin(t * 0.14);
-      px('#e11d48', 0.36 * al * pulse, 313, 223, 14, 14);
-      px('#fb7185', 0.85 * al * pulse, 318, 227 + (t % 6 < 3 ? 0 : -1), 4, 7);
-      px('#fef2f2', 0.88 * al, 319, 228, 2, 2);
+      px('#e11d48', 0.38 * al * pulse, 313, 283, 14, 14);
+      px('#fb7185', 0.88 * al * pulse, 318, 287 + (t % 6 < 3 ? 0 : -1), 4, 7);
+      px('#fef2f2', 0.88 * al, 319, 288, 2, 2);
 
-      // 3. Volutas de energía maldita ascendiendo + reflejo en el lago (320, 318)
       for (let w = 0; w < 6; w++) {
-        const prog = (t * 1.2 + w * 9) % 44;
-        const wx = 286 + w * 13 + Math.round(Math.sin(t * 0.08 + w) * 3);
-        const wy = 266 - Math.round(prog);
-        px(w % 2 === 0 ? '#a855f7' : '#f43f5e', Math.max(0.15, (1 - prog / 44) * 0.80 * al), wx, wy, 2, 2);
+        const prog = (t * 1.2 + w * 9) % 42;
+        const wx = 290 + w * 12 + Math.round(Math.sin(t * 0.08 + w) * 3);
+        const wy = 306 - Math.round(prog);
+        px(w % 2 === 0 ? '#a855f7' : '#f43f5e', Math.max(0.15, (1 - prog / 42) * 0.80 * al), wx, wy, 2, 2);
       }
-      px('#e11d48', 0.35 * al * pulse, 312, 318, 16, 2);
+      for (const [fx, fy] of [[228, 236], [412, 236], [182, 310], [458, 310]]) {
+        px('#fef08a', 0.65 * al * (0.7 + 0.3 * Math.sin(t * 0.2 + fx)), fx - 1, fy - 1, 3, 3);
+      }
+    }
+
+    function pintaAotRumbling(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+      const pulse = 0.70 + 0.30 * Math.sin(t * 0.14);
+
+      // Ojos esmeralda del Fundador (294, 134) + vapor y brasas de Colosales
+      px('#4ade80', 0.92 * al * pulse, 289, 134, 2, 2);
+      px('#4ade80', 0.92 * al * pulse, 297, 134, 2, 2);
+      for (let i = 0; i < 6; i++) {
+        const tx = [48, 124, 218, 376, 450, 174][i];
+        const py = 248 - ((t * 2 + i * 11) % 52);
+        const pxX = tx + Math.round(Math.sin(t * 0.08 + i) * 6);
+        px(i % 2 === 0 ? '#fb923c' : '#cbd5e1', 0.55 * al, pxX, py, 3, 2);
+      }
+
+      // Remolino de cuchillas de Levi (392, 322) y bufanda roja de Mikasa (210, 326)
+      for (let a = 0; a < 8; a++) {
+        const ang = (a * Math.PI * 2) / 8 + t * 0.42;
+        px(a % 2 === 0 ? '#f8fafc' : '#38bdf8', 0.85 * al, 392 + Math.round(Math.cos(ang) * 18), 322 + Math.round(Math.sin(ang) * 14), 3, 2);
+      }
+      px('#ef4444', 0.85 * al, 206 + (t % 3) - 1, 315, 6, 2);
+    }
+
+    function pintaAotShiganshina(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
+      const pulse = 0.65 + 0.35 * Math.sin(t * 0.18);
+
+      px('#fef08a', 0.92 * al * pulse, 190, 116, 3, 2);
+      px('#fef08a', 0.92 * al * pulse, 212, 116, 3, 2);
+      if ((t % 18) < 5) {
+        for (let k = 0; k < 8; k++) {
+          px(k % 2 === 0 ? '#fef08a' : '#f97316', 0.88 * al, 200 + Math.round(Math.sin(t + k) * 6), 24 + k * 9, 2, 7);
+        }
+      }
+      for (let s = 0; s < 5; s++) {
+        const sy = 194 - ((t + s * 9) % 34);
+        px('#e2e8f0', 0.40 * al, 148 + s * 28 + Math.round(Math.sin(t * 0.06 + s) * 4), sy, 6, 3);
+      }
+      px('#ef4444', 0.80 * al, 320 + Math.round(Math.sin(t * 0.2) * 3), 270 - (t % 8), 2, 4);
+    }
+
+    function pintaAotPaths(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
+      const pulse = 0.70 + 0.30 * Math.sin(t * 0.11);
+
+      px('#e0f2fe', 0.45 * al * pulse, 316, 134, 8, 120);
+      for (let i = 0; i < 8; i++) {
+        const gy = 250 - ((t * 2 + i * 16) % 140);
+        const gx = 320 + Math.round(Math.sin(t * 0.09 + i * 1.3) * (gy < 140 ? 38 : 7));
+        px(i % 2 === 0 ? '#fde047' : '#67e8f9', 0.82 * al, gx, gy, 2, 2);
+      }
+      px('#f8fafc', 0.72 * al * pulse, 319, 312, 2, 6);
+    }
+
+    function pintaOpGear5(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
+      const pulse = 0.68 + 0.32 * Math.sin(t * 0.16);
+
+      // Haki del Conquistador de Luffy Nika (204, 348) + Bajrang Gun (236, 306)
+      for (let h = 0; h < 6; h++) {
+        const ang = t * 0.32 + h * 1.04;
+        const dist = 8 + ((t * 2 + h * 4) % 16);
+        px(h % 2 === 0 ? '#f43f5e' : '#09090b', 0.90 * al, 212 + Math.round(Math.cos(ang) * dist), 322 + Math.round(Math.sin(ang) * dist), 2, 2);
+      }
+      // Choque Bajrang Gun vs Bolo Breath (308, 276) y ojos de Kaido (358, 204)
+      const cr = Math.round(5 + 3 * pulse + aBoost * 8);
+      px('#fb923c', 0.65 * al, 308 - cr, 276 - cr, cr * 2, cr * 2);
+      px('#ffffff', 0.94 * al, 306, 274, 4, 4);
+      px('#fef08a', 0.90 * al * pulse, 352, 199, 2, 2);
+      for (let f = 0; f < 5; f++) {
+        const u = ((t * 0.12 + f * 0.2) % 1.0);
+        px(u < 0.5 ? '#ef4444' : '#fde047', 0.88 * al, Math.round(338 - u * 30), Math.round(214 + u * 62), 3, 3);
+      }
+    }
+
+    function pintaOpSunny(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.30 : 0;
+      const al = Math.min(1, 0.55 + 0.45 * nf + aBoost);
+      const bob = Math.round(Math.sin(t * 0.08));
+
+      for (const lx of [276, 332]) {
+        px('#fef08a', 0.78 * al, lx - 1, 233 + bob, 3, 3);
+      }
+      px('#4ade80', 0.85 * al, 291, 215 + bob, 3, 3);
+      px('#38bdf8', 0.85 * al, 313, 215 + bob, 3, 3);
+      px('#e0f2fe', 0.50 * al, 256 + ((t * 2) % 92), 282, 12, 1);
+    }
+
+    function pintaOpPoneglyph(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+
+      for (let g = 0; g < 6; g++) {
+        const idx = (t + g * 5) % 24;
+        const gx = 180 + (idx % 5) * 7;
+        const gy = 248 + Math.floor(idx / 5) * 14;
+        px('#fde047', 0.85 * al, gx, gy, 2, 2);
+      }
+      for (let m = 0; m < 4; m++) {
+        const ang = t * 0.16 + m * 1.57;
+        px('#e879f9', 0.82 * al, 404 + Math.round(Math.cos(ang) * 13), 318 + Math.round(Math.sin(ang) * 9), 2, 2);
+      }
+    }
+
+    function pintaDbzUi(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.62 + 0.38 * nf + aBoost);
+      const pulse = 0.70 + 0.30 * Math.sin(t * 0.2);
+
+      // Aura plateada-cian Ultra Instinto en Goku (202, 348)
+      for (let u = 0; u < 6; u++) {
+        const uy = 344 - ((t * 2 + u * 7) % 36);
+        const ux = 202 + Math.round(Math.sin(t * 0.25 + u) * 14);
+        px(u % 2 === 0 ? '#e0f2fe' : '#38bdf8', 0.85 * al, ux, uy, 2, 3);
+      }
+      // Kamehameha vs Supernova (386, 296) -> choque (304, 298)
+      px('#38bdf8', 0.78 * al * pulse, 232 + (t % 12) * 5, 315 - (t % 12) * 1.4, 8, 3);
+      const sr = Math.round(5 + 3 * pulse + aBoost * 6);
+      px('#f97316', 0.65 * al, 386 - sr, 296 - sr, sr * 2, sr * 2);
+      px('#fef08a', 0.92 * al * pulse, 302, 296, 5, 5);
+    }
+
+    function pintaDbzNamek(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+      const activeIdx = Math.floor(t / 4) % 7;
+
+      for (let b = 0; b < 7; b++) {
+        const bx = 240 + b * 16;
+        px(b === activeIdx ? '#ffffff' : '#fde047', (b === activeIdx ? 0.95 : 0.55) * al, bx - 1, 274, 3, 3);
+      }
+      px('#ef4444', 0.90 * al, 282, 120, 2, 2);
+      for (let k = 0; k < 5; k++) {
+        const ky = 250 - ((t * 3 + k * 24) % 160);
+        px('#fde047', 0.72 * al, 278 + Math.round(Math.sin(t * 0.1 + k) * 18), ky, 2, 5);
+      }
+    }
+
+    function pintaDbzKame(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.30 : 0;
+      const al = Math.min(1, 0.55 + 0.45 * nf + aBoost);
+
+      px('#fef3c7', 0.78 * al, 185, 213, 4, 4);
+      const rGlow = 0.6 + 0.4 * Math.sin(t * 0.14);
+      px('#fde047', 0.85 * al * rGlow, 421, 255, 3, 3);
+      const sy = 176 - (t % 20);
+      px('#fce7f3', Math.max(0.15, (1 - (t % 20) / 20) * 0.50), 206 + Math.round(Math.sin(t * 0.2) * 3), sy, 3, 2);
+      px('#fde68a', 0.65 * al, 234 + (t % 16), 130, 2, 2);
+    }
+
+    function pintaCyberSandevistan(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
+      const cols = ['#4ade80', '#22d3ee', '#f43f5e'];
+
+      for (let s = 0; s < 3; s++) {
+        const jitter = (t + s) % 3;
+        px(cols[s], 0.52 * al, 178 + s * 16 - jitter, 314, 10, 14);
+      }
+      px('#22d3ee', 0.90 * al, 227, 316 + (t % 4), 2, 6);
+      // Monofilo pulsante de Lucy (328, 308) + faros Quadra + AV
+      const mU = ((t * 3) % 40) / 40;
+      px('#fde047', 0.92 * al, Math.round(370 - mU * 82), Math.round(328 - Math.sin(mU * Math.PI * 1.35) * 26), 3, 2);
+      px('#ef4444', 0.80 * al * (0.7 + 0.3 * Math.sin(t * 0.25)), 40, 319, 6, 2);
+      px('#38bdf8', 0.82 * al, (92 + (t * 2)) % 460, 116, 4, 2);
+    }
+
+    function pintaCyberMoon(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.30 : 0;
+      const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
+
+      // Monorraíl NCART deslizando por viaducto y=219..225 + balizas de azotea
+      const tx = ((96 + t * 2) % 440);
+      px('#38bdf8', 0.85 * al, tx, 221, 18, 3);
+      for (const bx of [42, 148, 240, 396]) {
+        px((t + bx) % 16 < 8 ? '#38bdf8' : '#f472b6', 0.88 * al, bx, 259, 2, 2);
+      }
+      for (let p = 0; p < 4; p++) {
+        const gy = 290 - ((t + p * 8) % 30);
+        px('#bae6fd', 0.72 * al, 300 + p * 10 + Math.round(Math.sin(t * 0.1 + p) * 4), gy, 2, 2);
+      }
+    }
+
+    function pintaCyberBloq(t, nf) {
+      const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
+      const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
+
+      // Onda neural por las 7 vértebras del Apogee Sandevistan (x=286..352, y=317)
+      const activeSeg = Math.floor(t / 2) % 7;
+      for (let s = 0; s < 7; s++) {
+        const vx = 286 + s * 11;
+        px(s === activeSeg ? '#ffffff' : (s % 2 === 0 ? '#22d3ee' : '#4ade80'), (s === activeSeg ? 0.96 : 0.68) * al, vx - 1, 315, 3, 5);
+      }
+      if ((t % 19) !== 0) {
+        px('#f43f5e', 0.78 * al, 96, 166, 72, 1);
+      }
+      px('#4ade80', 0.60 * al * (0.6 + 0.4 * Math.sin(t * 0.15)), 316, 194, 8, 8);
     }
 
     function climaEfectivo(T, fecha) {
@@ -1016,8 +1218,10 @@
       if (m !== 'auto') return m;
       const tid = state.tema || '';
       const h = fecha ? fecha.getHours() : 21;
-      if (tid === 'spiderman-miles-morales' && (h >= 20 || h < 5)) return 'lluvia';
+      if ((tid === 'spiderman-miles-morales' && (h >= 20 || h < 5)) || tid === 'cyberpunk-edgerunners') return 'lluvia';
       if (tid === 'stranger-things' && h % 2 === 1) return 'tormenta';
+      if (tid === 'dragon-ball-z' && h % 3 === 0) return 'tormenta';
+      if (tid === 'attack-on-titan') return 'ceniza';
       if (tid === 'demon-slayer' || tid === 'harry-potter' || tid === 'jujutsu-kaisen') return 'niebla';
       if (tid === 'fittoa' && (h < 7 || h >= 22)) return 'niebla';
       return 'normal';
@@ -1069,6 +1273,14 @@
           const sx = (((c[0] + Math.sin(t * 0.04 + c[3]) * 14 + t * 0.15) % 640) + 640) % 640;
           const sy = (c[1] + t * c[2]) % 394;
           px(i % 4 === 0 ? '#e0f2fe' : '#ffffff', alphaBase, sx, sy, c[4], c[4]);
+        }
+      } else if (modo === 'ceniza') {
+        const alphaBase = 0.64 + 0.25 * nf;
+        for (let i = 0; i < COPOS_CLIMA.length; i++) {
+          const c = COPOS_CLIMA[i];
+          const sx = (((c[0] + t * 0.45 + Math.sin(t * 0.05 + c[3]) * 10) % 640) + 640) % 640;
+          const sy = (((c[1] - t * c[2] * 0.85) % 394) + 394) % 394;
+          px(i % 5 === 0 ? '#fb923c' : (i % 2 === 0 ? '#fed7aa' : '#94a3b8'), alphaBase, sx, sy, c[4], 1);
         }
       } else if (modo === 'niebla') {
         const col = wB > 0.5 ? '#f8fafc' : '#cbd5e1';
@@ -1478,6 +1690,18 @@
       else if (T.modo_heroe === 'jujutsu') { pintaJujutsu(t, nf); }
       else if (T.modo_heroe === 'jujutsu_sec') { pintaJujutsuSec(t, nf); }
       else if (T.modo_heroe === 'jujutsu_bloq') { pintaJujutsuBloq(t, nf); }
+      else if (T.modo_heroe === 'aot_rumbling') { pintaAotRumbling(t, nf); }
+      else if (T.modo_heroe === 'aot_shiganshina') { pintaAotShiganshina(t, nf); }
+      else if (T.modo_heroe === 'aot_paths') { pintaAotPaths(t, nf); }
+      else if (T.modo_heroe === 'op_gear5') { pintaOpGear5(t, nf); }
+      else if (T.modo_heroe === 'op_sunny') { pintaOpSunny(t, nf); }
+      else if (T.modo_heroe === 'op_poneglyph') { pintaOpPoneglyph(t, nf); }
+      else if (T.modo_heroe === 'dbz_ui') { pintaDbzUi(t, nf); }
+      else if (T.modo_heroe === 'dbz_namek') { pintaDbzNamek(t, nf); }
+      else if (T.modo_heroe === 'dbz_kame') { pintaDbzKame(t, nf); }
+      else if (T.modo_heroe === 'cyber_sandevistan') { pintaCyberSandevistan(t, nf); }
+      else if (T.modo_heroe === 'cyber_moon') { pintaCyberMoon(t, nf); }
+      else if (T.modo_heroe === 'cyber_bloq') { pintaCyberBloq(t, nf); }
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {
@@ -1586,6 +1810,10 @@
       'harry-potter': ['#eab308', '#38bdf8', 'rgba(234, 179, 8, 0.36)'],
       'naruto': ['#ff9b38', '#38bdf8', 'rgba(255, 155, 56, 0.40)'],
       'jujutsu-kaisen': ['#e11d48', '#c084fc', 'rgba(225, 29, 72, 0.40)'],
+      'attack-on-titan': ['#f97316', '#22c55e', 'rgba(249, 115, 22, 0.40)'],
+      'one-piece': ['#f43f5e', '#facc15', 'rgba(244, 63, 94, 0.40)'],
+      'dragon-ball-z': ['#38bdf8', '#facc15', 'rgba(56, 189, 248, 0.42)'],
+      'cyberpunk-edgerunners': ['#facc15', '#22d3ee', 'rgba(250, 204, 21, 0.42)'],
     };
 
     const WORLD_AUDIO = {
@@ -1600,6 +1828,10 @@
       'harry-potter': ["Hedwig's Theme · Celesta", '88 BPM · CELESTA', 'VOL 66%'],
       'naruto': ['Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN', 'VOL 82%'],
       'jujutsu-kaisen': ['Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH', 'VOL 84%'],
+      'attack-on-titan': ['Atæk on Titan · Sawano OST', '138 BPM · CORO ÉPICO', 'VOL 86%'],
+      'one-piece': ['Drums of Liberation · Nika', '126 BPM · TAMBORES', 'VOL 85%'],
+      'dragon-ball-z': ['Ultimate Battle · UI OST', '145 BPM · ROCK SINFÓNICO', 'VOL 88%'],
+      'cyberpunk-edgerunners': ['I Really Want to Stay · OST', '124 BPM · SYNTHWAVE', 'VOL 84%'],
     };
 
     function detectarGpu() {

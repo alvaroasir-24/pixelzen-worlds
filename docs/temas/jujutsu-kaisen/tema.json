@@ -2,10 +2,10 @@
   "id": "jujutsu-kaisen",
   "serie": "Jujutsu Kaisen",
   "nombre": "Jujutsu Kaisen · Expansión de Dominio",
-  "subtitulo": "Santuario Malevolente vs Vacío Infinito · Sukuna vs Gojo",
-  "descripcion": "Shinjuku devastado bajo el choque imposible de dos dominios: el Santuario Malevolente de Ryomen Sukuna con sus cráneos rituales frente al abismo cósmico del Vacío Infinito de Satoru Gojo y Púrpura Vacío.",
-  "sin_lago": false,
-  "cielo_fondo": "#0b0614",
+  "subtitulo": "Sagrario Malevolente vs Vacío Infinito · Sukuna vs Gojo",
+  "descripcion": "Shinjuku partido por el choque de dominios: el monumental Sagrario Malevolente de Ryomen Sukuna con su boca demoníaca y cráneos sobre el mar carmesí frente al abismo cósmico del Vacío Infinito de Satoru Gojo y Púrpura Vacío.",
+  "sin_lago": true,
+  "cielo_fondo": "#0b0410",
   "modo_heroe": "jujutsu",
   "modo_pajaros": "ninguno",
   "color_pajaros": "#12081a",
@@ -28,8 +28,8 @@
   "color_destello": "#f5d0fe",
   "citas": [
     {"sub": "Satoru Gojo · Vacío Infinito", "es": "«En el cielo y en la tierra, solo yo merezco ser honrado.»", "au": "Satoru Gojo"},
-    {"sub": "Ryomen Sukuna · Santuario Malevolente", "es": "«Conoce tu lugar, necio. Esto es la verdadera cúspide de la hechicería.»", "au": "Ryomen Sukuna"},
+    {"sub": "Ryomen Sukuna · Sagrario Malevolente", "es": "«Conoce tu lugar, necio. Esto es la verdadera cúspide de la hechicería.»", "au": "Ryomen Sukuna"},
     {"sub": "Batalla de Shinjuku · Técnica Maldita", "es": "«Cuando el Rojo y el Azul chocan y convergen, nace el Púrpura Vacío que todo lo borra.»", "au": "Satoru Gojo"},
-    {"sub": "Rey de las Maldiciones · Dominio Abierto", "es": "«Extiende el santuario sin barrera; cada corte alcanza hasta el último fragmento del cielo.»", "au": "Narrador"}
+    {"sub": "Rey de las Maldiciones · Dominio Abierto", "es": "«Extiende el sagrario sin barrera; cada corte alcanza hasta el último fragmento del cielo.»", "au": "Narrador"}
   ]
 }
