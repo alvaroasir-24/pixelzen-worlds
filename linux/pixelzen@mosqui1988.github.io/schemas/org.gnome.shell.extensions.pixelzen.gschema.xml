@@ -72,5 +72,62 @@
       <default>true</default>
       <summary>Mostrar tarjeta de citas del grimorio en el HUD</summary>
     </key>
+    <key name="hud-clima" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de clima real y órbita solar en el HUD</summary>
+    </key>
+    <key name="hud-gpu" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de GPU y motor gráfico en el HUD</summary>
+    </key>
+    <key name="hud-audio" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de música y audio en el HUD</summary>
+    </key>
+    <key name="hud-foco" type="b">
+      <default>true</default>
+      <summary>Mostrar tarjeta de temporizador Foco Zen en el HUD</summary>
+    </key>
+    <key name="hud-compacto" type="b">
+      <default>false</default>
+      <summary>Modo HUD compacto con paleta adaptada al mundo</summary>
+    </key>
+    <key name="solo-widgets" type="b">
+      <default>false</default>
+      <summary>Modo Solo Widgets sobre el fondo actual de GNOME</summary>
+    </key>
+    <key name="fondo-principal" type="s">
+      <default>'principal'</default>
+      <summary>Variante de escena en el monitor principal (principal, secundaria, bloqueo)</summary>
+    </key>
+    <key name="fondo-secundario" type="s">
+      <default>'secundaria'</default>
+      <summary>Variante de escena en el segundo monitor (principal, secundaria, bloqueo)</summary>
+    </key>
+    <key name="tema-secundario" type="s">
+      <default>'igual'</default>
+      <summary>Mundo independiente en monitor secundario ('igual' o id de tema)</summary>
+    </key>
+    <key name="usar-bloqueo" type="b">
+      <default>true</default>
+      <summary>Aplicar escena seleccionada a la pantalla de bloqueo</summary>
+    </key>
+    <key name="fondo-bloqueo" type="s">
+      <default>'bloqueo'</default>
+      <summary>Variante de escena para la pantalla de bloqueo (principal, secundaria, bloqueo)</summary>
+    </key>
+    <key name="clima" type="s">
+      <default>'normal'</default>
+      <summary>Efecto climático atmosférico (normal, lluvia, tormenta, nieve, niebla, ceniza, auto)</summary>
+    </key>
+    <key name="rotacion-minutos" type="i">
+      <range min="0" max="1440"/>
+      <default>0</default>
+      <summary>Intervalo en minutos para rotación automática de mundos (0 = desactivado)</summary>
+    </key>
+    <key name="evento-seq" type="i">
+      <default>0</default>
+      <summary>Contador interno para disparar eventos épicos en vivo</summary>
+    </key>
   </schema>
 </schemalist>

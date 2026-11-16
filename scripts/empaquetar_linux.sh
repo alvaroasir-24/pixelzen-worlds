@@ -17,6 +17,7 @@ cp -a "$RAIZ/linux/." "$PKG/linux/"
 rm -f "$PKG/linux/LEEME.md"
 cp "$RAIZ/src/ubicacion.py" "$PKG/src/"
 cp "$RAIZ/src/datos.py" "$PKG/src/"
+cp "$RAIZ/src/clima.py" "$PKG/src/"
 cp "$RAIZ/fuentes/DepartureMono-Regular.otf" "$PKG/fuentes/"
 cp "$RAIZ/LICENSE" "$PKG/"
 [ -f "$RAIZ/VERSION" ] && cp "$RAIZ/VERSION" "$PKG/"
@@ -38,6 +39,11 @@ for d in "$RAIZ/escenas"/*/pack; do
     mkdir -p "$PKG/temas/$id/secundario"
     rm -rf "$PKG/temas/$id/secundario/preview"
     cp -a "$RAIZ/escenas/$id/secundario/preview" "$PKG/temas/$id/secundario/preview"
+  fi
+  if [ -d "$RAIZ/escenas/$id/bloqueo/preview" ]; then
+    mkdir -p "$PKG/temas/$id/bloqueo"
+    rm -rf "$PKG/temas/$id/bloqueo/preview"
+    cp -a "$RAIZ/escenas/$id/bloqueo/preview" "$PKG/temas/$id/bloqueo/preview"
   fi
 done
 

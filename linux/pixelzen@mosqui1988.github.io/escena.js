@@ -850,9 +850,17 @@ export class Escena {
         this._monitores = [];
         this._timer = 0;
         this._pausa = false;
+        this._oculta = false;
         this.tick = 0;
         this.lat = 40.4;
         this.lon = -3.7;
+        this.climaMode = 'normal';
+        this.realClimaEfecto = '';
+        this.eventoTipo = '';
+        this.eventoInicioTick = -999;
+        this.eventoDuracion = 96;
+        this._ultimaHoraEvento = -1;
+        this._lastClimaCheck = 0;
 
         let n = lcg(7);
         this.olas = [];
@@ -865,14 +873,32 @@ export class Escena {
 
         this._cargaDatosYTexturas();
         this._leeAjustes();
+        this._leeClimaCache();
         this.recalcula();
     }
 
-    _rutaTema() {
-        const id = this._settings?.get_string('tema') || '';
-        const sub = id ? `${this._dir}/temas/${id}` : '';
-        if (sub && GLib.file_test(`${sub}/datos.json`, GLib.FileTest.EXISTS)) return sub;
-        return this._dir;
+    _resuelveVarianteDir(temaId, variante) {
+        const id = temaId || 'fittoa';
+        const base = `${this._dir}/temas/${id}`;
+        if (!GLib.file_test(`${base}/datos.json`, GLib.FileTest.EXISTS)) return this._dir;
+        const sub = variante === 'secundaria' ? 'secundario' : (variante === 'bloqueo' ? 'bloqueo' : '');
+        if (sub && GLib.file_test(`${base}/${sub}/datos.json`, GLib.FileTest.EXISTS)) {
+            return `${base}/${sub}`;
+        }
+        return base;
+    }
+
+    _leeClimaCache() {
+        const ahora = Date.now();
+        if (ahora - this._lastClimaCheck < 60000) return;
+        this._lastClimaCheck = ahora;
+        try {
+            const p = GLib.build_filenamev([GLib.get_user_config_dir(), 'pixelzen', 'clima_real.json']);
+            if (GLib.file_test(p, GLib.FileTest.EXISTS)) {
+                const raw = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(p)[1]));
+                if (raw && raw.ok && raw.efecto) this.realClimaEfecto = String(raw.efecto);
+            }
+        } catch (_e) { /* sin cache */ }
     }
 
     _cargaPack(dir) {
@@ -901,8 +927,15 @@ export class Escena {
     }
 
     _cargaDatosYTexturas() {
-        const dir = this._rutaTema();
-        const prim = this._cargaPack(dir);
+        const s = this._settings;
+        const temaId = s?.get_string('tema') || 'fittoa';
+        const fp = s?.get_string('fondo-principal') || 'principal';
+        const fs = s?.get_string('fondo-secundario') || 'secundaria';
+        const ts = s?.get_string('tema-secundario') || 'igual';
+        const temaSec = (ts && ts !== 'igual') ? ts : temaId;
+
+        const dirPrim = this._resuelveVarianteDir(temaId, fp);
+        const prim = this._cargaPack(dirPrim);
         this.D = prim.D;
         this.T = prim.T;
         this.brillantes = prim.brillantes;
@@ -910,10 +943,10 @@ export class Escena {
         this.texNubes = prim.texNubes;
         this._packPrim = prim;
 
-        const secDir = `${dir}/secundario`;
-        if (GLib.file_test(`${secDir}/datos.json`, GLib.FileTest.EXISTS)) {
+        const dirSec = this._resuelveVarianteDir(temaSec, fs);
+        if (dirSec !== dirPrim && GLib.file_test(`${dirSec}/datos.json`, GLib.FileTest.EXISTS)) {
             try {
-                this._packSec = this._cargaPack(secDir);
+                this._packSec = this._cargaPack(dirSec);
             } catch (e) {
                 logError(e, 'PixelZen carga secundario');
                 this._packSec = null;
@@ -939,6 +972,11 @@ export class Escena {
         this.horaSim = s.get_double('hora-simulada');
         this.demo = s.get_boolean('ciclo-rapido');
         this.duracionCiclo = Math.max(10, s.get_int('ciclo-duracion'));
+        try {
+            this.climaMode = s.get_string('clima') || 'normal';
+        } catch (_e) {
+            this.climaMode = 'normal';
+        }
     }
 
     ajustesCambiados() {
@@ -1088,6 +1126,7 @@ export class Escena {
             cr.$dispose();
         });
         raiz.add_child(velo);
+        if (this._oculta) raiz.visible = false;
         return {raiz};
     }
 
@@ -1100,18 +1139,163 @@ export class Escena {
 
     _programa() {
         if (this._timer) { GLib.source_remove(this._timer); this._timer = 0; }
-        if (this._pausa || !this._lienzo) return;
+        if (this._pausa || this._oculta || !this._lienzo) return;
         const ms = this.animar ? Math.round(1000 / this.fps) : 60000;
         this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
             if (this.animar) {
                 this.tick++;
-                if (this.demo || this.tick % this.fps === 0) this.recalcula();
+                if (this.demo || this.tick % this.fps === 0) {
+                    this.recalcula();
+                    this._leeClimaCache();
+                    const dNow = new Date();
+                    if (dNow.getMinutes() === 0 && dNow.getSeconds() < 3 && this._ultimaHoraEvento !== dNow.getHours()) {
+                        this._ultimaHoraEvento = dNow.getHours();
+                        this.disparaEvento('');
+                    }
+                }
             } else {
                 this.recalcula();
             }
             this.pinta();
             return GLib.SOURCE_CONTINUE;
         });
+    }
+
+    disparaEvento(tipo = '') {
+        const ops = ['cometa', 'invocacion', 'anomalia'];
+        this.eventoTipo = tipo || ops[Math.abs(this.tick) % ops.length];
+        this.eventoInicioTick = this.tick;
+        this.pinta();
+    }
+
+    _climaEfectivo(fecha) {
+        const m = this.climaMode || 'normal';
+        if (m !== 'auto') return m;
+        if (this.realClimaEfecto) return this.realClimaEfecto;
+        const temaId = this._settings?.get_string('tema') || 'fittoa';
+        const h = fecha.getHours();
+        if ((temaId === 'spiderman-miles-morales' && (h >= 20 || h < 5)) || temaId === 'cyberpunk-edgerunners') return 'lluvia';
+        if (temaId === 'stranger-things' && (h % 2 === 1)) return 'tormenta';
+        if (temaId === 'dragon-ball-z' && (h % 3 === 0)) return 'tormenta';
+        if (temaId === 'attack-on-titan') return 'ceniza';
+        if (temaId === 'demon-slayer' || temaId === 'harry-potter' || temaId === 'jujutsu-kaisen') return 'niebla';
+        if (temaId === 'fittoa' && (h < 7 || h >= 22)) return 'niebla';
+        return 'normal';
+    }
+
+    _pintaEventoEspecial(cr, t) {
+        if (!this.eventoTipo) return;
+        const age = t - this.eventoInicioTick;
+        if (age < 0 || age > this.eventoDuracion) { this.eventoTipo = ''; return; }
+        const p = age / this.eventoDuracion;
+        const env = p < 0.15 ? p / 0.15 : (p > 0.8 ? (1.0 - p) / 0.2 : 1.0);
+        if (this.eventoTipo === 'cometa') {
+            const cx = 60 + p * 520;
+            const cy = 28 + p * 125 - Math.sin(p * Math.PI) * 18;
+            for (let k = 0; k < 18; k++) {
+                const tx = cx - k * 3.6;
+                const ty = cy - k * 1.1;
+                const a = (1 - k / 18) * 0.85 * env;
+                const c = k < 4 ? '#ffffff' : (k < 10 ? '#fde047' : '#38bdf8');
+                px(cr, c, a, tx, ty, k < 5 ? 3 : 2, k < 5 ? 2 : 1);
+            }
+            px(cr, '#ffffff', 0.98 * env, cx - 1, cy - 1, 4, 4);
+        } else if (this.eventoTipo === 'invocacion') {
+            for (let a = 0; a < 16; a++) {
+                const ang = (a * Math.PI * 2) / 16 + t * 0.08;
+                px(cr, a % 2 === 0 ? '#facc15' : '#38bdf8', 0.82 * env, 320 + Math.round(Math.cos(ang) * 34), 224 + Math.round(Math.sin(ang) * 14), 2, 2);
+            }
+            for (const colX of [302, 320, 338]) {
+                px(cr, '#facc15', 0.22 * env, colX - 1, 56, 3, 224);
+                px(cr, '#ffffff', 0.50 * env, colX, 76, 1, 204);
+            }
+            px(cr, '#38bdf8', 0.35 * env, 296, 314, 48, 3);
+        } else if (this.eventoTipo === 'anomalia') {
+            for (let i = -24; i <= 24; i += 2) {
+                const y = 148 + i;
+                const x = 320 + Math.round(Math.sin(i * 0.35 + t * 0.25) * 6);
+                px(cr, '#09090b', 0.85 * env, x - 2, y, 5, 2);
+                px(cr, i % 4 === 0 ? '#e11d48' : '#a855f7', 0.90 * env, x - 3, y, 2, 2);
+                px(cr, '#f43f5e', 0.90 * env, x + 2, y, 2, 2);
+            }
+            for (let r = 0; r < 10; r++) {
+                const ang = r * 0.62 + t * 0.14;
+                const rad = 14 + (age % 22);
+                px(cr, r % 2 === 0 ? '#f43f5e' : '#c084fc', 0.72 * env, 320 + Math.round(Math.cos(ang) * rad), 148 + Math.round(Math.sin(ang) * rad * 0.7), 2, 1);
+            }
+        }
+    }
+
+    _pintaClima(cr, t, wB, nf, fecha) {
+        const modo = this._climaEfectivo(fecha);
+        if (modo === 'normal') return;
+        if (modo === 'lluvia' || modo === 'tormenta') {
+            const pesado = modo === 'tormenta';
+            const wind = pesado ? -2.2 : -1.0;
+            const vyBase = pesado ? 1.55 : 1.0;
+            const col = pesado ? '#bae6fd' : '#7dd3fc';
+            const alphaBase = (pesado ? 0.56 : 0.42) * (1.0 - 0.15 * wB);
+            for (let i = 0; i < 84; i++) {
+                if (!pesado && i % 3 === 2) continue;
+                const x0 = (i * 53 + 17) % 640;
+                const y0 = (i * 89 + 31) % 390;
+                const len = Math.round((5 + (i % 4) * 2) * (pesado ? 1.35 : 1.0));
+                const sp = 6 + (i % 3);
+                const gx = (((x0 + t * wind * 2.2) % 640) + 640) % 640;
+                const gy = (y0 + t * sp * vyBase) % 390;
+                for (let d = 0; d < len; d++) {
+                    px(cr, col, alphaBase * (1.0 - d * 0.08), gx + (wind < -1.5 ? -Math.floor(d * 0.4) : 0), gy + d, 1, 1);
+                }
+                if (gy > 282 && gy < 386 && i % 7 === 0) {
+                    const rw = 2 + ((t + i) % 3);
+                    px(cr, '#e0f2fe', 0.30 * alphaBase, gx - rw, gy + 1, rw * 2, 1);
+                }
+            }
+            if (pesado) {
+                const flash = (t * 17 + 13) % 131;
+                if (flash < 2) {
+                    px(cr, '#e0f2fe', flash === 0 ? 0.22 : 0.10, 0, 0, 640, 280);
+                    const lx = 110 + ((t * 97) % 420);
+                    for (let y = 8; y < 230; y += 4) {
+                        const jx = lx + Math.round(Math.sin(y * 0.18 + t) * 7);
+                        px(cr, '#ffffff', 0.92, jx, y, 2, 4);
+                        px(cr, col, 0.45, jx - 1, y, 4, 4);
+                    }
+                }
+            }
+        } else if (modo === 'nieve') {
+            const alphaBase = 0.72 + 0.20 * nf;
+            for (let i = 0; i < 68; i++) {
+                const x0 = (i * 61 + 29) % 640;
+                const y0 = (i * 97 + 13) % 390;
+                const sp = 0.75 + (i % 4) * 0.35;
+                const sz = (i % 5 === 0) ? 2 : 1;
+                const sx = (((x0 + Math.sin(t * 0.04 + i * 0.7) * 14 + t * 0.15) % 640) + 640) % 640;
+                const sy = (y0 + t * sp) % 394;
+                px(cr, i % 4 === 0 ? '#e0f2fe' : '#ffffff', alphaBase, sx, sy, sz, sz);
+            }
+        } else if (modo === 'ceniza') {
+            const alphaBase = 0.64 + 0.25 * nf;
+            for (let i = 0; i < 68; i++) {
+                const x0 = (i * 61 + 29) % 640;
+                const y0 = (i * 97 + 13) % 390;
+                const sp = 0.75 + (i % 4) * 0.35;
+                const sz = (i % 5 === 0) ? 2 : 1;
+                const sx = (((x0 + t * 0.45 + Math.sin(t * 0.05 + i * 0.7) * 10) % 640) + 640) % 640;
+                const sy = (((y0 - t * sp * 0.85) % 394) + 394) % 394;
+                const cc = (i % 5 === 0) ? '#fb923c' : ((i % 2 === 0) ? '#fed7aa' : '#94a3b8');
+                px(cr, cc, alphaBase, sx, sy, sz, 1);
+            }
+        } else if (modo === 'niebla') {
+            const col = wB > 0.5 ? '#f8fafc' : '#cbd5e1';
+            for (let i = 0; i < 6; i++) {
+                const mx = (((i * 120 + t * (0.25 + (i % 3) * 0.12)) % 760) + 760) % 760 - 120;
+                const my = 252 + i * 14;
+                const mw = 95 + (i % 3) * 45;
+                px(cr, col, 0.09 + 0.06 * nf, mx, my, mw, 5);
+                px(cr, col, 0.05 + 0.04 * nf, mx + 16, my - 2, mw - 32, 2);
+            }
+        }
     }
 
     _pintaLienzo(l) {
@@ -1318,6 +1502,15 @@ export class Escena {
                 px(cr, core, 0.2 + 0.8 * b, fx, fy, 1, 1);
             });
         }
+        this._pintaEventoEspecial(cr, t);
+        this._pintaClima(cr, t, this.wB, nf, this.fechaEfectiva());
+    }
+
+    ocultar(o) {
+        this._oculta = !!o;
+        for (const m of this._monitores) m.raiz.visible = !this._oculta;
+        if (!this._oculta && !this._pausa) { this.recalcula(); this.pinta(); }
+        this._programa();
     }
 
     pausa(p) {

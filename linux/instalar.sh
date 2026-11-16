@@ -41,6 +41,7 @@ rm -rf "$EXT"; mkdir -p "$EXT/code" "$EXT/temas"
 cp -a "$AQUI/$UUID/." "$EXT/"
 cp "$RAIZ/src/ubicacion.py" "$EXT/code/"
 cp "$RAIZ/src/datos.py" "$EXT/code/"
+cp "$RAIZ/src/clima.py" "$EXT/code/"
 cp "$RAIZ/LICENSE" "$EXT/"
 
 if [ -d "$RAIZ/temas" ]; then
@@ -62,6 +63,11 @@ for d in "$RAIZ/escenas"/*/pack; do
     mkdir -p "$EXT/temas/$id/secundario"
     rm -rf "$EXT/temas/$id/secundario/preview"
     cp -a "$RAIZ/escenas/$id/secundario/preview" "$EXT/temas/$id/secundario/preview"
+  fi
+  if [ -d "$RAIZ/escenas/$id/bloqueo/preview" ]; then
+    mkdir -p "$EXT/temas/$id/bloqueo"
+    rm -rf "$EXT/temas/$id/bloqueo/preview"
+    cp -a "$RAIZ/escenas/$id/bloqueo/preview" "$EXT/temas/$id/bloqueo/preview"
   fi
 done
 
@@ -146,6 +152,8 @@ echo "==> Instalando aplicación gráfica PixelZen Worlds en el menú de aplicac
 mkdir -p "$HOME/.local/share/pixelzen" "$HOME/.local/bin" \
          "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/256x256/apps"
 cp "$AQUI/pixelzen_app.py" "$HOME/.local/share/pixelzen/pixelzen_app.py"
+[ -f "$RAIZ/src/clima.py" ] && cp "$RAIZ/src/clima.py" "$HOME/.local/share/pixelzen/clima.py"
+[ -f "$RAIZ/src/ubicacion.py" ] && cp "$RAIZ/src/ubicacion.py" "$HOME/.local/share/pixelzen/ubicacion.py"
 cp "$AQUI/desinstalar.sh" "$HOME/.local/share/pixelzen/desinstalar.sh"
 [ -f "$RAIZ/VERSION" ] && cp "$RAIZ/VERSION" "$HOME/.local/share/pixelzen/VERSION"
 chmod +x "$HOME/.local/share/pixelzen/pixelzen_app.py" "$HOME/.local/share/pixelzen/desinstalar.sh"

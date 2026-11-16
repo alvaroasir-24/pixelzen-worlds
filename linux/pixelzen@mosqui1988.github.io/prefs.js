@@ -190,6 +190,26 @@ export default class PixelZenPreferences extends ExtensionPreferences {
         settings.bind('fps', rowFps, 'value', Gio.SettingsBindFlags.DEFAULT);
         grupoTiempo.add(rowFps);
 
+        const climas = [
+            {id: 'normal', label: 'Despejado (Original del mundo)'},
+            {id: 'lluvia', label: 'Lluvia suave'},
+            {id: 'tormenta', label: 'Tormenta con relámpagos'},
+            {id: 'nieve', label: 'Nieve suave'},
+            {id: 'niebla', label: 'Niebla misteriosa'},
+            {id: 'ceniza', label: 'Ceniza / brasas'},
+            {id: 'auto', label: 'Automático por universo y clima real'},
+        ];
+        const listaClima = new Gtk.StringList();
+        climas.forEach(c => listaClima.append(c.label));
+        const comboClima = new Adw.ComboRow({title: 'Clima dinámico', model: listaClima});
+        const curClima = settings.get_string('clima');
+        comboClima.set_selected(Math.max(0, climas.findIndex(c => c.id === curClima)));
+        comboClima.connect('notify::selected', () => {
+            const sel = climas[comboClima.get_selected()];
+            if (sel) settings.set_string('clima', sel.id);
+        });
+        grupoTiempo.add(comboClima);
+
         // Grupo 3: HUD y monitores
         const grupoHud = new Adw.PreferencesGroup({
             title: 'Panel HUD y pantallas',
@@ -213,6 +233,13 @@ export default class PixelZenPreferences extends ExtensionPreferences {
         });
         grupoHud.add(comboMon);
 
+        const rowSoloW = new Adw.SwitchRow({
+            title: 'Modo Solo Widgets',
+            subtitle: 'Muestra solo las tarjetas HUD manteniendo tu fondo de GNOME',
+        });
+        settings.bind('solo-widgets', rowSoloW, 'active', Gio.SettingsBindFlags.DEFAULT);
+        grupoHud.add(rowSoloW);
+
         const rowHud = new Adw.SwitchRow({
             title: 'Mostrar panel de datos (HUD)',
             subtitle: 'Activa o desactiva la superposición del HUD en el monitor principal',
@@ -220,18 +247,29 @@ export default class PixelZenPreferences extends ExtensionPreferences {
         settings.bind('hud', rowHud, 'active', Gio.SettingsBindFlags.DEFAULT);
         grupoHud.add(rowHud);
 
+        const rowCompacto = new Adw.SwitchRow({
+            title: 'HUD compacto',
+            subtitle: 'Reduce márgenes y relleno entre tarjetas',
+        });
+        settings.bind('hud-compacto', rowCompacto, 'active', Gio.SettingsBindFlags.DEFAULT);
+        grupoHud.add(rowCompacto);
+
         // Grupo 3b: Tarjetas de estadísticas del HUD
         const grupoStats = new Adw.PreferencesGroup({
-            title: 'Estadísticas visibles en el HUD',
-            description: 'Elige de forma independiente qué tarjetas de información mostrar.',
+            title: 'Estadísticas visibles en el HUD (9 tarjetas)',
+            description: 'Si activas más de 5 tarjetas, el HUD pasa automáticamente a 2 columnas.',
         });
         page.add(grupoStats);
 
         for (const [clave, titulo, subtitulo] of [
             ['hud-tiempo', 'Tiempo y fase lunar', 'Reloj en vivo, fecha, nombre del mundo y luna'],
+            ['hud-clima', 'Clima real y órbita solar', 'Temperatura, viento, elevación solar y azimut'],
             ['hud-sistema', 'Sistema (CPU, RAM, Temp, Disco)', 'Barras de rendimiento, historial CPU y batería'],
+            ['hud-gpu', 'GPU y motor gráfico', 'Tarjeta gráfica, FPS y resolución'],
             ['hud-red', 'Red y tráfico', 'SSID/interfaz, IP, puerta de enlace, VPN y caudal ↓↑'],
+            ['hud-audio', 'Música y BSO del mundo', 'Reproductores MPRIS/Spotify o banda sonora del universo'],
             ['hud-dev', 'Entorno Dev y servicios', 'Repositorios Git, versiones (Python/Node/Go/Rust) y servicios'],
+            ['hud-foco', 'Foco Zen (Pomodoro)', 'Temporizador de 25 minutos y tiempo de sesión'],
             ['hud-grimorio', 'Grimorio (citas del mundo)', 'Citas rotatorias de los personajes del paisaje activo'],
         ]) {
             const row = new Adw.SwitchRow({title: titulo, subtitle: subtitulo});

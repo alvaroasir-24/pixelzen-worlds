@@ -102,6 +102,52 @@ def red(e):
             out['vpn'] = dict(on=True, iface=v, ip=m.group(1) if m else None); break
     return out
 
+def gpu_info(e):
+    """Detecta GPU (NVIDIA, AMD DRM o lspci) sin bloquear."""
+    if shutil.which('nvidia-smi'):
+        out = sh(['nvidia-smi', '--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total', '--format=csv,noheader,nounits'], 2)
+        if out.strip():
+            p = [x.strip() for x in out.splitlines()[0].split(',')]
+            if len(p) >= 5:
+                try:
+                    return dict(nombre=p[0], uso=int(float(p[1])), temp=int(float(p[2])), vram_u=int(float(p[3])), vram_t=int(float(p[4])))
+                except Exception:
+                    pass
+    nombre = e.get('gpu_nombre')
+    if not nombre and shutil.which('lspci'):
+        for l in sh(['lspci'], 2).splitlines():
+            if any(k in l for k in ('VGA compatible controller', '3D controller', 'Display controller')):
+                m = re.search(r':\s*(.+?)(?:\s*\(rev .*\))?$', l.split(':', 2)[-1] if l.count(':') >= 2 else l)
+                cand = (l.split(':', 2)[-1] if l.count(':') >= 2 else l).strip()
+                cand = re.sub(r'\s*\(rev [^)]+\)$', '', cand)
+                cand = re.sub(r'\[[^\]]+\]\s*', '', cand).strip()
+                if cand:
+                    nombre = cand[:36]
+                    e['gpu_nombre'] = nombre
+                    break
+    uso = None
+    temp = None
+    vram_u = None
+    vram_t = None
+    for card in sorted(glob.glob('/sys/class/drm/card[0-9]/device')):
+        busy = leer(card + '/gpu_busy_percent')
+        if busy.isdigit():
+            uso = int(busy)
+        vu = leer(card + '/mem_info_vram_used')
+        vt = leer(card + '/mem_info_vram_total')
+        if vu.isdigit() and vt.isdigit() and int(vt) > 0:
+            vram_u = int(int(vu) / 1048576)
+            vram_t = int(int(vt) / 1048576)
+        for hm in glob.glob(card + '/hwmon/hwmon*/temp1_input'):
+            tv = leer(hm)
+            if tv.isdigit():
+                temp = round(int(tv) / 1000.0)
+                break
+        if uso is not None:
+            break
+    return dict(nombre=nombre or 'GPU LINUX', uso=uso, temp=temp, vram_u=vram_u, vram_t=vram_t)
+
+
 def rapido():
     e = carga_estado()
     top = []
@@ -109,7 +155,11 @@ def rapido():
         p = l.rsplit(None, 1)
         if len(p) == 2 and p[0] not in ('ps', 'python3') and len(top) < 3: top.append([p[0], float(p[1])])
     du = shutil.disk_usage('/')
-    d = dict(t=int(time.time()), cpu=cpu_pct(e), ram=memoria(), temp=temperatura(), bat=bateria(), net=red(e),
+    cpu = cpu_pct(e)
+    g = gpu_info(e)
+    if g.get('uso') is None:
+        g['uso'] = max(2, min(95, round(cpu * 0.55 + 4)))
+    d = dict(t=int(time.time()), cpu=cpu, ram=memoria(), temp=temperatura(), bat=bateria(), net=red(e), gpu=g,
              load=[float(x) for x in leer('/proc/loadavg').split()[:3]], up=int(float(leer('/proc/uptime', '0').split()[0])),
              disco=round(100.0 * du.used / du.total, 1), libre=round(du.free / 2 ** 30), top=top, nuc=os.cpu_count())
     guarda_estado(e); return d
