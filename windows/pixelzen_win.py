@@ -59,7 +59,7 @@ def cargar_config():
         'monitores': 2,
         'modo': '90m',
         'horaFija': 21.5,
-        'fps': 8,
+        'fps': 16,
         'hud': True,
         'stats': {
             'tiempo': True,

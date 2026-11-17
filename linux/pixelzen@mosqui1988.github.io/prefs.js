@@ -184,7 +184,7 @@ export default class PixelZenPreferences extends ExtensionPreferences {
 
         const rowFps = new Adw.SpinRow({
             title: 'Cuadros por segundo (FPS)',
-            adjustment: new Gtk.Adjustment({lower: 2, upper: 24, step_increment: 1, page_increment: 2, value: settings.get_int('fps')}),
+            adjustment: new Gtk.Adjustment({lower: 4, upper: 30, step_increment: 1, page_increment: 2, value: settings.get_int('fps')}),
             digits: 0,
         });
         settings.bind('fps', rowFps, 'value', Gio.SettingsBindFlags.DEFAULT);

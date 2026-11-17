@@ -79,7 +79,7 @@ function Cargar-Config {
         monitores = 2
         modo = '90m'
         horaFija = 21.5
-        fps = 8
+        fps = 16
         hud = $true
         soloWidgets = $false
         compactoHud = $false
@@ -398,7 +398,7 @@ function Aplicar-Todo($c) {
     $pj = if ($null -ne $c.pausaJuego -and -not [bool]$c.pausaJuego) { 0 } else { 1 }
     $ar = if ($null -ne $c.audioReactivo -and -not [bool]$c.audioReactivo) { 0 } else { 1 }
     $hk = if ($null -ne $c.hotkeys -and -not [bool]$c.hotkeys) { 0 } else { 1 }
-    $fpsVal = if ($null -ne $c.fps -and [int]$c.fps -ge 2) { [int]$c.fps } else { 8 }
+    $fpsVal = if ($null -ne $c.fps -and [int]$c.fps -ge 4) { [int]$c.fps } else { 16 }
     $horaStr = ([double]$c.horaFija).ToString('0.##', [System.Globalization.CultureInfo]::InvariantCulture)
     Aplicar-Fondos-Windows $c.tema $c.monitores $fase $fp $fs $ts
     if ($c.usarBloqueo) {
@@ -2630,7 +2630,7 @@ function Lee-FormConfig {
         monitores = if ($el.RbMon2.IsChecked) { 2 } else { 1 }
         modo = $el.CmbModo.SelectedItem.Tag
         horaFija = [double]$el.SldHora.Value
-        fps = 8
+        fps = $(if ($null -ne $script:cfg -and $null -ne $script:cfg.fps -and [int]$script:cfg.fps -ge 4) { [int]$script:cfg.fps } else { 16 })
         hud = [bool]$el.ChkHudMaster.IsChecked
         soloWidgets = [bool]$el.ChkSoloWidgets.IsChecked
         compactoHud = [bool]$el.ChkCompactoHud.IsChecked
@@ -2980,7 +2980,7 @@ function Actualiza-Vista {
 
     # Tarjeta Ajustes
     $el.TxtHubGenVal.Text = $modoTxt
-    $el.TxtHubRendVal.Text = if ($el.ChkPausaJuego.IsChecked) { 'Pausa Auto ON' } else { 'Libre 8 FPS' }
+    $el.TxtHubRendVal.Text = if ($el.ChkPausaJuego.IsChecked) { 'Pausa Auto ON' } else { 'Libre 16 FPS' }
     $el.TxtHubAtajosVal.Text = if ($el.ChkHotkeys.IsChecked) { 'Ctrl+Alt ON' } else { 'Atajos OFF' }
     $script:syncingCombos = $true
     $el.SldHubHora.Value = $hv

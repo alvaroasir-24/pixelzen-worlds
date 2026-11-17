@@ -48,7 +48,7 @@ function Normaliza-Config($c) {
         red = $true; audio = $true; dev = $true; foco = $true; grimorio = $true
     }
     if ($null -eq $c.fps) {
-        $c | Add-Member -NotePropertyName fps -NotePropertyValue 8 -Force
+        $c | Add-Member -NotePropertyName fps -NotePropertyValue 16 -Force
     }
     if ($null -eq $c.soloWidgets) {
         $c | Add-Member -NotePropertyName soloWidgets -NotePropertyValue $false -Force

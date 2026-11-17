@@ -119,26 +119,253 @@ function _setContentBytes(cont, bytes, w, h, stride) {
     }
 }
 
-function fija(a, op) {
-    const o = op255(op);
-    const v = o > 1;
-    if (a.visible !== v) a.visible = v;
-    if (v && a.opacity !== o) a.opacity = o;
-    return v;
+function _pixbufToU32(pb) {
+    const w = pb.get_width(), h = pb.get_height(), rs = pb.get_rowstride(), nc = pb.get_n_channels();
+    const src = pb.get_pixels();
+    const out = new Uint32Array(w * h);
+    if (IS_LE && nc === 4 && rs === w * 4 && src.byteOffset % 4 === 0) {
+        out.set(new Uint32Array(src.buffer, src.byteOffset, w * h));
+        return out;
+    }
+    let idx = 0;
+    for (let y = 0; y < h; y++) {
+        let p = y * rs;
+        for (let x = 0; x < w; x++) {
+            const r = src[p], g = src[p + 1], b = src[p + 2], a = nc === 4 ? src[p + 3] : 255;
+            out[idx++] = ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+            p += nc;
+        }
+    }
+    return out;
 }
 
-function contenido(pixbuf) {
-    const c = St.ImageContent.new_with_preferred_size(pixbuf.width, pixbuf.height);
-    const fmt = pixbuf.has_alpha ? Cogl.PixelFormat.RGBA_8888 : Cogl.PixelFormat.RGB_888;
-    const bytes = pixbuf.read_pixel_bytes();
-    try {
-        c.set_bytes(bytes, fmt, pixbuf.width, pixbuf.height, pixbuf.rowstride);
-    } catch (e) {
-        const ctx = global.stage.context.get_backend().get_cogl_context();
-        c.set_bytes(ctx, bytes, fmt, pixbuf.width, pixbuf.height, pixbuf.rowstride);
+function _blendLayersU32(dst, base, o1, a255, o2, b255) {
+    const n = dst.length;
+    const use1 = a255 > 1;
+    const use2 = b255 > 1;
+    for (let i = 0; i < n; i++) {
+        let p = base[i];
+        if (use1) {
+            const q = o1[i];
+            const qa0 = q >>> 24;
+            if (qa0 > 0) {
+                const sa = a255 >= 254 ? qa0 : ((qa0 * a255 + 127) / 255 | 0);
+                if (sa >= 255) {
+                    p = (0xff000000 | (q & 0x00ffffff)) >>> 0;
+                } else if (sa > 0) {
+                    const da = p >>> 24;
+                    const sr = q & 0xff, sg = (q >>> 8) & 0xff, sb = (q >>> 16) & 0xff;
+                    if (da === 0) {
+                        p = ((sa << 24) | (q & 0x00ffffff)) >>> 0;
+                    } else if (da === 255) {
+                        const inv = 255 - sa;
+                        const r = (sr * sa + (p & 0xff) * inv + 127) / 255 | 0;
+                        const g = (sg * sa + ((p >>> 8) & 0xff) * inv + 127) / 255 | 0;
+                        const b = (sb * sa + ((p >>> 16) & 0xff) * inv + 127) / 255 | 0;
+                        p = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+                    } else {
+                        const aTmp = (da * (255 - sa) + 127) / 255 | 0;
+                        const outA = sa + aTmp;
+                        const r = ((sr * sa + (p & 0xff) * aTmp) / outA) | 0;
+                        const g = ((sg * sa + ((p >>> 8) & 0xff) * aTmp) / outA) | 0;
+                        const b = ((sb * sa + ((p >>> 16) & 0xff) * aTmp) / outA) | 0;
+                        p = ((outA << 24) | (b << 16) | (g << 8) | r) >>> 0;
+                    }
+                }
+            }
+        }
+        if (use2) {
+            const q = o2[i];
+            const qa0 = q >>> 24;
+            if (qa0 > 0) {
+                const sa = b255 >= 254 ? qa0 : ((qa0 * b255 + 127) / 255 | 0);
+                if (sa >= 255) {
+                    p = (0xff000000 | (q & 0x00ffffff)) >>> 0;
+                } else if (sa > 0) {
+                    const da = p >>> 24;
+                    const sr = q & 0xff, sg = (q >>> 8) & 0xff, sb = (q >>> 16) & 0xff;
+                    if (da === 0) {
+                        p = ((sa << 24) | (q & 0x00ffffff)) >>> 0;
+                    } else if (da === 255) {
+                        const inv = 255 - sa;
+                        const r = (sr * sa + (p & 0xff) * inv + 127) / 255 | 0;
+                        const g = (sg * sa + ((p >>> 8) & 0xff) * inv + 127) / 255 | 0;
+                        const b = (sb * sa + ((p >>> 16) & 0xff) * inv + 127) / 255 | 0;
+                        p = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+                    } else {
+                        const aTmp = (da * (255 - sa) + 127) / 255 | 0;
+                        const outA = sa + aTmp;
+                        const r = ((sr * sa + (p & 0xff) * aTmp) / outA) | 0;
+                        const g = ((sg * sa + ((p >>> 8) & 0xff) * aTmp) / outA) | 0;
+                        const b = ((sb * sa + ((p >>> 16) & 0xff) * aTmp) / outA) | 0;
+                        p = ((outA << 24) | (b << 16) | (g << 8) | r) >>> 0;
+                    }
+                }
+            }
+        }
+        dst[i] = p;
     }
-    return c;
 }
+
+function _subPixbufToU32(pb, sx, sy, w, h) {
+    const rs = pb.get_rowstride(), nc = pb.get_n_channels();
+    const src = pb.get_pixels();
+    const out = new Uint32Array(w * h);
+    let idx = 0;
+    for (let y = 0; y < h; y++) {
+        let p = (sy + y) * rs + sx * nc;
+        for (let x = 0; x < w; x++) {
+            const r = src[p], g = src[p + 1], b = src[p + 2], a = nc === 4 ? src[p + 3] : 255;
+            out[idx++] = ((a << 24) | (b << 16) | (g << 8) | r) >>> 0;
+            p += nc;
+        }
+    }
+    return out;
+}
+
+function _packSpriteU32(u32, w, h) {
+    let n = 0;
+    for (let i = 0; i < u32.length; i++) {
+        if ((u32[i] >>> 24) > 0) n++;
+    }
+    const sx = new Int16Array(n);
+    const sy = new Int16Array(n);
+    const col = new Uint32Array(n);
+    let k = 0;
+    for (let y = 0; y < h; y++) {
+        const row = y * w;
+        for (let x = 0; x < w; x++) {
+            const p = u32[row + x];
+            if ((p >>> 24) > 0) {
+                sx[k] = x;
+                sy[k] = y;
+                col[k] = p;
+                k++;
+            }
+        }
+    }
+    return {w, h, n, sx, sy, col};
+}
+
+function _blitSpriteOpaqueDst(dst, sp, dx, dy, op255Mul) {
+    if (op255Mul <= 1 || sp.n === 0) return;
+    const ox = Math.round(dx), oy = Math.round(dy);
+    const n = sp.n, sx = sp.sx, sy = sp.sy, col = sp.col;
+    const fullOp = op255Mul >= 254;
+    for (let k = 0; k < n; k++) {
+        const x = ox + sx[k];
+        if (x < 0 || x >= W) continue;
+        const y = oy + sy[k];
+        if (y < 0 || y >= H) continue;
+        const idx = y * W + x;
+        const q = col[k];
+        const qa = q >>> 24;
+        const sa = fullOp ? qa : ((qa * op255Mul + 127) / 255 | 0);
+        if (sa >= 255) {
+            dst[idx] = (0xff000000 | (q & 0x00ffffff)) >>> 0;
+        } else if (sa > 0) {
+            const p = dst[idx];
+            const inv = 255 - sa;
+            const r = ((q & 0xff) * sa + (p & 0xff) * inv + 127) / 255 | 0;
+            const g = (((q >>> 8) & 0xff) * sa + ((p >>> 8) & 0xff) * inv + 127) / 255 | 0;
+            const b = (((q >>> 16) & 0xff) * sa + ((p >>> 16) & 0xff) * inv + 127) / 255 | 0;
+            dst[idx] = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+        }
+    }
+}
+
+function _compileOpaqueMask(u32) {
+    const len = u32.length;
+    const runs = [];
+    let alphaCnt = 0;
+    let inRun = false, runStart = 0;
+    for (let i = 0; i < len; i++) {
+        const a = u32[i] >>> 24;
+        if (a === 255) {
+            if (!inRun) { inRun = true; runStart = i; }
+        } else {
+            if (inRun) { runs.push(runStart, i); inRun = false; }
+            if (a > 0) alphaCnt++;
+        }
+    }
+    if (inRun) runs.push(runStart, len);
+    const opaqueRuns = new Int32Array(runs);
+    const aIdx = new Int32Array(alphaCnt);
+    const aR = new Uint8Array(alphaCnt);
+    const aG = new Uint8Array(alphaCnt);
+    const aB = new Uint8Array(alphaCnt);
+    const aSa = new Uint8Array(alphaCnt);
+    const aInv = new Uint8Array(alphaCnt);
+    let k = 0;
+    for (let i = 0; i < len; i++) {
+        const p = u32[i];
+        const a = p >>> 24;
+        if (a > 0 && a < 255) {
+            aIdx[k] = i;
+            aR[k] = p & 0xff;
+            aG[k] = (p >>> 8) & 0xff;
+            aB[k] = (p >>> 16) & 0xff;
+            aSa[k] = a;
+            aInv[k] = 255 - a;
+            k++;
+        }
+    }
+    return {src: u32, opaqueRuns, aIdx, aR, aG, aB, aSa, aInv, alphaCnt};
+}
+
+function _applyOpaqueMask(dst, mask) {
+    const runs = mask.opaqueRuns, src = mask.src;
+    for (let r = 0; r < runs.length; r += 2) {
+        const s = runs[r], e = runs[r + 1];
+        dst.set(src.subarray(s, e), s);
+    }
+    const cnt = mask.alphaCnt;
+    if (cnt === 0) return;
+    const idxArr = mask.aIdx, rArr = mask.aR, gArr = mask.aG, bArr = mask.aB, saArr = mask.aSa, invArr = mask.aInv;
+    for (let k = 0; k < cnt; k++) {
+        const idx = idxArr[k];
+        const p = dst[idx];
+        const sa = saArr[k], inv = invArr[k];
+        const r = (rArr[k] * sa + (p & 0xff) * inv + 127) / 255 | 0;
+        const g = (gArr[k] * sa + ((p >>> 8) & 0xff) * inv + 127) / 255 | 0;
+        const b = (bArr[k] * sa + ((p >>> 16) & 0xff) * inv + 127) / 255 | 0;
+        dst[idx] = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+    }
+}
+
+function _blend3CloudU32(n0, op0, n1, op1, n2, op2, w, h) {
+    const len = w * h;
+    const out = new Uint32Array(len);
+    const u0 = op0 > 1, u1 = op1 > 1, u2 = op2 > 1;
+    const f0 = op0 >= 254, f1 = op1 >= 254, f2 = op2 >= 254;
+    if (u0 && f0 && !u1 && !u2) return _packSpriteU32(n0, w, h);
+    if (u1 && f1 && !u0 && !u2) return _packSpriteU32(n1, w, h);
+    if (u2 && f2 && !u0 && !u1) return _packSpriteU32(n2, w, h);
+    for (let i = 0; i < len; i++) {
+        let rr = 0, gg = 0, bb = 0, aa = 0;
+        if (u0) {
+            const p = n0[i], a = f0 ? (p >>> 24) : (((p >>> 24) * op0 + 127) / 255 | 0);
+            if (a > 0) { rr += (p & 0xff) * a; gg += ((p >>> 8) & 0xff) * a; bb += ((p >>> 16) & 0xff) * a; aa += a; }
+        }
+        if (u1) {
+            const p = n1[i], a = f1 ? (p >>> 24) : (((p >>> 24) * op1 + 127) / 255 | 0);
+            if (a > 0) { rr += (p & 0xff) * a; gg += ((p >>> 8) & 0xff) * a; bb += ((p >>> 16) & 0xff) * a; aa += a; }
+        }
+        if (u2) {
+            const p = n2[i], a = f2 ? (p >>> 24) : (((p >>> 24) * op2 + 127) / 255 | 0);
+            if (a > 0) { rr += (p & 0xff) * a; gg += ((p >>> 8) & 0xff) * a; bb += ((p >>> 16) & 0xff) * a; aa += a; }
+        }
+        if (aa > 0) {
+            const oa = aa > 255 ? 255 : aa;
+            const r = Math.min(255, (rr / aa) | 0);
+            const g = Math.min(255, (gg / aa) | 0);
+            const b = Math.min(255, (bb / aa) | 0);
+            out[i] = ((oa << 24) | (b << 16) | (g << 8) | r) >>> 0;
+        }
+    }
+    return _packSpriteU32(out, w, h);
+}
+
 function imagen(padre, cont, w, h) {
     const a = new Clutter.Actor({width: w, height: h});
     a.set_content(cont);
@@ -997,15 +1224,26 @@ export class Escena {
         }
 
         const img = f => GdkPixbuf.Pixbuf.new_from_file(`${dir}/images/${f}.png`);
-        const tex = {};
-        for (const f of ['cielo-noche', 'cielo-dorado', 'cielo-dia', 'escena-noche', 'escena-dorado', 'escena-dia', 'sol', 'luna'])
-            tex[f] = contenido(img(f));
-        const texNubes = {};
+        const pxLayers = {};
+        for (const f of ['cielo-noche', 'cielo-dorado', 'cielo-dia', 'escena-noche', 'escena-dorado', 'escena-dia']) {
+            pxLayers[f] = _pixbufToU32(img(f));
+        }
+        const solPb = img('sol');
+        const lunaPb = img('luna');
+        const solSp = _packSpriteU32(_pixbufToU32(solPb), solPb.get_width(), solPb.get_height());
+        const lunaSp = _packSpriteU32(_pixbufToU32(lunaPb), lunaPb.get_width(), lunaPb.get_height());
+
+        const nubesPx = {};
         for (const fase of ['noche', 'dorado', 'dia']) {
             const hoja = img(`nubes-${fase}`);
-            texNubes[fase] = D.nubes.map(nb => contenido(hoja.new_subpixbuf(0, nb[4], nb[2], nb[3]).copy()));
+            nubesPx[fase] = D.nubes.map(nb => _subPixbufToU32(hoja, 0, nb[4], nb[2], nb[3]));
         }
-        return {D, T, brillantes, tex, texNubes};
+        const escenaMasks = {
+            noche: _compileOpaqueMask(pxLayers['escena-noche']),
+            dorado: _compileOpaqueMask(pxLayers['escena-dorado']),
+            dia: _compileOpaqueMask(pxLayers['escena-dia']),
+        };
+        return {D, T, brillantes, pxLayers, solSp, lunaSp, nubesPx, escenaMasks};
     }
 
     _cargaDatosYTexturas() {
@@ -1021,8 +1259,6 @@ export class Escena {
         this.D = prim.D;
         this.T = prim.T;
         this.brillantes = prim.brillantes;
-        this.tex = prim.tex;
-        this.texNubes = prim.texNubes;
         this._packPrim = prim;
 
         const dirSec = this._resuelveVarianteDir(temaSec, fs);
@@ -1050,7 +1286,7 @@ export class Escena {
     _leeAjustes() {
         const s = this._settings;
         this.animar = s.get_boolean('animar');
-        this.fps = Math.max(2, Math.min(24, s.get_int('fps')));
+        this.fps = Math.max(4, Math.min(30, s.get_int('fps')));
         this.horaSim = s.get_double('hora-simulada');
         this.demo = s.get_boolean('ciclo-rapido');
         this.duracionCiclo = Math.max(10, s.get_int('ciclo-duracion'));
@@ -1134,7 +1370,7 @@ export class Escena {
         this.recalcula();
         this.pinta();
     }
-    osc(f, p) { return 0.5 + 0.5 * Math.sin(this.tick * f + p); }
+    osc(f, p) { return 0.5 + 0.5 * Math.sin((this.tickFloat ?? this.tick) * f + p); }
 
     construye(monitores) {
         this.destruyeMonitores();
@@ -1147,32 +1383,20 @@ export class Escena {
     }
 
     _creaLienzo(pack) {
-        const D = pack.D, T = pack.tex, TN = pack.texNubes;
         const l = {pack};
         const raiz = new Clutter.Actor({width: W, height: H});
         l.raiz = raiz;
-        const capaBuf = () => {
-            const u8 = new Uint8Array(W * H * 4);
-            const u32 = new Uint32Array(u8.buffer);
-            const cont = St.ImageContent.new_with_preferred_size(W, H);
-            const actor = imagen(raiz, cont, W, H);
-            return {u8, u32, cont, actor};
-        };
-
-        l.cielo = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`cielo-${f}`], W, H));
-        l.atrasLayer = capaBuf();
-        l.atras = l.atrasLayer.actor;
-        l.atrasKey = '';
-        l.sol = imagen(raiz, T.sol, 208, 208);
-        l.luna = imagen(raiz, T.luna, 208, 208);
-        l.nubes = D.nubes.map((nb, i) => ['noche', 'dorado', 'dia'].map(f => {
-            const a = imagen(raiz, TN[f][i], nb[2], nb[3]);
-            a.y = nb[1];
-            return a;
-        }));
-        l.escena = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`escena-${f}`], W, H));
-        l.delanteLayer = capaBuf();
-        l.delante = l.delanteLayer.actor;
+        l.frameU8 = new Uint8Array(W * H * 4);
+        l.frameU32 = new Uint32Array(l.frameU8.buffer);
+        l.frameCont = St.ImageContent.new_with_preferred_size(W, H);
+        l.frameActor = imagen(raiz, l.frameCont, W, H);
+        l.cieloStarsU32 = new Uint32Array(W * H);
+        l.escenaDynU32 = new Uint32Array(W * H);
+        l.escenaDynMask = null;
+        l.lastSkyKey = '';
+        l.lastEscKey = '';
+        l.lastNubKey = '';
+        l.nubesSprites = [];
         return l;
     }
 
@@ -1223,25 +1447,45 @@ export class Escena {
     _programa() {
         if (this._timer) { GLib.source_remove(this._timer); this._timer = 0; }
         if (this._pausa || this._oculta || !this._lienzo) return;
-        const ms = this.animar ? Math.round(1000 / this.fps) : 60000;
-        this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
-            if (this.animar) {
-                this.tick++;
-                if (this.demo || this.tick % this.fps === 0) {
-                    this.recalcula();
-                    this._leeClimaCache();
-                    const dNow = new Date();
-                    if (dNow.getMinutes() === 0 && dNow.getSeconds() < 3 && this._ultimaHoraEvento !== dNow.getHours()) {
-                        this._ultimaHoraEvento = dNow.getHours();
-                        this.disparaEvento('');
-                    }
-                }
-            } else {
+        if (!this._t0Us) {
+            this._t0Us = GLib.get_monotonic_time();
+            this._lastSlowUs = this._t0Us;
+        }
+        if (!this.animar) {
+            this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 60000, () => {
                 this.recalcula();
+                this.pinta();
+                return GLib.SOURCE_CONTINUE;
+            });
+            return;
+        }
+        const intervalUs = Math.round(1000000 / this.fps);
+        let nextUs = GLib.get_monotonic_time() + intervalUs;
+        const step = () => {
+            this._timer = 0;
+            if (this._pausa || this._oculta || !this._lienzo || !this.animar) return GLib.SOURCE_REMOVE;
+            const nowUs = GLib.get_monotonic_time();
+            this.tickFloat = (nowUs - this._t0Us) * 10.0 / 1000000.0;
+            this.tick = Math.floor(this.tickFloat);
+            if (this.demo || (nowUs - this._lastSlowUs) >= 1000000) {
+                this._lastSlowUs = nowUs;
+                this.recalcula();
+                this._leeClimaCache();
+                const dNow = new Date();
+                if (dNow.getMinutes() === 0 && dNow.getSeconds() < 3 && this._ultimaHoraEvento !== dNow.getHours()) {
+                    this._ultimaHoraEvento = dNow.getHours();
+                    this.disparaEvento('');
+                }
             }
             this.pinta();
-            return GLib.SOURCE_CONTINUE;
-        });
+            const afterUs = GLib.get_monotonic_time();
+            nextUs += intervalUs;
+            if (nextUs < afterUs) nextUs = afterUs + intervalUs;
+            const delayMs = Math.max(4, Math.round((nextUs - afterUs) / 1000));
+            this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delayMs, step);
+            return GLib.SOURCE_REMOVE;
+        };
+        this._timer = GLib.timeout_add(GLib.PRIORITY_DEFAULT, Math.max(4, Math.round(intervalUs / 1000)), step);
     }
 
     disparaEvento(tipo = '') {
@@ -1330,15 +1574,16 @@ export class Escena {
                     px(cr, col, alphaBase * (1.0 - d * 0.08), gx + (wind < -1.5 ? -Math.floor(d * 0.4) : 0), gy + d, 1, 1);
                 }
                 if (gy > 282 && gy < 386 && i % 7 === 0) {
-                    const rw = 2 + ((t + i) % 3);
+                    const rw = 2 + (((t | 0) + i) % 3);
                     px(cr, '#e0f2fe', 0.30 * alphaBase, gx - rw, gy + 1, rw * 2, 1);
                 }
             }
             if (pesado) {
-                const flash = (t * 17 + 13) % 131;
+                const ti = t | 0;
+                const flash = (ti * 17 + 13) % 131;
                 if (flash < 2) {
                     px(cr, '#e0f2fe', flash === 0 ? 0.22 : 0.10, 0, 0, 640, 280);
-                    const lx = 110 + ((t * 97) % 420);
+                    const lx = 110 + ((ti * 97) % 420);
                     for (let y = 8; y < 230; y += 4) {
                         const jx = lx + Math.round(Math.sin(y * 0.18 + t) * 7);
                         px(cr, '#ffffff', 0.92, jx, y, 2, 4);
@@ -1383,53 +1628,87 @@ export class Escena {
 
     _pintaLienzo(l) {
         if (!l) return;
-        const t = this.tick;
+        const P = l.pack, D = P.D, L = P.pxLayers;
+        const t = this.tick, tf = this.tickFloat ?? t, ef = this.estrellaF;
         const noche = this.elev < 0;
-        const opNub = [noche ? 1 - this.wA : 0, noche ? this.wA : 1 - this.wB, this.wB];
+        const a255 = op255(this.wA);
+        const b255 = op255(this.wB);
+        const efKey = ef > 0.01 ? Math.round(ef * 255) : 0;
 
-        const diaOp = op255(this.wB);
-        const dorOp = op255(this.wA);
-        if (diaOp >= 255) {
-            if (l.cielo[0].visible) l.cielo[0].visible = false;
-            if (l.cielo[1].visible) l.cielo[1].visible = false;
-            fija(l.cielo[2], 1);
-        } else if (dorOp >= 255 && diaOp <= 1) {
-            if (l.cielo[0].visible) l.cielo[0].visible = false;
-            fija(l.cielo[1], 1);
-            fija(l.cielo[2], 0);
-        } else {
-            if (!l.cielo[0].visible) l.cielo[0].visible = true;
-            fija(l.cielo[1], this.wA);
-            fija(l.cielo[2], this.wB);
-        }
-        fija(l.escena[1], this.wA); fija(l.escena[2], this.wB);
+        // 1) Cachear cielo + estrellas estáticas cuando cambia fase solar o efKey
+        const skyKey = `${a255}:${b255}:${efKey}`;
+        if (l.lastSkyKey !== skyKey) {
+            l.lastSkyKey = skyKey;
+            if (b255 >= 254) l.cieloStarsU32.set(L['cielo-dia']);
+            else if (a255 >= 254 && b255 <= 1) l.cieloStarsU32.set(L['cielo-dorado']);
+            else if (a255 <= 1 && b255 <= 1) l.cieloStarsU32.set(L['cielo-noche']);
+            else _blendLayersU32(l.cieloStarsU32, L['cielo-noche'], L['cielo-dorado'], a255, L['cielo-dia'], b255);
 
-        const conAstro = l === this._lienzo;
-        if (fija(l.sol, conAstro ? this.solOp : 0)) {
-            const sx = Math.round(this.solX - 104), sy = Math.round(this.solY - 104);
-            if (l.sol.x !== sx || l.sol.y !== sy) l.sol.set_position(sx, sy);
-        }
-        if (fija(l.luna, conAstro ? this.lunaOp : 0)) {
-            const lx = Math.round(this.lunaX - 104), ly = Math.round(this.lunaY - 104);
-            if (l.luna.x !== lx || l.luna.y !== ly) l.luna.set_position(lx, ly);
-        }
-
-        const nubes = l.pack.D.nubes;
-        for (let i = 0; i < nubes.length; i++) {
-            const nb = nubes[i];
-            const v = 0.035 + (i % 4) * 0.012;
-            const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2]);
-            for (let k = 0; k < 3; k++) {
-                const a = l.nubes[i][k];
-                if (fija(a, opNub[k]) && a.x !== cx) a.x = cx;
+            if (efKey > 0) {
+                const est = D.estrellas;
+                for (let i = 0; i < est.length; i++) {
+                    if (i % 3 !== 0) {
+                        const e = est[i];
+                        px(l.cieloStarsU32, e[2], ef, e[0], e[1]);
+                    }
+                }
             }
         }
 
-        if (this._pintaAtras(l, l.pack)) {
-            _setContentBytes(l.atrasLayer.cont, GLib.Bytes.new(l.atrasLayer.u8), W, H, W * 4);
+        // 2) Cachear máscara de escena cuando cambia fase solar
+        const escKey = `${a255}:${b255}`;
+        if (l.lastEscKey !== escKey) {
+            l.lastEscKey = escKey;
+            if (b255 >= 254) l.escenaMask = P.escenaMasks.dia;
+            else if (a255 >= 254 && b255 <= 1) l.escenaMask = P.escenaMasks.dorado;
+            else if (a255 <= 1 && b255 <= 1) l.escenaMask = P.escenaMasks.noche;
+            else {
+                _blendLayersU32(l.escenaDynU32, L['escena-noche'], L['escena-dorado'], a255, L['escena-dia'], b255);
+                l.escenaMask = _compileOpaqueMask(l.escenaDynU32);
+            }
         }
-        this._pintaDelante(l.delanteLayer.u32, l.pack);
-        _setContentBytes(l.delanteLayer.cont, GLib.Bytes.new(l.delanteLayer.u8), W, H, W * 4);
+
+        // 3) Cachear sprites de nubes mezclados por fase solar
+        const o0 = op255(noche ? 1 - this.wA : 0);
+        const o1 = op255(noche ? this.wA : 1 - this.wB);
+        const o2 = op255(this.wB);
+        const nubKey = `${o0}:${o1}:${o2}`;
+        if (l.lastNubKey !== nubKey) {
+            l.lastNubKey = nubKey;
+            const NP = P.nubesPx;
+            const list = new Array(D.nubes.length);
+            for (let i = 0; i < D.nubes.length; i++) {
+                const nb = D.nubes[i];
+                list[i] = _blend3CloudU32(NP.noche[i], o0, NP.dorado[i], o1, NP.dia[i], o2, nb[2], nb[3]);
+            }
+            l.nubesSprites = list;
+        }
+
+        // 4) Ensamblar el cuadro completo en 1 único buffer RGBA opaco
+        const dst = l.frameU32;
+        dst.set(l.cieloStarsU32);
+        this._pintaAtras(dst, P);
+
+        const conAstro = l === this._lienzo;
+        if (conAstro) {
+            const sop = op255(this.solOp);
+            if (sop > 1) _blitSpriteOpaqueDst(dst, P.solSp, this.solX - 104, this.solY - 104, sop);
+            const lop = op255(this.lunaOp);
+            if (lop > 1) _blitSpriteOpaqueDst(dst, P.lunaSp, this.lunaX - 104, this.lunaY - 104, lop);
+        }
+
+        const nubes = D.nubes;
+        const nSp = l.nubesSprites;
+        for (let i = 0; i < nubes.length; i++) {
+            const nb = nubes[i];
+            const v = 0.08 + (i % 4) * 0.025;
+            const cx = Math.round(((nb[0] + nb[2] + tf * v) % (640 + nb[2])) - nb[2]);
+            _blitSpriteOpaqueDst(dst, nSp[i], cx, nb[1], 255);
+        }
+
+        _applyOpaqueMask(dst, l.escenaMask);
+        this._pintaDelante(dst, P);
+        _setContentBytes(l.frameCont, GLib.Bytes.new(l.frameU8), W, H, W * 4);
     }
 
     pinta() {
@@ -1437,34 +1716,13 @@ export class Escena {
         this._pintaLienzo(this._lienzo2);
     }
 
-    _pintaAtras(l, pack = this._packPrim) {
-        const t = this.tick, D = pack.D, T = pack.T, brillantes = pack.brillantes, ef = this.estrellaF;
-        const alas = T.modo_pajaros === 'wyverns' ? ALAS_WYVERN : ALAS_GRULLA;
-        const cuadro = [0, 1, 2, 1][Math.floor(t / 5) % 4];
-        const b0x = Math.round(((t * 0.22 + 40) % 760) - 60), b0y = Math.round(126 + 4 * Math.sin(t * 0.03));
-        const b1x = Math.round(((t * 0.22 + 22) % 760) - 60), b1y = Math.round(116 + 4 * Math.sin(t * 0.03 + 1));
-        const b2x = Math.round(((t * 0.20 + 5) % 760) - 60), b2y = Math.round(138 + 4 * Math.sin(t * 0.025 + 2));
-
-        const periodo = this.fps * 38;
-        const ciclo = Math.floor(t / periodo), fase = t % periodo;
-        const fugaz = fase < 14 && ef > 0.5;
-
-        if (ef <= 0.01 && !fugaz) {
-            const key = `${cuadro}:${b0x},${b0y}:${b1x},${b1y}:${b2x},${b2y}:${T.modo_pajaros}:${T.color_pajaros}`;
-            if (l.atrasKey === key) return false;
-            l.atrasKey = key;
-        } else {
-            l.atrasKey = '';
-        }
-
-        const cr = l.atrasLayer.u32;
-        cr.fill(0);
-
+    _pintaAtras(cr, pack = this._packPrim) {
+        const t = this.tick, tf = this.tickFloat ?? t, D = pack.D, T = pack.T, brillantes = pack.brillantes, ef = this.estrellaF;
         if (ef > 0.01) {
             const est = D.estrellas;
-            for (let i = 0; i < est.length; i++) {
+            for (let i = 0; i < est.length; i += 3) {
                 const e = est[i];
-                const o = i % 3 === 0 ? 0.3 + 0.7 * this.osc(0.10 + (i % 7) * 0.02, i * 1.3) : 1;
+                const o = 0.3 + 0.7 * this.osc(0.10 + (i % 7) * 0.02, i * 1.3);
                 px(cr, e[2], ef * o, e[0], e[1]);
             }
             for (let i = 0; i < brillantes.length; i++) {
@@ -1475,6 +1733,11 @@ export class Escena {
                 px(cr, '#c7ccff', o, e[0], e[1] - 1); px(cr, '#c7ccff', o, e[0], e[1] + 1);
             }
         }
+        const alas = T.modo_pajaros === 'wyverns' ? ALAS_WYVERN : ALAS_GRULLA;
+        const cuadro = [0, 1, 2, 1][Math.floor(t / 5) % 4];
+        const b0x = Math.round(((tf * 0.22 + 40) % 760) - 60), b0y = Math.round(126 + 4 * Math.sin(tf * 0.03));
+        const b1x = Math.round(((tf * 0.22 + 22) % 760) - 60), b1y = Math.round(116 + 4 * Math.sin(tf * 0.03 + 1));
+        const b2x = Math.round(((tf * 0.20 + 5) % 760) - 60), b2y = Math.round(138 + 4 * Math.sin(tf * 0.025 + 2));
         const alasF = alas[cuadro];
         const bCoords = [[b0x, b0y], [b1x, b1y], [b2x, b2y]];
         for (let b = 0; b < 3; b++) {
@@ -1482,17 +1745,17 @@ export class Escena {
             for (let k = 0; k < alasF.length; k++) px(cr, T.color_pajaros, 1, cx + alasF[k][0], cy + alasF[k][1]);
             px(cr, T.color_pajaros, 1, cx, cy + 1);
         }
-        if (fugaz) {
+        const periodo = 380;
+        const ciclo = Math.floor(t / periodo), fase = t % periodo;
+        if (fase < 14 && ef > 0.5) {
             const x0 = 60 + ((ciclo * 137) % 300), y0 = 20 + ((ciclo * 53) % 70);
             for (let i = 0; i < 7; i++)
                 px(cr, i === 0 ? '#fff8e6' : '#c7ccff', 1 - i / 8, x0 + (fase - i) * 5, y0 + (fase - i) * 2.4);
         }
-        return true;
     }
 
     _pintaDelante(cr, pack = this._packPrim) {
-        const t = this.tick, D = pack.D, T = pack.T, nf = this.nocheF;
-        cr.fill(0);
+        const t = this.tick, tf = this.tickFloat ?? t, D = pack.D, T = pack.T, nf = this.nocheF;
 
         if (T.modo_heroe === 'miles_morales') {
             pintaFerry(cr, t, nf);
@@ -1544,8 +1807,8 @@ export class Escena {
         if (D.chimenea) {
             const [hx, hy] = D.chimenea;
             for (let i = 0; i < 9; i++) {
-                const fase = ((t * 0.25 + i * 5) % 45) / 45;
-                const sx = hx + Math.sin(t * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
+                const fase = ((tf * 0.25 + i * 5) % 45) / 45;
+                const sx = hx + Math.sin(tf * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
                 const sy = hy - fase * 26;
                 const sz = fase < 0.35 ? 2 : 3;
                 const op = (1 - fase) * (0.28 + 0.16 * nf);
@@ -1558,24 +1821,24 @@ export class Escena {
             for (let i = 0; i < vens.length; i++) {
                 const v = vens[i];
                 const p = nf * (((Math.floor(t / 24) + i) % 13 === 0) ? 0.25
-                    : 0.7 + 0.3 * Math.sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
+                    : 0.7 + 0.3 * Math.sin(tf * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
                 px(cr, T.color_ventanas, 0.12 * p, v[0] - 1, v[1] - 1, 4, 6);
                 px(cr, T.color_ventanas, p, v[0], v[1], 2, 4);
             }
             const fars = D.faroles;
             for (let i = 0; i < fars.length; i++) {
                 const fr = fars[i];
-                const p = nf * (0.65 + 0.35 * Math.sin(t * 0.11 + i * 1.7));
+                const p = nf * (0.65 + 0.35 * Math.sin(tf * 0.11 + i * 1.7));
                 const g = Math.max(2, Math.round(fr[2] / 3));
                 px(cr, T.color_faroles_halo, 0.06 * p, fr[0] - g * 2, fr[1] - g * 2, g * 4 + 1, g * 4 + 1);
                 px(cr, T.color_faroles_halo, 0.14 * p, fr[0] - g, fr[1] - g, g * 2 + 1, g * 2 + 1);
                 px(cr, T.color_faroles_centro, p, fr[0], fr[1], 1, 2);
             }
             if (D.runas) {
-                const pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.sin(t * 0.08));
+                const pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.sin(tf * 0.08));
                 for (let i = 0; i < D.runas.length; i++) {
                     const rn = D.runas[i];
-                    const pulse = pr * (0.75 + 0.25 * Math.sin(t * 0.12 + i * 0.4));
+                    const pulse = pr * (0.75 + 0.25 * Math.sin(tf * 0.12 + i * 0.4));
                     px(cr, T.color_runas_halo, 0.14 * pulse, rn[0] - 1, rn[1] - 1, 3, 3);
                     px(cr, T.color_runas_centro, pulse, rn[0], rn[1], 1, 1);
                 }
@@ -1586,8 +1849,8 @@ export class Escena {
         for (let i = 0; i < olas.length; i++) {
             const o = olas[i];
             px(cr, o[5] ? T.color_olas[0] : T.color_olas[1],
-                (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * olaDay,
-                o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
+                (0.08 + 0.55 * Math.max(0, Math.sin(tf * 0.04 + o[3]))) * olaDay,
+                o[0] + 6 * Math.sin(tf * o[4] + o[3]), o[1], o[2], 1);
         }
         const conAstro = !this._packSec || pack !== this._packSec;
         const co = this.cuerpoOp;
@@ -1596,13 +1859,13 @@ export class Escena {
             for (let i = 0; i < 38; i++) {
                 const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);
                 px(cr, col, co * (0.75 - d * 0.005) * this.osc(0.07, i * 1.7),
-                    this.cuerpoX - w / 2 + 3 * Math.sin(t * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * this.osc(0.09, i * 2.2)), 1);
+                    this.cuerpoX - w / 2 + 3 * Math.sin(tf * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * this.osc(0.09, i * 2.2)), 1);
             }
             const dx = this.cuerpoX - 352;
             const dest = D.destellos;
             for (let i = 0; i < dest.length; i++) {
                 const ds = dest[i];
-                const o = co * Math.pow(Math.max(0, Math.sin(t * 0.16 + i * 0.9)), 3);
+                const o = co * Math.pow(Math.max(0, Math.sin(tf * 0.16 + i * 0.9)), 3);
                 if (o > 0.004) px(cr, T.color_destello, o, ds[0] + dx, ds[1], 2, 1);
             }
         }
@@ -1611,16 +1874,16 @@ export class Escena {
         for (let i = 0; i < hojas.length; i++) {
             const p = hojas[i];
             const esMana = p[5] === 3;
-            const ax = (p[0] + t * p[3] + 18 * Math.sin(t * 0.03 + p[4])) % 660 - 10;
+            const ax = (p[0] + tf * p[3] + 18 * Math.sin(tf * 0.03 + p[4])) % 660 - 10;
             const dirY = (esMana || esBrasas) ? -p[2] * 0.45 : p[2];
-            const ay = ((p[1] + t * dirY) % 420 + 420) % 420 - 10;
+            const ay = ((p[1] + tf * dirY) % 420 + 420) % 420 - 10;
             if (ay >= 395) continue;
             if (esMana) {
-                const mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.sin(t * 0.11 + i));
+                const mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.sin(tf * 0.11 + i));
                 px(cr, T.color_mana_halo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
                 px(cr, T.color_mana_centro, mOp, ax, ay, 1, 1);
             } else if (esBrasas) {
-                const bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.sin(t * 0.13 + i));
+                const bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.sin(tf * 0.13 + i));
                 px(cr, T.colores_hojas[p[5] % T.colores_hojas.length], bOp, ax, ay, 1, 1);
             } else {
                 const h = Math.floor(t / 7 + i) % 2;
@@ -1630,9 +1893,9 @@ export class Escena {
         if (nf > 0.25) {
             for (let i = 0; i < MOTAS_MANA.length; i++) {
                 const lc = MOTAS_MANA[i];
-                const fx = lc[0] + 9 * Math.sin(t * (0.021 + i * 0.002) + i * 2.3);
-                const fy = lc[1] + 5 * Math.sin(t * (0.017 + i * 0.0015) + i * 1.1);
-                const b = nf * Math.pow(Math.max(0, Math.sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
+                const fx = lc[0] + 9 * Math.sin(tf * (0.021 + i * 0.002) + i * 2.3);
+                const fy = lc[1] + 5 * Math.sin(tf * (0.017 + i * 0.0015) + i * 1.1);
+                const b = nf * Math.pow(Math.max(0, Math.sin(tf * (0.05 + i * 0.004) + i * 1.9)), 2);
                 const halo = T.color_fuegos_halo[i % T.color_fuegos_halo.length];
                 const core = T.color_fuegos_centro[i % T.color_fuegos_centro.length];
                 px(cr, halo, 0.28 * b, fx - 1, fy - 1, 3, 3);
@@ -1640,7 +1903,7 @@ export class Escena {
             }
         }
         this._pintaEventoEspecial(cr, t);
-        this._pintaClima(cr, t, this.wB, nf, this.fechaEfectiva());
+        this._pintaClima(cr, tf, this.wB, nf, this.fechaEfectiva());
     }
 
     ocultar(o) {

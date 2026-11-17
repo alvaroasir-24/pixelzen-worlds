@@ -117,7 +117,7 @@
       pantalla: 'principal',
       modoHora: 1,
       horaFija: 21.5,
-      fps: 8,
+      fps: 16,
       mostrarHud: true,
       hudCompacto: false,
       clima: 'normal',
@@ -153,6 +153,7 @@
       lat: 40.4,
       lon: -3.7,
       tick: 0,
+      tickFloat: null,
       inicioMs: Date.now(),
       inicioHora: 12.0,
       D: null,
@@ -182,7 +183,7 @@
       ctx.fillStyle = hex;
       ctx.fillRect(Math.round(ax), Math.round(ay), aw, ah);
     };
-    const osc = (f, p) => 0.5 + 0.5 * Math.sin(state.tick * f + p);
+    const osc = (f, p) => 0.5 + 0.5 * Math.sin(((typeof state.tickFloat === 'number') ? state.tickFloat : state.tick) * f + p);
 
     function fechaEfectiva() {
       const d = new Date();
@@ -1579,7 +1580,9 @@
 
     function render() {
       if (!state.D || !state.T) return;
-      const D = state.D, T = state.T, I = state.img, t = state.tick;
+      const D = state.D, T = state.T, I = state.img;
+      const tf = (typeof state.tickFloat === 'number') ? state.tickFloat : state.tick;
+      const t = Math.floor(tf);
       const fecha = fechaEfectiva();
       audioCtrl.sampleEnergy();
       if (state.modoHora === 0 && opts.autoHourlyEvent !== false) {
@@ -1648,11 +1651,11 @@
         });
       }
       const alas = T.modo_pajaros === 'wyverns' ? ALAS_WYVERN : ALAS_GRULLA;
-      const cuadro = [0, 1, 2, 1][Math.floor(t / 5) % 4];
+      const cuadro = [0, 1, 2, 1][Math.floor(tf / 5) % 4];
       for (const [cx, cy] of [
-        [((t * 0.22 + 40) % 760) - 60 + pxCloud, 126 + 4 * Math.sin(t * 0.03) + pySky],
-        [((t * 0.22 + 22) % 760) - 60 + pxCloud, 116 + 4 * Math.sin(t * 0.03 + 1) + pySky],
-        [((t * 0.20 + 5) % 760) - 60 + pxCloud, 138 + 4 * Math.sin(t * 0.025 + 2) + pySky],
+        [((tf * 0.22 + 40) % 760) - 60 + pxCloud, 126 + 4 * Math.sin(tf * 0.03) + pySky],
+        [((tf * 0.22 + 22) % 760) - 60 + pxCloud, 116 + 4 * Math.sin(tf * 0.03 + 1) + pySky],
+        [((tf * 0.20 + 5) % 760) - 60 + pxCloud, 138 + 4 * Math.sin(tf * 0.025 + 2) + pySky],
       ]) {
         for (const [dx, dy] of alas[cuadro]) px(T.color_pajaros, 1, cx + dx, cy + dy);
         px(T.color_pajaros, 1, cx, cy + 1);
@@ -1666,7 +1669,7 @@
       const fasesN = ['nubes-noche', 'nubes-dorado', 'nubes-dia'];
       D.nubes.forEach((nb, i) => {
         const v = 0.11 + (i % 4) * 0.035;
-        const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2] + pxCloud);
+        const cx = Math.round(((nb[0] + nb[2] + tf * v) % (640 + nb[2])) - nb[2] + pxCloud);
         for (let k = 0; k < 3; k++) {
           if (opNub[k] <= 0.01) continue;
           ctx.globalAlpha = opNub[k];
@@ -1711,8 +1714,8 @@
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {
-          const fase = ((t * 0.25 + i * 5) % 45) / 45;
-          const sx = hx + Math.sin(t * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
+          const fase = ((tf * 0.25 + i * 5) % 45) / 45;
+          const sx = hx + Math.sin(tf * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
           const sy = hy - fase * 26;
           const sz = fase < 0.35 ? 2 : 3;
           px(wB > 0.5 ? T.color_humo_dia : T.color_humo_noche, (1 - fase) * (0.28 + 0.16 * nf), sx, sy, sz, sz - 1);
@@ -1720,21 +1723,21 @@
       }
       if (nf > 0.02) {
         D.ventanas.forEach((v, i) => {
-          const p = nf * (((Math.floor(t / 24) + i) % 13 === 0) ? 0.25 : 0.7 + 0.3 * Math.sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
+          const p = nf * (((Math.floor(t / 24) + i) % 13 === 0) ? 0.25 : 0.7 + 0.3 * Math.sin(tf * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
           px(T.color_ventanas, 0.12 * p, v[0] - 1, v[1] - 1, 4, 6);
           px(T.color_ventanas, p, v[0], v[1], 2, 4);
         });
         D.faroles.forEach((fr, i) => {
-          const p = nf * (0.65 + 0.35 * Math.sin(t * 0.11 + i * 1.7));
+          const p = nf * (0.65 + 0.35 * Math.sin(tf * 0.11 + i * 1.7));
           const g = Math.max(2, Math.round(fr[2] / 3));
           px(T.color_faroles_halo, 0.06 * p, fr[0] - g * 2, fr[1] - g * 2, g * 4 + 1, g * 4 + 1);
           px(T.color_faroles_halo, 0.14 * p, fr[0] - g, fr[1] - g, g * 2 + 1, g * 2 + 1);
           px(T.color_faroles_centro, p, fr[0], fr[1], 1, 2);
         });
         if (D.runas) {
-          const pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.sin(t * 0.08));
+          const pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.sin(tf * 0.08));
           D.runas.forEach((rn, i) => {
-            const pulse = pr * (0.75 + 0.25 * Math.sin(t * 0.12 + i * 0.4));
+            const pulse = pr * (0.75 + 0.25 * Math.sin(tf * 0.12 + i * 0.4));
             px(T.color_runas_halo, 0.14 * pulse, rn[0] - 1, rn[1] - 1, 3, 3);
             px(T.color_runas_centro, pulse, rn[0], rn[1], 1, 1);
           });
@@ -1743,19 +1746,19 @@
       if (!T.sin_lago) {
         for (const o of olas) {
           px(o[5] ? T.color_olas[0] : T.color_olas[1],
-            (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * wB),
-            o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
+            (0.08 + 0.55 * Math.max(0, Math.sin(tf * 0.04 + o[3]))) * (1 - 0.6 * wB),
+            o[0] + 6 * Math.sin(tf * o[4] + o[3]), o[1], o[2], 1);
         }
         if (conAstro && cuerpoOp > 0.02) {
           const col = s.e > -1 ? T.color_reflejo_sol : T.color_reflejo_luna;
           for (let i = 0; i < 38; i++) {
             const d = 8 + i * 3, w = Math.max(3, 46 - d * 0.30);
             px(col, cuerpoOp * (0.75 - d * 0.005) * osc(0.07, i * 1.7),
-              cuerpoX - w / 2 + 3 * Math.sin(t * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * osc(0.09, i * 2.2)), 1);
+              cuerpoX - w / 2 + 3 * Math.sin(tf * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * osc(0.09, i * 2.2)), 1);
           }
           const dx = cuerpoX - 352;
           D.destellos.forEach((ds, i) => {
-            const o = cuerpoOp * Math.pow(Math.max(0, Math.sin(t * 0.16 + i * 0.9)), 3);
+            const o = cuerpoOp * Math.pow(Math.max(0, Math.sin(tf * 0.16 + i * 0.9)), 3);
             if (o > 0.004) px(T.color_destello, o, ds[0] + dx, ds[1], 2, 1);
           });
         }
@@ -1763,27 +1766,27 @@
       const esBrasas = T.modo_particulas === 'brasas_mana';
       hojas.forEach((p, i) => {
         const esMana = p[5] === 3;
-        const ax = (p[0] + t * p[3] + 18 * Math.sin(t * 0.03 + p[4])) % 660 - 10;
+        const ax = (p[0] + tf * p[3] + 18 * Math.sin(tf * 0.03 + p[4])) % 660 - 10;
         const dirY = (esMana || esBrasas) ? -p[2] * 0.45 : p[2];
-        const ay = ((p[1] + t * dirY) % 420 + 420) % 420 - 10;
+        const ay = ((p[1] + tf * dirY) % 420 + 420) % 420 - 10;
         if (ay >= 395) return;
         if (esMana) {
-          const mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.sin(t * 0.11 + i));
+          const mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.sin(tf * 0.11 + i));
           px(T.color_mana_halo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
           px(T.color_mana_centro, mOp, ax, ay, 1, 1);
         } else if (esBrasas) {
-          const bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.sin(t * 0.13 + i));
+          const bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.sin(tf * 0.13 + i));
           px(T.colores_hojas[p[5] % T.colores_hojas.length], bOp, ax, ay, 1, 1);
         } else {
-          const h = Math.floor(t / 7 + i) % 2;
+          const h = Math.floor(tf / 7 + i) % 2;
           px(T.colores_hojas[p[5] % T.colores_hojas.length], 0.92, ax, ay, h ? 2 : 1, h ? 1 : 2);
         }
       });
       if (nf > 0.25) {
         MOTAS_MANA.forEach((lc, i) => {
-          const fx = lc[0] + 9 * Math.sin(t * (0.021 + i * 0.002) + i * 2.3) + pxSky;
-          const fy = lc[1] + 5 * Math.sin(t * (0.017 + i * 0.0015) + i * 1.1) + pySky;
-          const b = Math.min(1, nf * (1 + aBoost) * Math.pow(Math.max(0, Math.sin(t * (0.05 + i * 0.004) + i * 1.9)), 2));
+          const fx = lc[0] + 9 * Math.sin(tf * (0.021 + i * 0.002) + i * 2.3) + pxSky;
+          const fy = lc[1] + 5 * Math.sin(tf * (0.017 + i * 0.0015) + i * 1.1) + pySky;
+          const b = Math.min(1, nf * (1 + aBoost) * Math.pow(Math.max(0, Math.sin(tf * (0.05 + i * 0.004) + i * 1.9)), 2));
           px(T.color_fuegos_halo[i % T.color_fuegos_halo.length], 0.28 * b, fx - 1, fy - 1, 3, 3);
           px(T.color_fuegos_centro[i % T.color_fuegos_centro.length], 0.2 + 0.8 * b, fx, fy, 1, 1);
         });
@@ -1791,9 +1794,9 @@
       if (state.hudStats && state.hudStats.foco && state.foco && state.foco.activo) {
         const zCol = state.foco.descanso ? '#38bdf8' : '#e6c06e';
         for (let z = 0; z < 4; z++) {
-          const zx = 320 + Math.round(Math.sin(t * 0.04 + z * 1.57) * 58);
-          const zy = 356 + Math.round(Math.cos(t * 0.05 + z * 1.57) * 8);
-          const zo = 0.25 + 0.35 * Math.sin(t * 0.09 + z);
+          const zx = 320 + Math.round(Math.sin(tf * 0.04 + z * 1.57) * 58);
+          const zy = 356 + Math.round(Math.cos(tf * 0.05 + z * 1.57) * 8);
+          const zo = 0.25 + 0.35 * Math.sin(tf * 0.09 + z);
           px(zCol, zo, zx, zy, 2, 1);
         }
       }

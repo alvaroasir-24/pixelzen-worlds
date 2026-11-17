@@ -4,7 +4,7 @@ param(
     [ValidateSet('real', '90m', 'demo', 'fija')]
     [string]$Modo = '90m',
     [double]$Hora = 21.5,
-    [int]$Fps = 8,
+    [int]$Fps = 16,
     [string]$FondoPrincipal = 'principal',
     [string]$FondoSecundario = 'secundaria',
     [string]$Clima = 'normal',
@@ -307,7 +307,7 @@ public class PzmRenderer {
 
     static double Clamp01(double v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
     static double Suave(double t) { t = Clamp01(t); return t * t * (3.0 - 2.0 * t); }
-    static double Osc(int t, double f, double p) { return 0.5 + 0.5 * Math.Sin(t * f + p); }
+    static double Osc(double t, double f, double p) { return 0.5 + 0.5 * Math.Sin(t * f + p); }
 
     void Px(Graphics g, Color c, double op, double ax, double ay, double aw = 1, double ah = 1) {
         op = Clamp01(op);
@@ -1622,10 +1622,14 @@ public class PzmRenderer {
     }
 
     public void Render(PzmSceneData S, DateTime fecha, int t) {
-        Render(S, fecha, t, true);
+        Render(S, fecha, t, (double)t, true);
     }
 
     public void Render(PzmSceneData S, DateTime fecha, int t, bool syncBitmap) {
+        Render(S, fecha, t, (double)t, syncBitmap);
+    }
+
+    public void Render(PzmSceneData S, DateTime fecha, int t, double tf, bool syncBitmap) {
         if (S == null || S.CieloNochePx == null || S.EscenaNochePx == null) return;
         double e, az, H, H0;
         Solar(fecha, RealLat, RealLon, out e, out az, out H, out H0);
@@ -1659,13 +1663,13 @@ public class PzmRenderer {
         if (ef > 0.01 && S.Estrellas != null) {
             for (int i = 0; i < S.Estrellas.Length; i++) {
                 var st = S.Estrellas[i];
-                double o = (i % 3 == 0) ? 0.3 + 0.7 * Osc(t, 0.10 + (i % 7) * 0.02, i * 1.3) : 1.0;
+                double o = (i % 3 == 0) ? 0.3 + 0.7 * Osc(tf, 0.10 + (i % 7) * 0.02, i * 1.3) : 1.0;
                 Px(g, st.Col, ef * o, st.X, st.Y);
             }
             Color haloStar = Color.FromArgb(199, 204, 255);
             for (int i = 0; i < S.Brillantes.Length; i++) {
                 var st = S.Brillantes[i];
-                double o = ef * 0.8 * Math.Max(0, Osc(t, 0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
+                double o = ef * 0.8 * Math.Max(0, Osc(tf, 0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
                 if (o <= 0.004) continue;
                 Px(g, haloStar, o, st.X - 1, st.Y);
                 Px(g, haloStar, o, st.X + 1, st.Y);
@@ -1677,9 +1681,9 @@ public class PzmRenderer {
         var alasSet = S.ModoWyvern ? AlasWyvern : AlasGrulla;
         int cuadro = new int[] { 0, 1, 2, 1 }[(t / 5) % 4];
         var birdPos = new double[,] {
-            { ((t * 0.22 + 40) % 760) - 60, 126 + 4 * Math.Sin(t * 0.03) },
-            { ((t * 0.22 + 22) % 760) - 60, 116 + 4 * Math.Sin(t * 0.03 + 1) },
-            { ((t * 0.20 + 5) % 760) - 60, 138 + 4 * Math.Sin(t * 0.025 + 2) }
+            { ((tf * 0.22 + 40) % 760) - 60, 126 + 4 * Math.Sin(tf * 0.03) },
+            { ((tf * 0.22 + 22) % 760) - 60, 116 + 4 * Math.Sin(tf * 0.03 + 1) },
+            { ((tf * 0.20 + 5) % 760) - 60, 138 + 4 * Math.Sin(tf * 0.025 + 2) }
         };
         for (int b = 0; b < 3; b++) {
             double bx = birdPos[b, 0], by = birdPos[b, 1];
@@ -1697,7 +1701,7 @@ public class PzmRenderer {
             for (int i = 0; i < S.Nubes.Length; i++) {
                 var nb = S.Nubes[i];
                 double v = 0.11 + (i % 4) * 0.035;
-                int cx = (int)Math.Round(((nb.X + nb.W + t * v) % (640 + nb.W)) - nb.W);
+                int cx = (int)Math.Round(((nb.X + nb.W + tf * v) % (640 + nb.W)) - nb.W);
                 for (int k = 0; k < 3; k++) {
                     if (opNub[k] > 0.01 && imgNub[k] != null) {
                         BlitImg(imgNub[k], cx, nb.Y, 0, nb.SheetY, nb.W, nb.H, opNub[k], false);
@@ -1745,8 +1749,8 @@ public class PzmRenderer {
             int hx = S.Chimenea[0], hy = S.Chimenea[1];
             Color hc = wB > 0.5 ? S.ColorHumoDia : S.ColorHumoNoche;
             for (int i = 0; i < 9; i++) {
-                double fase = ((t * 0.25 + i * 5) % 45) / 45.0;
-                double sx = hx + Math.Sin(t * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
+                double fase = ((tf * 0.25 + i * 5) % 45) / 45.0;
+                double sx = hx + Math.Sin(tf * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
                 double sy = hy - fase * 26;
                 int sz = fase < 0.35 ? 2 : 3;
                 Px(g, hc, (1 - fase) * (0.28 + 0.16 * nf), sx, sy, sz, sz - 1);
@@ -1756,23 +1760,23 @@ public class PzmRenderer {
         if (nf > 0.02) {
             for (int i = 0; i < S.Ventanas.Length; i++) {
                 var v = S.Ventanas[i];
-                double p = nf * (((t / 24 + i) % 13 == 0) ? 0.25 : 0.7 + 0.3 * Math.Sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
+                double p = nf * (((t / 24 + i) % 13 == 0) ? 0.25 : 0.7 + 0.3 * Math.Sin(tf * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
                 Px(g, S.ColorVentanas, 0.12 * p, v.X - 1, v.Y - 1, 4, 6);
                 Px(g, S.ColorVentanas, p, v.X, v.Y, 2, 4);
             }
             for (int i = 0; i < S.Faroles.Length; i++) {
                 var fr = S.Faroles[i];
-                double p = nf * (0.65 + 0.35 * Math.Sin(t * 0.11 + i * 1.7));
+                double p = nf * (0.65 + 0.35 * Math.Sin(tf * 0.11 + i * 1.7));
                 int gr = Math.Max(2, (int)Math.Round(fr.R / 3.0));
                 Px(g, S.ColorFarolesHalo, 0.06 * p, fr.X - gr * 2, fr.Y - gr * 2, gr * 4 + 1, gr * 4 + 1);
                 Px(g, S.ColorFarolesHalo, 0.14 * p, fr.X - gr, fr.Y - gr, gr * 2 + 1, gr * 2 + 1);
                 Px(g, S.ColorFarolesCentro, p, fr.X, fr.Y, 1, 2);
             }
             if (S.Runas.Length > 0) {
-                double pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.Sin(t * 0.08));
+                double pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.Sin(tf * 0.08));
                 for (int i = 0; i < S.Runas.Length; i++) {
                     var rn = S.Runas[i];
-                    double pulse = pr * (0.75 + 0.25 * Math.Sin(t * 0.12 + i * 0.4));
+                    double pulse = pr * (0.75 + 0.25 * Math.Sin(tf * 0.12 + i * 0.4));
                     Px(g, S.ColorRunasHalo, 0.14 * pulse, rn.X - 1, rn.Y - 1, 3, 3);
                     Px(g, S.ColorRunasCentro, pulse, rn.X, rn.Y, 1, 1);
                 }
@@ -1782,22 +1786,22 @@ public class PzmRenderer {
         if (!S.SinLago) {
             foreach (var o in _olas) {
                 Px(g, o.Light ? S.ColorOlas[0] : S.ColorOlas[1 % S.ColorOlas.Length],
-                    (0.08 + 0.55 * Math.Max(0, Math.Sin(t * 0.04 + o.Ph))) * (1 - 0.6 * wB),
-                    o.X + 6 * Math.Sin(t * o.Sp + o.Ph), o.Y, o.W, 1);
+                    (0.08 + 0.55 * Math.Max(0, Math.Sin(tf * 0.04 + o.Ph))) * (1 - 0.6 * wB),
+                    o.X + 6 * Math.Sin(tf * o.Sp + o.Ph), o.Y, o.W, 1);
             }
 
             if (S.ConAstro && cuerpoOp > 0.02) {
                 Color col = e > -1 ? S.ColorReflejoSol : S.ColorReflejoLuna;
                 for (int i = 0; i < 38; i++) {
                     double d = 8 + i * 3, w = Math.Max(3, 46 - d * 0.30);
-                    Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(t, 0.07, i * 1.7),
-                        cuerpoX - w / 2 + 3 * Math.Sin(t * 0.05 + i * 1.3), 280 + d,
-                        w * (0.45 + 0.55 * Osc(t, 0.09, i * 2.2)), 1);
+                    Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(tf, 0.07, i * 1.7),
+                        cuerpoX - w / 2 + 3 * Math.Sin(tf * 0.05 + i * 1.3), 280 + d,
+                        w * (0.45 + 0.55 * Osc(tf, 0.09, i * 2.2)), 1);
                 }
                 double dx = cuerpoX - 352;
                 for (int i = 0; i < S.Destellos.Length; i++) {
                     var ds = S.Destellos[i];
-                    double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(t * 0.16 + i * 0.9)), 3);
+                    double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(tf * 0.16 + i * 0.9)), 3);
                     if (op > 0.004) Px(g, S.ColorDestello, op, ds.X + dx, ds.Y, 2, 1);
                 }
             }
@@ -1806,16 +1810,16 @@ public class PzmRenderer {
         for (int i = 0; i < _hojas.Length; i++) {
             var p = _hojas[i];
             bool esMana = p.Tipo == 3;
-            double ax = (p.X + t * p.Vx + 18 * Math.Sin(t * 0.03 + p.Ph)) % 660 - 10;
+            double ax = (p.X + tf * p.Vx + 18 * Math.Sin(tf * 0.03 + p.Ph)) % 660 - 10;
             double dirY = (esMana || S.ModoBrasas) ? -p.Vy * 0.45 : p.Vy;
-            double ay = ((p.Y + t * dirY) % 420 + 420) % 420 - 10;
+            double ay = ((p.Y + tf * dirY) % 420 + 420) % 420 - 10;
             if (ay >= 395) continue;
             if (esMana) {
-                double mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.Sin(t * 0.11 + i));
+                double mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.Sin(tf * 0.11 + i));
                 Px(g, S.ColorManaHalo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
                 Px(g, S.ColorManaCentro, mOp, ax, ay, 1, 1);
             } else if (S.ModoBrasas) {
-                double bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.Sin(t * 0.13 + i));
+                double bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.Sin(tf * 0.13 + i));
                 Px(g, S.ColoresHojas[p.Tipo % S.ColoresHojas.Length], bOp, ax, ay, 1, 1);
             } else {
                 bool hh = ((t / 7 + i) % 2) != 0;
@@ -1826,9 +1830,9 @@ public class PzmRenderer {
         if (nf > 0.25) {
             for (int i = 0; i < MotasMana.Length; i++) {
                 var lc = MotasMana[i];
-                double fx = lc[0] + 9 * Math.Sin(t * (0.021 + i * 0.002) + i * 2.3);
-                double fy = lc[1] + 5 * Math.Sin(t * (0.017 + i * 0.0015) + i * 1.1);
-                double b = nf * Math.Pow(Math.Max(0, Math.Sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
+                double fx = lc[0] + 9 * Math.Sin(tf * (0.021 + i * 0.002) + i * 2.3);
+                double fy = lc[1] + 5 * Math.Sin(tf * (0.017 + i * 0.0015) + i * 1.1);
+                double b = nf * Math.Pow(Math.Max(0, Math.Sin(tf * (0.05 + i * 0.004) + i * 1.9)), 2);
                 Px(g, S.ColorFuegosHalo[i % S.ColorFuegosHalo.Length], 0.28 * b, fx - 1, fy - 1, 3, 3);
                 Px(g, S.ColorFuegosCentro[i % S.ColorFuegosCentro.Length], 0.2 + 0.8 * b, fx, fy, 1, 1);
             }
@@ -2417,6 +2421,12 @@ public static class PzmSystemGuard {
     [StructLayout(LayoutKind.Sequential)]
     struct GuardRect { public int Left, Top, Right, Bottom; }
 
+    [DllImport("winmm.dll")]
+    public static extern uint timeBeginPeriod(uint uMilliseconds);
+
+    [DllImport("winmm.dll")]
+    public static extern uint timeEndPeriod(uint uMilliseconds);
+
     [DllImport("user32.dll")]
     static extern IntPtr GetForegroundWindow();
 
@@ -2832,7 +2842,7 @@ $script:horaIni = $script:ahoraIni.Hour + ($script:ahoraIni.Minute / 60.0) + ($s
 $script:sw = [System.Diagnostics.Stopwatch]::StartNew()
 $script:lastCfgWrite = if (Test-Path $ConfigPath) { (Get-Item $ConfigPath).LastWriteTimeUtc } else { [DateTime]::MinValue }
 
-function Render-MotorFrame([int]$t) {
+function Render-MotorFrame([int]$t, [double]$tf = 0.0) {
     $elapsed = $script:sw.Elapsed.TotalSeconds
     $d = Get-Date
     if ($script:modoAct -eq 'fija') {
@@ -2864,22 +2874,36 @@ function Render-MotorFrame([int]$t) {
             else { $needBmpPrim = $true }
         }
     }
-    if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t, $needBmpPrim) }
-    if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t, $needBmpSec) }
+    if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t, $tf, $needBmpPrim) }
+    if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t, $tf, $needBmpSec) }
     foreach ($fItem in $script:forms) {
         $fItem.Form.PushFrame()
     }
     if ($script:dcomp -and $script:dcomp.Ready) { $script:dcomp.Commit() }
 }
 
-Render-MotorFrame 0
+$script:animSw = [System.Diagnostics.Stopwatch]::StartNew()
+$script:fpsAct = [Math]::Max(4, [Math]::Min(30, $Fps))
+$script:targetFrameMs = 1000.0 / $script:fpsAct
+$script:nextFrameMs = $script:targetFrameMs
+$script:frameTick = 0
+$script:lastCfgCheckMs = 0.0
+$script:lastGuardCheckMs = 0.0
+$script:lastZCheckMs = 0.0
+$script:timerPeriodOn = $true
+$null = [PzmSystemGuard]::timeBeginPeriod(1)
+
+Render-MotorFrame 0 0.0
 
 $timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = [Math]::Max(42, [int](1000 / [Math]::Max(2, [Math]::Min(24, $Fps))))
+$timer.Interval = [Math]::Max(15, [int][Math]::Round($script:targetFrameMs))
 
 $timer.Add_Tick({
-    $script:tick++
-    $t = $script:tick
+    $script:frameTick++
+    $nowMs = $script:animSw.Elapsed.TotalMilliseconds
+    $tf = ($nowMs / 1000.0) * 10.0
+    $t = [int][Math]::Floor($tf)
+    $script:tick = $t
 
     if ($script:hotkeysAct) {
         $hk = [PzmSystemGuard]::PollHotkey()
@@ -2920,8 +2944,9 @@ $timer.Add_Tick({
         }
     }
 
-    if (($t % 8) -eq 0 -and (Test-Path $ConfigPath)) {
-        if (($t % 64) -eq 0) { Sincronizar-ClimaRealMotor }
+    if (($nowMs - $script:lastCfgCheckMs) -ge 1000.0 -and (Test-Path $ConfigPath)) {
+        $script:lastCfgCheckMs = $nowMs
+        if (($script:frameTick % 8) -eq 0) { Sincronizar-ClimaRealMotor }
         try {
             $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
             if ($wt -ne $script:lastCfgWrite) {
@@ -2964,9 +2989,11 @@ $timer.Add_Tick({
                     }
                     if ($null -ne $nc.horaFija) { $script:horaAct = [double]$nc.horaFija }
                     if ($null -ne $nc.fps) {
-                        $nfps = [Math]::Max(2, [Math]::Min(24, [int]$nc.fps))
-                        $nint = [Math]::Max(42, [int](1000 / $nfps))
-                        if ($timer.Interval -ne $nint) { $timer.Interval = $nint }
+                        $nfps = [Math]::Max(4, [Math]::Min(30, [int]$nc.fps))
+                        if ($nfps -ne $script:fpsAct) {
+                            $script:fpsAct = $nfps
+                            $script:targetFrameMs = 1000.0 / $nfps
+                        }
                     }
                     if ($cambio) { Recargar-Escenas }
                 }
@@ -2987,7 +3014,8 @@ $timer.Add_Tick({
         }
     }
 
-    if (($t % 8) -eq 0) {
+    if (($nowMs - $script:lastGuardCheckMs) -ge 1000.0) {
+        $script:lastGuardCheckMs = $nowMs
         $nuevoPausa = $script:pausaJuegoAct -and ([PzmSystemGuard]::IsFullscreenAppActive() -or [PzmSystemGuard]::IsBatterySaver())
         if ($nuevoPausa -ne $script:autoPausado) {
             $script:autoPausado = $nuevoPausa
@@ -2995,9 +3023,22 @@ $timer.Add_Tick({
         }
     }
 
-    if ($script:pauseManual -or $script:autoPausado) { return }
+    $pausado = $script:pauseManual -or $script:autoPausado
+    if ($pausado) {
+        if ($script:timerPeriodOn) {
+            $null = [PzmSystemGuard]::timeEndPeriod(1)
+            $script:timerPeriodOn = $false
+        }
+        $timer.Interval = 500
+        return
+    } elseif (-not $script:timerPeriodOn) {
+        $null = [PzmSystemGuard]::timeBeginPeriod(1)
+        $script:timerPeriodOn = $true
+        $script:nextFrameMs = $nowMs + $script:targetFrameMs
+    }
 
-    if ((($t -eq 12) -or (($t % 24) -eq 0)) -and $script:forms.Count -gt 0) {
+    if ((($script:frameTick -eq 12) -or (($nowMs - $script:lastZCheckMs) -ge 3000.0)) -and $script:forms.Count -gt 0) {
+        $script:lastZCheckMs = $nowMs
         $f0 = $script:forms[0].Form
         $zMal = ($script:desktopAfter -ne [IntPtr]::Zero) -and ([PzmDesktopHost]::GetWindow($script:desktopAfter, 2) -ne $f0.Handle)
         if ((-not [PzmDesktopHost]::IsWindow($script:desktopParent)) -or ([PzmDesktopHost]::GetParent($f0.Handle) -ne $script:desktopParent) -or $zMal) {
@@ -3014,7 +3055,7 @@ $timer.Add_Tick({
         if ($script:desktopWorkerBelow -ne [IntPtr]::Zero) {
             [PzmDesktopHost]::PushWorkersBelow($script:desktopParent, $script:forms[-1].Form.Handle)
         }
-        if ($t -eq 12) {
+        if ($script:frameTick -eq 12) {
             $pc = ($script:forms | ForEach-Object { $_.Form.PaintCount }) -join ','
             $pres = ($script:forms | ForEach-Object { ('0x{0:X}' -f $_.Form.LastPresentHr) }) -join ','
             $bnds = ($script:forms | ForEach-Object { "$($_.Form.UseDComp)/$($_.Form.BindErr)" }) -join ','
@@ -3024,8 +3065,16 @@ $timer.Add_Tick({
         }
     }
 
-    Render-MotorFrame $t
+    Render-MotorFrame $t $tf
+    $afterMs = $script:animSw.Elapsed.TotalMilliseconds
+    $script:nextFrameMs += $script:targetFrameMs
+    if ($script:nextFrameMs -lt $afterMs) { $script:nextFrameMs = $afterMs + $script:targetFrameMs }
+    $timer.Interval = [Math]::Max(8, [int][Math]::Round($script:nextFrameMs - $afterMs))
 })
 
 $timer.Start()
-[System.Windows.Forms.Application]::Run()
+try {
+    [System.Windows.Forms.Application]::Run()
+} finally {
+    if ($script:timerPeriodOn) { $null = [PzmSystemGuard]::timeEndPeriod(1) }
+}

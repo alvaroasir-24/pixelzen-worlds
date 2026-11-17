@@ -52,10 +52,10 @@
   },
   "fps": {
     "type": "slider",
-    "min": 2,
-    "max": 24,
+    "min": 4,
+    "max": 30,
     "step": 1,
-    "value": 8,
+    "value": 16,
     "text": "Cuadros por segundo (FPS)"
   },
   "mostrarHud": {

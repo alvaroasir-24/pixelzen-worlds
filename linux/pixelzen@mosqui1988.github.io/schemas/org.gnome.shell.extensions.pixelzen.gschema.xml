@@ -16,8 +16,8 @@
       <description>Si es falso, el fondo solo cambia con la altura del sol (una vez por minuto).</description>
     </key>
     <key name="fps" type="i">
-      <range min="2" max="24"/>
-      <default>8</default>
+      <range min="4" max="30"/>
+      <default>16</default>
       <summary>Cuadros por segundo de la animación</summary>
     </key>
     <key name="hora-simulada" type="d">

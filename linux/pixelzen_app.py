@@ -112,7 +112,7 @@ def _leer_version():
                     return txt
             except Exception:
                 pass
-    return '1.2.3'
+    return '1.2.31'
 
 
 def _cortar_serie_prefijo(txt):
@@ -1809,7 +1809,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self.row_animar.connect('notify::active', lambda *_: self._actualiza_vista())
         grp_luz.add(self.row_animar)
 
-        self.row_fps = Adw.SpinRow.new_with_range(2, 24, 1)
+        self.row_fps = Adw.SpinRow.new_with_range(4, 30, 1)
         self.row_fps.set_title('Fluidez de animación (FPS)')
         grp_luz.add(self.row_fps)
         box.append(grp_luz)
@@ -2145,7 +2145,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
             self.row_hora.set_value(hv_eff)
             self.scl_hub_hora.set_value(hv_eff)
             self.row_animar.set_active(_get_bool(s, 'animar', True))
-            self.row_fps.set_value(_get_int(s, 'fps', 8))
+            self.row_fps.set_value(_get_int(s, 'fps', 16))
 
             cl_id = _get_str(s, 'clima', 'normal')
             self.combo_clima.set_selected(max(0, next((i for i, (k, _) in enumerate(CLIMAS) if k == cl_id), 0)))
@@ -2482,7 +2482,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
             self.chk_bloq_menu.set_active(True)
             self.combo_modo.set_selected(0)
             self.row_animar.set_active(True)
-            self.row_fps.set_value(8)
+            self.row_fps.set_value(16)
             self.combo_clima.set_selected(0)
             self.combo_rot.set_selected(0)
             self.row_hud.set_active(True)

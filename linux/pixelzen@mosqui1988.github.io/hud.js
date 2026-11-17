@@ -2,6 +2,7 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import St from 'gi://St';
+import Cairo from 'cairo';
 import Pango from 'gi://Pango';
 import PangoCairo from 'gi://PangoCairo';
 
@@ -129,6 +130,13 @@ export class Hud {
         this._workerBusy = false;
         this._moonKey = -1;
         this._moonCells = null;
+        this._cardSurfs = new Map();
+        this._revTheme = 1;
+        this._revRapido = 1;
+        this._revLento = 1;
+        this._revClima = 1;
+        this._revMedia = 1;
+        this._revGrimorio = 1;
 
         this.actor = new St.DrawingArea({reactive: false});
         this.actor.connect('repaint', a => this._pinta(a));
@@ -203,21 +211,25 @@ export class Hud {
     }
 
     ajustesCambiados() {
+        this._revTheme++;
         if (!this._pausa) {
             this._lanza('rapido');
             this._lanza('lento');
             this._lanzaMedia();
         }
+        this.actor?.queue_repaint();
     }
 
     ponUbicacion(lat, lon) {
         if (typeof lat === 'number' && typeof lon === 'number') {
             this.lat = lat;
             this.lon = lon;
+            this._revTheme++;
         }
     }
 
     recargaTema() {
+        this._revTheme++;
         try {
             const id = this._settings?.get_string('tema') || 'fittoa';
             const sub = id ? `${this._dir}/temas/${id}/tema.json` : '';
@@ -411,11 +423,13 @@ export class Hud {
         if (modo === 'rapido') {
             const hadBat = Boolean(this.d?.bat);
             this.d = j;
+            this._revRapido++;
             this.cpuH = this._push(this.cpuH, j.cpu ?? 0, 120);
             this.rxH = this._push(this.rxH, j.net?.rx ?? 0, 120);
             if (Boolean(j?.bat) !== hadBat && this._lastArea) this.coloca(this._lastArea);
         } else {
             this.s = j;
+            this._revLento++;
             if (this._lastArea) this.coloca(this._lastArea);
         }
         this.actor.queue_repaint();
@@ -445,6 +459,7 @@ export class Hud {
                     const j = JSON.parse(out);
                     if (j && typeof j === 'object') {
                         this.clima = j;
+                        this._revClima++;
                         if (j.lat && j.lon) {
                             this.lat = Number(j.lat);
                             this.lon = Number(j.lon);
@@ -470,7 +485,7 @@ export class Hud {
                     const names = val.deep_unpack()[0].filter(n => n.startsWith('org.mpris.MediaPlayer2.'));
                     if (!names.length) {
                         this._ocupado.media = false;
-                        this.media = {ok: false};
+                        if (this.media?.ok) { this.media = {ok: false}; this._revMedia++; }
                         return;
                     }
                     // Priorizar Spotify o el primer reproductor
@@ -488,6 +503,7 @@ export class Hud {
         if (idx >= names.length) {
             this._ocupado.media = false;
             this.media = mejor || {ok: false};
+            this._revMedia++;
             return;
         }
         const busName = names[idx];
@@ -519,6 +535,7 @@ export class Hud {
                         if (cand.playing && rawApp.includes('SPOTIFY')) {
                             this._ocupado.media = false;
                             this.media = cand;
+                            this._revMedia++;
                             return;
                         }
                     }
@@ -538,6 +555,7 @@ export class Hud {
             if (i <= 4) this.hkOp = 1 - i / 4;
             else if (i === 5) this.hk = (this.hk + 1) % this.citas.length;
             else this.hkOp = Math.min(1, (i - 4) / 6);
+            this._revGrimorio++;
             this.actor.queue_repaint();
             if (i >= pasos) { this._timers = this._timers.filter(t => t !== id); return GLib.SOURCE_REMOVE; }
             return GLib.SOURCE_CONTINUE;
@@ -635,7 +653,7 @@ export class Hud {
         return {x: x0 + pad, y: y + 31, w: w - 2 * pad};
     }
 
-    _pintaTarjeta(id, x0, y, h) {
+    _pintaTarjeta(id, x0, y, h, omitSeconds = false) {
         const P = this._pal;
         const st = this._settings;
         const now = new Date(), d = this.d, s = this.s, net = d.net ?? {vpn: {}};
@@ -649,7 +667,7 @@ export class Hud {
 
             const b = this._card(x0, y, h, '✦', 'TIEMPO', modoMeta);
             this._t(b.x - 2, b.y - 4, p2(now.getHours()) + ':' + p2(now.getMinutes()), {px: 40});
-            this._t(b.x + 132, b.y + 12, p2(now.getSeconds()), {px: 16, col: P.rosa});
+            if (!omitSeconds) this._t(b.x + 132, b.y + 12, p2(now.getSeconds()), {px: 16, col: P.rosa});
             this._t(b.x, b.y + 39, `${DIAS[now.getDay()]} ${now.getDate()} ${MESES[now.getMonth()]} ${now.getFullYear()}`, {px: 11.5});
             this._t(b.x, b.y + 56, soloW ? (s.host ?? 'FONDO EXTERNO') : this.eraSub, {px: 10.5, col: P.flor, w: b.w - 58});
 
@@ -721,7 +739,7 @@ export class Hud {
                 ['TOP', d.top?.length ? d.top[0][0].substring(0, 8) : '--', P.amber]], 11);
         } else if (id === 'gpu') {
             const g = d.gpu ?? {};
-            const fps = st ? st.get_int('fps') : 8;
+            const fps = st ? st.get_int('fps') : 16;
             const meta = g.temp ? `${g.temp}°C · ${fps} FPS` : `${fps} FPS`;
             const b = this._card(x0, y, h, '▣', 'GPU & MOTOR', meta);
             this._t(b.x, b.y, g.nombre || 'GPU LINUX', {px: 11, col: P.flor, w: b.w});
@@ -837,30 +855,98 @@ export class Hud {
         }
     }
 
+    _cardCacheKey(id, cardH, kKey, now) {
+        const th = this._revTheme;
+        switch (id) {
+            case 'tiempo':
+                return `${th}:${this._revLento}:${kKey}:${cardH}:${now.getFullYear()}:${now.getMonth()}:${now.getDate()}:${now.getHours()}:${now.getMinutes()}`;
+            case 'clima':
+                return `${th}:${this._revClima}:${kKey}:${cardH}:${Math.floor(now.getTime() / 60000)}`;
+            case 'sistema':
+            case 'gpu':
+                return `${th}:${this._revRapido}:${kKey}:${cardH}`;
+            case 'red':
+                return `${th}:${this._revRapido}:${this._revLento}:${kKey}:${cardH}`;
+            case 'audio': {
+                const live = this.media?.ok && this.media.playing && this.media.durSec > 0 ? Math.floor(Date.now() / 1000) : 0;
+                return `${th}:${this._revMedia}:${kKey}:${cardH}:${live}`;
+            }
+            case 'dev':
+                return `${th}:${this._revLento}:${kKey}:${cardH}`;
+            case 'foco':
+                return `${th}:${kKey}:${cardH}:${Math.floor(Math.max(0, (Date.now() - this.sessionStart) / 1000))}`;
+            case 'grimorio':
+                return `${th}:${this._revGrimorio}:${kKey}:${cardH}`;
+            default:
+                return `${th}:${kKey}:${cardH}`;
+        }
+    }
+
     _pinta(area) {
         const cr = area.get_context();
-        this.cr = cr;
-        this._pangoLay = PangoCairo.create_layout(cr);
+        const mainCr = cr;
         this._pal = this._paleta();
         try {
             const [sw] = area.get_surface_size();
             const lay = this._layoutColumnas(this._lastAltoDisp);
             const k = sw / lay.totalW;
-            cr.scale(k, k);
+            const kKey = Math.round(k * 1000);
+            const surfW = Math.max(1, Math.ceil(COL_W * k));
+            const now = new Date();
+            const activeIds = new Set();
 
             for (let cIdx = 0; cIdx < lay.cols.length; cIdx++) {
                 const x0 = cIdx * (COL_W + COL_GAP);
                 let y = 0;
                 for (const card of lay.cols[cIdx]) {
-                    this._pintaTarjeta(card.id, x0, y, card.h);
+                    activeIds.add(card.id);
+                    const key = this._cardCacheKey(card.id, card.h, kKey, now);
+                    const surfH = Math.max(1, Math.ceil(card.h * k));
+                    let entry = this._cardSurfs.get(card.id);
+                    if (!entry || entry.key !== key || entry.w !== surfW || entry.h !== surfH) {
+                        if (!entry || entry.w !== surfW || entry.h !== surfH) {
+                            entry = {
+                                surf: new Cairo.ImageSurface(Cairo.Format.ARGB32, surfW, surfH),
+                                key: '', w: surfW, h: surfH,
+                            };
+                            this._cardSurfs.set(card.id, entry);
+                        }
+                        const sCr = new Cairo.Context(entry.surf);
+                        sCr.setOperator(Cairo.Operator.CLEAR);
+                        sCr.paint();
+                        sCr.setOperator(Cairo.Operator.OVER);
+                        sCr.scale(k, k);
+                        this.cr = sCr;
+                        this._pangoLay = PangoCairo.create_layout(sCr);
+                        this._pintaTarjeta(card.id, 0, 0, card.h, card.id === 'tiempo');
+                        this._pangoLay = null;
+                        sCr.$dispose();
+                        entry.key = key;
+                    }
+                    const dstX = Math.round(x0 * k);
+                    const dstY = Math.round(y * k);
+                    mainCr.setSourceSurface(entry.surf, dstX, dstY);
+                    mainCr.paint();
+                    if (card.id === 'tiempo') {
+                        mainCr.save();
+                        mainCr.scale(k, k);
+                        this.cr = mainCr;
+                        this._pangoLay = PangoCairo.create_layout(mainCr);
+                        this._t(x0 + 142, y + 43, p2(now.getSeconds()), {px: 16, col: this._pal.rosa});
+                        this._pangoLay = null;
+                        mainCr.restore();
+                    }
                     y += card.h + lay.gap;
                 }
+            }
+            for (const cid of this._cardSurfs.keys()) {
+                if (!activeIds.has(cid)) this._cardSurfs.delete(cid);
             }
         } catch (e) {
             logError(e, 'PixelZen HUD');
         } finally {
             this._pangoLay = null;
-            cr.$dispose();
+            mainCr.$dispose();
             this.cr = null;
         }
     }
@@ -869,6 +955,7 @@ export class Hud {
         this._cancel.cancel();
         this._cierraWorker();
         this._paraTimers();
+        this._cardSurfs.clear();
         this.actor.destroy();
     }
 }

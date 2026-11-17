@@ -27,7 +27,7 @@
       pantalla: pantallaParam,
       modoHora: modoToIdx(params.get('modo')),
       horaFija: parseFloat(params.get('hora') || '21.5'),
-      fps: parseInt(params.get('fps') || '8', 10),
+      fps: parseInt(params.get('fps') || '16', 10),
       mostrarHud: mostrarHudParam,
       hudStats: hudStatsInit,
       inicioHora: d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600,
@@ -41,16 +41,32 @@
   });
 
   const { state } = renderer;
-  let timer = null;
+  let rafId = null;
+  let animT0 = performance.now();
+  let lastRender = 0;
+  function step(now) {
+    if (document.hidden) { rafId = null; return; }
+    const fps = Math.max(4, Math.min(30, parseInt(state.fps, 10) || 16));
+    const minInterval = 1000 / fps;
+    if (!lastRender || (now - lastRender) >= minInterval * 0.92) {
+      lastRender = now;
+      state.tickFloat = (now - animT0) * 0.01;
+      state.tick = Math.floor(state.tickFloat);
+      renderer.render();
+    }
+    rafId = requestAnimationFrame(step);
+  }
   function reprogramar() {
-    if (timer) { clearInterval(timer); timer = null; }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (document.hidden) return;
-    timer = setInterval(() => { state.tick++; renderer.render(); }, Math.round(1000 / Math.max(2, Math.min(24, state.fps))));
+    lastRender = 0;
+    rafId = requestAnimationFrame(step);
   }
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      if (timer) { clearInterval(timer); timer = null; }
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     } else {
+      animT0 = performance.now() - ((state.tickFloat || state.tick || 0) * 100);
       renderer.render();
       reprogramar();
     }
@@ -73,10 +89,10 @@
     }
     if (cfg.horaFija !== undefined) state.horaFija = parseFloat(cfg.horaFija) || 21.5;
     if (cfg.fps !== undefined) {
-      const nf = parseInt(cfg.fps, 10) || 8;
+      const nf = parseInt(cfg.fps, 10) || 16;
       if (nf !== state.fps) {
         state.fps = nf;
-        if (timer) reprogramar();
+        if (rafId) reprogramar();
       }
     }
     if (cfg.hud !== undefined) state.mostrarHud = !!cfg.hud;
