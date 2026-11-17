@@ -633,22 +633,23 @@ function Aplica-Visibilidad($c) {
 $script:bc = New-Object System.Windows.Media.BrushConverter
 $script:lastThemeApplied = ''
 $script:lastCompactApplied = $null
-$script:worldThemes = @{
-    'fittoa'                  = @('#7D6540', '#E6C06E', '#54DED4')
-    'continente-demoniaco'    = @('#7F3F2B', '#FF7854', '#F4A261')
-    'hunter-x-hunter'         = @('#3A6F4F', '#72C48C', '#F3C65F')
-    'black-clover'            = @('#61448A', '#B888FF', '#EF4444')
-    'spiderman-miles-morales' = @('#8B2240', '#F43F5E', '#38BDF8')
-    'solo-leveling'           = @('#602C94', '#A855F7', '#38BDF8')
-    'demon-slayer'            = @('#8A4A22', '#FB923C', '#22D3EE')
-    'stranger-things'         = @('#8A2424', '#EF4444', '#A855F7')
-    'harry-potter'            = @('#7B6020', '#EAB308', '#38BDF8')
-    'naruto'                  = @('#8E5120', '#FF9B38', '#38BDF8')
-    'jujutsu-kaisen'          = @('#881337', '#E11D48', '#C084FC')
-    'attack-on-titan'         = @('#7C2D12', '#F97316', '#22C55E')
-    'one-piece'               = @('#881337', '#F43F5E', '#FACC15')
-    'dragon-ball-z'           = @('#075985', '#38BDF8', '#FACC15')
-    'cyberpunk-edgerunners'   = @('#713F12', '#FACC15', '#22D3EE')
+$script:worldThemes = @{ 'fittoa' = @('#7D6540', '#E6C06E', '#54DED4') }
+$script:worldAudio = @{ 'fittoa' = @('Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI') }
+foreach ($metaCand in @((Join-Path $Aqui 'worlds_meta.json'), (Join-Path $Raiz 'src\worlds_meta.json'))) {
+    if (Test-Path -LiteralPath $metaCand) {
+        try {
+            $metaObj = Get-Content -LiteralPath $metaCand -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($metaObj.hud_themes) {
+                $script:worldThemes = @{}
+                foreach ($p in $metaObj.hud_themes.PSObject.Properties) { $script:worldThemes[$p.Name] = @($p.Value) }
+            }
+            if ($metaObj.world_audio) {
+                $script:worldAudio = @{}
+                foreach ($p in $metaObj.world_audio.PSObject.Properties) { $script:worldAudio[$p.Name] = @($p.Value) }
+            }
+            break
+        } catch {}
+    }
 }
 
 function Apply-WorldTheme([string]$temaId, [bool]$compacto, $customPal = $null) {
@@ -694,23 +695,6 @@ $script:mediaCache = @{ t = [datetime]::MinValue; ok = $false; app = ''; playing
 $script:climaRealPath = Join-Path $DataDir 'clima_real.json'
 $script:climaRealCache = $null
 $script:lastClimaFetch = [datetime]::MinValue
-$script:worldAudio = @{
-    'fittoa'                  = @('Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI')
-    'continente-demoniaco'    = @('Rikarisu Wasteland · OST', '92 BPM · SYNTH AMBIENT')
-    'hunter-x-hunter'         = @('Departure! (Acoustic)', '96 BPM · GUITARRA LO-FI')
-    'black-clover'            = @('Haruka Mirai (Piano)', '108 BPM · ORQUESTA')
-    'spiderman-miles-morales' = @('Sunflower · Brooklyn Mix', '90 BPM · BOOM-BAP LO-FI')
-    'solo-leveling'           = @('DARK ARIA <LV2> · Sawano', '116 BPM · SINFÓNICO')
-    'demon-slayer'            = @('Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI')
-    'stranger-things'         = @("Kids / Synthwave '83", '104 BPM · ANALÓGICO')
-    'harry-potter'            = @("Hedwig's Theme · Celesta", '88 BPM · CELESTA')
-    'naruto'                  = @('Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN')
-    'jujutsu-kaisen'          = @('Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH')
-    'attack-on-titan'         = @('Atæk on Titan · Sawano OST', '138 BPM · CORO ÉPICO')
-    'one-piece'               = @('Drums of Liberation · Nika', '126 BPM · TAMBORES')
-    'dragon-ball-z'           = @('Ultimate Battle · UI OST', '145 BPM · ROCK SINFÓNICO')
-    'cyberpunk-edgerunners'   = @('I Really Want to Stay · OST', '124 BPM · SYNTHWAVE')
-}
 $script:cpuCounter = New-Object System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total")
 $null = $script:cpuCounter.NextValue()
 $script:lastSlow = [datetime]::MinValue

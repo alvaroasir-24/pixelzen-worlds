@@ -83,12 +83,27 @@ def check_shell():
 
 
 def check_js_sync():
+    for fname in ('pixelzen-canvas.js', 'pixelzen-heroes.js'):
+        src_js = os.path.join(ROOT, 'src', fname)
+        win_js = os.path.join(ROOT, 'windows', 'lively', fname)
+        doc_js = os.path.join(ROOT, 'docs', fname)
+        assert os.path.isfile(src_js), f'Falta {src_js}'
+        for dst in (win_js, doc_js):
+            assert os.path.isfile(dst), f'Falta {dst}'
+            assert filecmp.cmp(src_js, dst, shallow=False), f'Desincronizado: {dst} != {src_js}'
+
     src_js = os.path.join(ROOT, 'src', 'pixelzen-canvas.js')
-    win_js = os.path.join(ROOT, 'windows', 'lively', 'pixelzen-canvas.js')
-    doc_js = os.path.join(ROOT, 'docs', 'pixelzen-canvas.js')
-    for dst in (win_js, doc_js):
-        assert os.path.isfile(dst), f'Falta {dst}'
-        assert filecmp.cmp(src_js, dst, shallow=False), f'Desincronizado: {dst} != {src_js}'
+    heroes_js = os.path.join(ROOT, 'src', 'pixelzen-heroes.js')
+
+    meta_path = os.path.join(ROOT, 'src', 'worlds_meta.json')
+    assert os.path.isfile(meta_path), f'Falta {meta_path}'
+    with open(meta_path, 'r', encoding='utf-8') as f:
+        meta = json.load(f)
+    for sec in ('hud_themes', 'canvas_themes', 'world_audio', 'citas_defecto', 'tema_defecto'):
+        assert sec in meta and meta[sec], f'Falta "{sec}" en {meta_path}'
+    for tema in TEMAS:
+        for sec in ('hud_themes', 'canvas_themes', 'world_audio'):
+            assert tema in meta[sec], f'Falta tema "{tema}" en worlds_meta.json[{sec}]'
 
     gjs = shutil.which('gjs')
     if gjs:
@@ -107,7 +122,7 @@ def check_js_sync():
             )
             subprocess.run([gjs, '-c', code_ext], check=True)
         # Validar que el JS compartido parsea correctamente en SpiderMonkey/GJS
-        for js_path in (src_js, os.path.join(ROOT, 'windows', 'lively', 'escena-web.js'), os.path.join(ROOT, 'docs', 'app.js')):
+        for js_path in (heroes_js, src_js, os.path.join(ROOT, 'windows', 'lively', 'escena-web.js'), os.path.join(ROOT, 'docs', 'app.js')):
             code = (
                 "const window = { addEventListener() {}, location: { search: '' } }; "
                 "const document = { getElementById: () => null, querySelectorAll: () => [], body: { style: {} } }; "
@@ -117,7 +132,7 @@ def check_js_sync():
                 "new Function(new TextDecoder().decode(bytes));"
             )
             subprocess.run([gjs, '-c', code], check=True)
-    print('[OK] Sincronización y parseo JS')
+    print('[OK] Sincronización, metadatos centrales y parseo JS')
 
 
 def check_temas_y_packs():

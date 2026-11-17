@@ -13,46 +13,26 @@ const PAL_BASE = {
     text: '#f3ead6', dim: '#a8b8cf', faint: '#687a96', red: '#d6a34a', hot: '#e0584e',
     rosa: '#54ded4', flor: '#e6c06e', amber: '#e6b45a', green: '#72c48c', cyan: '#66dce0',
 };
-const WORLD_THEMES = {
-    'fittoa': ['#7D6540', '#E6C06E', '#54DED4'],
-    'continente-demoniaco': ['#7F3F2B', '#FF7854', '#F4A261'],
-    'hunter-x-hunter': ['#3A6F4F', '#72C48C', '#F3C65F'],
-    'black-clover': ['#61448A', '#B888FF', '#EF4444'],
-    'spiderman-miles-morales': ['#8B2240', '#F43F5E', '#38BDF8'],
-    'solo-leveling': ['#602C94', '#A855F7', '#38BDF8'],
-    'demon-slayer': ['#8A4A22', '#FB923C', '#22D3EE'],
-    'stranger-things': ['#8A2424', '#EF4444', '#A855F7'],
-    'harry-potter': ['#7B6020', '#EAB308', '#38BDF8'],
-    'naruto': ['#8E5120', '#FF9B38', '#38BDF8'],
-    'jujutsu-kaisen': ['#881337', '#E11D48', '#C084FC'],
-    'attack-on-titan': ['#7C2D12', '#F97316', '#22C55E'],
-    'one-piece': ['#881337', '#F43F5E', '#FACC15'],
-    'dragon-ball-z': ['#075985', '#38BDF8', '#FACC15'],
-    'cyberpunk-edgerunners': ['#713F12', '#FACC15', '#22D3EE'],
+const WORLD_META_FALLBACK = {
+    hud_themes: {'fittoa': ['#7D6540', '#E6C06E', '#54DED4']},
+    world_audio: {'fittoa': ['Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI']},
+    citas_defecto: [{sub: 'K407 · Aldea de Buena', es: '«Daré todo de mí en este mundo, sin arrepentimientos.»', au: 'Rudeus'}],
 };
-const WORLD_AUDIO = {
-    'fittoa': ['Lullaby of Fittoa · OST', '84 BPM · ACOUSTIC LO-FI'],
-    'continente-demoniaco': ['Rikarisu Wasteland · OST', '92 BPM · SYNTH AMBIENT'],
-    'hunter-x-hunter': ['Departure! (Acoustic)', '96 BPM · GUITARRA LO-FI'],
-    'black-clover': ['Haruka Mirai (Piano)', '108 BPM · ORQUESTA'],
-    'spiderman-miles-morales': ['Sunflower · Brooklyn Mix', '90 BPM · BOOM-BAP LO-FI'],
-    'solo-leveling': ['DARK ARIA <LV2> · Sawano', '116 BPM · SINFÓNICO'],
-    'demon-slayer': ['Kamado Tanjiro no Uta', '78 BPM · SHAKUHACHI'],
-    'stranger-things': ["Kids / Synthwave '83", '104 BPM · ANALÓGICO'],
-    'harry-potter': ["Hedwig's Theme · Celesta", '88 BPM · CELESTA'],
-    'naruto': ['Silhouette · Baryon OST', '132 BPM · TAIKO & SHAMISEN'],
-    'jujutsu-kaisen': ['Kaikai Kitan · Domain OST', '128 BPM · CURSED SYNTH'],
-    'attack-on-titan': ['Atæk on Titan · Sawano OST', '138 BPM · CORO ÉPICO'],
-    'one-piece': ['Drums of Liberation · Nika', '126 BPM · TAMBORES'],
-    'dragon-ball-z': ['Ultimate Battle · UI OST', '145 BPM · ROCK SINFÓNICO'],
-    'cyberpunk-edgerunners': ['I Really Want to Stay · OST', '124 BPM · SYNTHWAVE'],
-};
+
+function _cargarWorldsMeta(dir) {
+    for (const p of [`${dir}/code/worlds_meta.json`, `${dir}/../../src/worlds_meta.json`]) {
+        try {
+            if (GLib.file_test(p, GLib.FileTest.EXISTS)) {
+                const raw = JSON.parse(new TextDecoder().decode(GLib.file_get_contents(p)[1]));
+                if (raw && raw.hud_themes && raw.world_audio) return raw;
+            }
+        } catch (_e) { /* usar respaldo minimo */ }
+    }
+    return WORLD_META_FALLBACK;
+}
 const MONO = 'Departure Mono';
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const CITAS_DEFECTO = [
-    {sub: 'K407 · Aldea de Buena', es: '«Daré todo de mí en este mundo, sin arrepentimientos.»', au: 'Rudeus'},
-];
 
 const p2 = n => (n < 10 ? '0' : '') + n;
 const tasa = b => b >= 1048576 ? (b / 1048576).toFixed(1) + 'M' : b >= 1024 ? Math.round(b / 1024) + 'K' : b + 'B';
@@ -97,6 +77,8 @@ export class Hud {
     constructor(dir, settings = null) {
         this._dir = dir;
         this._settings = settings;
+        this._meta = _cargarWorldsMeta(dir);
+        this._citasDef = this._meta.citas_defecto || WORLD_META_FALLBACK.citas_defecto;
         this._script = `${dir}/code/datos.py`;
         this._climaScript = `${dir}/code/clima.py`;
         this.d = {cpu: 0, ram: {pct: 0, usado: 0, total: 0}, temp: 0, bat: null, net: {vpn: {}}, gpu: {}, load: [0, 0, 0], up: 0, disco: 0, top: [], nuc: 0};
@@ -110,7 +92,7 @@ export class Hud {
         this.sessionStart = Date.now();
         this.cpuH = [];
         this.rxH = [];
-        this.citas = CITAS_DEFECTO;
+        this.citas = this._citasDef;
         this.eraSub = 'Era del Dragón Acorazado';
         this.recargaTema();
         this.hk = Math.floor(Date.now() / 90000) % this.citas.length;
@@ -239,7 +221,7 @@ export class Hud {
             this.eraSub = raw.nombre ?? 'Era del Dragón Acorazado';
             this.hk = this.hk % this.citas.length;
         } catch (_e) {
-            this.citas = CITAS_DEFECTO;
+            this.citas = this._citasDef;
         }
         if (this._lastArea) this.coloca(this._lastArea);
         else this.actor?.queue_repaint();
@@ -252,7 +234,8 @@ export class Hud {
             return {...PAL_BASE, border: '#3B5278', flor: '#7CF6EE', rosa: '#54DED4'};
         }
         const tid = s?.get_string('tema') || 'fittoa';
-        const wt = WORLD_THEMES[tid] || WORLD_THEMES.fittoa;
+        const themes = this._meta.hud_themes || WORLD_META_FALLBACK.hud_themes;
+        const wt = themes[tid] || themes.fittoa || WORLD_META_FALLBACK.hud_themes.fittoa;
         return {...PAL_BASE, border: wt[0], flor: wt[1], rosa: wt[2]};
     }
 
@@ -807,7 +790,8 @@ export class Hud {
                 sub = 'Spotify · Navegador · MPRIS';
             } else {
                 const tid = st?.get_string('tema') || 'fittoa';
-                const info = WORLD_AUDIO[tid] || ['Ambient Pixel · OST', '90 BPM · STEREO'];
+                const audios = this._meta.world_audio || WORLD_META_FALLBACK.world_audio;
+                const info = audios[tid] || ['Ambient Pixel · OST', '90 BPM · STEREO'];
                 track = info[0];
                 sub = info[1];
             }

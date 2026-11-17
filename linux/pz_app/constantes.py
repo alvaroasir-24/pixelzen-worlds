@@ -1,6 +1,7 @@
 """Constantes, rutas y utilidades de GSettings/estado para PixelZen Worlds Linux."""
 import os
 import subprocess
+import time
 
 from gi.repository import Gio
 
@@ -67,7 +68,7 @@ def leer_version():
                     return txt
             except Exception:
                 pass
-    return '1.2.32'
+    return '1.2.33'
 
 
 VERSION_ACTUAL = leer_version()
@@ -140,7 +141,14 @@ def extension_instalada():
     return os.path.isdir(EXT_DIR) and os.path.isfile(os.path.join(SCHEMA_DIR, 'gschemas.compiled'))
 
 
-def extension_activa():
+_EXT_ACTIVA_CACHE = {'t': 0.0, 'v': False}
+
+
+def extension_activa(force=False):
+    ahora = time.monotonic()
+    if not force and ahora - _EXT_ACTIVA_CACHE['t'] < 10.0:
+        return _EXT_ACTIVA_CACHE['v']
+    res = False
     try:
         out = subprocess.run(
             ['gnome-extensions', 'info', UUID],
@@ -148,10 +156,13 @@ def extension_activa():
         ).stdout
         for linea in out.splitlines():
             if 'State:' in linea or 'Estado:' in linea:
-                return ('ACTIVE' in linea.upper()) or ('ENABLED' in linea.upper()) or ('ACTIVA' in linea.upper())
+                res = ('ACTIVE' in linea.upper()) or ('ENABLED' in linea.upper()) or ('ACTIVA' in linea.upper())
+                break
     except Exception:
         pass
-    return False
+    _EXT_ACTIVA_CACHE['t'] = ahora
+    _EXT_ACTIVA_CACHE['v'] = res
+    return res
 
 
 def ciclo90_activo():

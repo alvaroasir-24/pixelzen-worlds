@@ -42,6 +42,8 @@ cp -a "$AQUI/$UUID/." "$EXT/"
 cp "$RAIZ/src/ubicacion.py" "$EXT/code/"
 cp "$RAIZ/src/datos.py" "$EXT/code/"
 cp "$RAIZ/src/clima.py" "$EXT/code/"
+cp "$RAIZ/src/worlds_meta.json" "$EXT/code/"
+cp "$RAIZ/src/pixelzen-heroes.js" "$EXT/code/"
 cp "$RAIZ/LICENSE" "$EXT/"
 
 if [ -d "$RAIZ/temas" ]; then
@@ -154,6 +156,8 @@ echo "==> Instalando aplicación gráfica PixelZen Worlds en el menú de aplicac
 mkdir -p "$HOME/.local/share/pixelzen" "$HOME/.local/bin" \
          "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/256x256/apps"
 cp "$AQUI/pixelzen_app.py" "$HOME/.local/share/pixelzen/pixelzen_app.py"
+rm -rf "$HOME/.local/share/pixelzen/pz_app"
+[ -d "$AQUI/pz_app" ] && cp -a "$AQUI/pz_app" "$HOME/.local/share/pixelzen/pz_app"
 [ -f "$RAIZ/src/clima.py" ] && cp "$RAIZ/src/clima.py" "$HOME/.local/share/pixelzen/clima.py"
 [ -f "$RAIZ/src/ubicacion.py" ] && cp "$RAIZ/src/ubicacion.py" "$HOME/.local/share/pixelzen/ubicacion.py"
 cp "$AQUI/desinstalar.sh" "$HOME/.local/share/pixelzen/desinstalar.sh"

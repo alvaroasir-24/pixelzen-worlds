@@ -34,260 +34,46 @@ except Exception as exc:
     )
     sys.exit(1)
 
-UUID = 'pixelzen@mosqui1988.github.io'
-EXT_DIR = os.path.expanduser(f'~/.local/share/gnome-shell/extensions/{UUID}')
-SCHEMA_DIR = os.path.join(EXT_DIR, 'schemas')
-SCHEMA_ID = 'org.gnome.shell.extensions.pixelzen'
-SVC_CICLO90 = 'pixelzen-ciclo90.service'
-RELEASES_API = 'https://api.github.com/repos/davidlpizano/pixelzen-worlds/releases/latest'
-RELEASES_URL = 'https://github.com/davidlpizano/pixelzen-worlds/releases'
-WEB_URL_FALLBACK = 'https://davidlpizano.github.io/pixelzen-worlds/'
-CLIMA_CACHE_PATH = os.path.expanduser('~/.config/pixelzen/clima_real.json')
-
-MAPA_SERIE = {
-    'fittoa': ('Mushoku Tensei', 'Región de Fittoa'),
-    'continente-demoniaco': ('Mushoku Tensei', 'Continente Demoníaco'),
-    'black-clover': ('Black Clover', 'Aldea de Hage'),
-    'hunter-x-hunter': ('Hunter × Hunter', 'Isla Ballena'),
-    'spiderman-miles-morales': ('Spider-Man: Miles Morales', 'Brooklyn y Manhattan'),
-    'solo-leveling': ('Solo Leveling', 'Castillo del Monarca'),
-    'demon-slayer': ('Demon Slayer', 'Tren Infinito'),
-    'stranger-things': ('Stranger Things', 'Hawkins y el Revés'),
-    'harry-potter': ('Harry Potter', 'Castillo de Hogwarts'),
-    'naruto': ('Naruto', 'Konoha & Modo Baryon'),
-    'jujutsu-kaisen': ('Jujutsu Kaisen', 'Expansión de Dominio'),
-    'attack-on-titan': ('Attack on Titan', 'El Retumbar y la Muralla'),
-    'one-piece': ('One Piece', 'Gear 5 & Onigashima'),
-    'dragon-ball-z': ('Dragon Ball Z', 'Ultra Instinto en Namek'),
-    'cyberpunk-edgerunners': ('Cyberpunk: Edgerunners', 'Night City & Sandevistan'),
-}
-
-FASES = [('dia', '☀️ Día'), ('dorado', '🌅 Dorado'), ('noche', '🌙 Noche')]
-MODOS = [
-    ('90m', '🌗 Ciclo suave — Día y noche cada 90 min (Recomendado)'),
-    ('real', '🕒 Hora real — Igual que el reloj de tu sistema'),
-    ('demo', '⚡ Paseo rápido — Cambia en 90 segundos para probar'),
-    ('fija', '🔒 Momento fijo — Elige tú Día, Atardecer o Noche'),
-]
-MODOS_CORTO = {'90m': 'Ciclo 90m', 'real': 'Hora real', 'demo': 'Pase rápido', 'fija': 'Hora fija'}
-CLIMAS = [
-    ('normal', '✨ Despejado (Original del mundo)'),
-    ('lluvia', '🌧️ Lluvia suave en tiempo real'),
-    ('tormenta', '⛈️ Tormenta con relámpagos'),
-    ('nieve', '❄️ Nevadas suaves de invierno'),
-    ('niebla', '🌫️ Niebla nocturna misteriosa'),
-    ('ceniza', '🌋 Ceniza volcánica / brasas'),
-    ('auto', '🤖 Automático por universo y clima real'),
-]
-ROTACIONES = [
-    (0, '🔒 Desactivado — Mantener mundo elegido'),
-    (5, '⏱️ Rotar cada 5 minutos'),
-    (15, '⏱️ Rotar cada 15 minutos'),
-    (30, '⏱️ Rotar cada 30 minutos'),
-    (60, '🕒 Rotar cada hora'),
-]
-VARIANTES = [('principal', 'Principal'), ('secundaria', 'Secundaria'), ('bloqueo', 'Bloqueo')]
-
-STATS_META = [
-    ('hud-tiempo', '🕒 Reloj, fecha y nombre del mundo', 'Muestra la hora grande, la fecha en español y el escenario activo.', '21:34 · Fittoa'),
-    ('hud-clima', '☀️ Clima real y órbita solar', 'Temperatura real, viento, elevación solar y fase atmosférica.', '☀ SOL +18° · DESPEJADO'),
-    ('hud-sistema', '💻 Rendimiento del PC (CPU, RAM, Temp, Disco)', 'Barras visuales en tiempo real para controlar la carga del equipo.', '❖ CPU 12% RAM 48%'),
-    ('hud-gpu', '🎮 GPU y motor gráfico', 'Tarjeta gráfica detectada, FPS activos y carga visual.', '▣ GPU · 8 FPS'),
-    ('hud-red', '🌐 Conexión e Internet (Wi-Fi / IP / Velocidad)', 'Muestra tu red activa, IP local y tráfico de subida/bajada.', '◈ ETH 192.168.1.38'),
-    ('hud-audio', '🎵 Música y banda sonora del mundo', 'Reproductores activos (Spotify/MPRIS) o BSO acorde al universo.', '♪ MÚSICA / BSO EN VIVO'),
-    ('hud-dev', '🛠️ Información técnica / Programador', 'Nombre del equipo, repositorios Git y runtimes detectados.', '⚔ DEV · main'),
-    ('hud-foco', '⏱️ Temporizador Zen / Sesión (Pomodoro)', 'Cuenta atrás de 25 minutos por ciclos y tiempo de sesión activa.', '⧖ ZEN 25:00'),
-    ('hud-grimorio', '📖 Frase del universo (Grimorio)', 'Citas icónicas de la serie que rotan automáticamente.', '«Frase del mundo...»'),
-]
-
-
-def _leer_version():
-    app_dir = os.path.dirname(os.path.abspath(__file__))
-    repo_root = os.path.dirname(app_dir)
-    for vp in (os.path.join(app_dir, 'VERSION'), os.path.join(repo_root, 'VERSION')):
-        if os.path.isfile(vp):
-            try:
-                txt = open(vp, 'r', encoding='utf-8').read().strip()
-                if txt:
-                    return txt
-            except Exception:
-                pass
-    return '1.2.32'
-
-
-def _cortar_serie_prefijo(txt):
-    if not txt:
-        return ''
-    if ' · ' in txt:
-        return txt.split(' · ', 1)[1].strip()
-    return txt.strip()
-
-
-def _cargar_temas():
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    bases = [
-        os.path.join(repo_root, 'windows', 'lively', 'temas'),
-        os.path.join(EXT_DIR, 'temas'),
-        os.path.join(repo_root, 'escenas'),
-    ]
-    encontrados = {}
-    for base in bases:
-        if not os.path.isdir(base):
-            continue
-        for nombre_dir in sorted(os.listdir(base)):
-            if nombre_dir.startswith('_') or nombre_dir in encontrados:
-                continue
-            tpath = os.path.join(base, nombre_dir)
-            tj = os.path.join(tpath, 'tema.json')
-            if not os.path.isfile(tj):
-                continue
-            anime = 'PixelZen'
-            titulo = nombre_dir
-            m1 = 'Escena principal'
-            m2 = 'Continuación de la historia'
-            m3 = 'Pantalla de bloqueo'
-            raw = {}
-            try:
-                raw = json.loads(open(tj, 'r', encoding='utf-8').read())
-                if raw.get('nombre'):
-                    titulo = str(raw['nombre'])
-                    if ' · ' in titulo:
-                        partes = titulo.split(' · ', 1)
-                        anime, titulo = partes[0].strip(), partes[1].strip()
-                if raw.get('anime'):
-                    anime = str(raw['anime'])
-                m1 = str(raw.get('subtitulo') or raw.get('descripcion') or m1)
-            except Exception:
-                pass
-            serie = str(raw.get('serie') or '')
-            if nombre_dir in MAPA_SERIE:
-                serie = serie or MAPA_SERIE[nombre_dir][0]
-                titulo = MAPA_SERIE[nombre_dir][1]
-            elif not serie:
-                serie = anime
-
-            sj = os.path.join(tpath, 'secundario', 'tema.json')
-            if os.path.isfile(sj):
-                try:
-                    sraw = json.loads(open(sj, 'r', encoding='utf-8').read())
-                    m2 = str(sraw.get('nombre') or sraw.get('subtitulo') or m2)
-                except Exception:
-                    pass
-            bj = os.path.join(tpath, 'bloqueo', 'tema.json')
-            if os.path.isfile(bj):
-                try:
-                    braw = json.loads(open(bj, 'r', encoding='utf-8').read())
-                    m3 = str(braw.get('nombre') or braw.get('subtitulo') or m3)
-                except Exception:
-                    pass
-            encontrados[nombre_dir] = {
-                'id': nombre_dir,
-                'serie': serie,
-                'anime': serie,
-                'titulo': titulo,
-                'm1': m1,
-                'm2': m2,
-                'm3': m3,
-            }
-        if encontrados:
-            break
-    if not encontrados:
-        return [{'id': 'fittoa', 'serie': 'Mushoku Tensei', 'anime': 'Mushoku Tensei', 'titulo': 'Región de Fittoa',
-                 'm1': 'Aldea de Buena', 'm2': 'Reino de Asura', 'm3': 'Santuario del Teletransporte'}]
-    return list(encontrados.values())
-
-
-VERSION_ACTUAL = _leer_version()
-TEMAS = _cargar_temas()
-SERIES_ORDEN = []
-SERIES_MAP = {}
-for _t in TEMAS:
-    if _t['serie'] not in SERIES_MAP:
-        SERIES_MAP[_t['serie']] = []
-        SERIES_ORDEN.append(_t['serie'])
-    SERIES_MAP[_t['serie']].append(_t)
-
-
-def _resolver_preview(tema_id, fase, variante='principal'):
-    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sub = 'secundario' if variante == 'secundaria' else ('bloqueo' if variante == 'bloqueo' else '')
-    pref = 'm2-' if variante == 'secundaria' else ('m3-' if variante == 'bloqueo' else '')
-    candidatos = [
-        os.path.join(EXT_DIR, 'temas', tema_id, sub, 'preview', fase, 'v3.png'),
-        os.path.join(repo_root, 'escenas', tema_id, sub, 'preview', fase, 'v3.png'),
-        os.path.join(repo_root, 'docs', 'previews', tema_id, f'{pref}{fase}.png'),
-        os.path.join(repo_root, 'windows', 'lively', 'temas', tema_id, sub, 'images', f'escena-{fase}.png'),
-        os.path.join(EXT_DIR, 'temas', tema_id, sub, 'images', f'escena-{fase}.png'),
-        os.path.join(EXT_DIR, 'temas', tema_id, sub, 'fondo.png'),
-        os.path.join(repo_root, 'windows', 'lively', 'temas', tema_id, sub, 'fondo.png'),
-        os.path.join(EXT_DIR, 'temas', tema_id, 'fondo.png'),
-    ]
-    for ruta in candidatos:
-        if ruta and os.path.isfile(ruta):
-            return ruta
-    return None
-
-
-def _cargar_settings():
-    if os.path.isfile(os.path.join(SCHEMA_DIR, 'gschemas.compiled')):
-        src = Gio.SettingsSchemaSource.new_from_directory(SCHEMA_DIR, None, False)
-        schema = src.lookup(SCHEMA_ID, True)
-        if schema is not None:
-            return Gio.Settings.new_full(schema, None, None)
-    return None
-
-
-def _has_key(s, key):
-    if not s:
-        return False
-    try:
-        schema = s.props.settings_schema
-        return bool(schema and schema.has_key(key))
-    except Exception:
-        return False
-
-
-def _get_str(s, key, default):
-    if not _has_key(s, key):
-        return default
-    try:
-        return s.get_string(key)
-    except Exception:
-        return default
-
-
-def _get_bool(s, key, default):
-    if not _has_key(s, key):
-        return default
-    try:
-        return s.get_boolean(key)
-    except Exception:
-        return default
-
-
-def _get_int(s, key, default):
-    if not _has_key(s, key):
-        return default
-    try:
-        return s.get_int(key)
-    except Exception:
-        return default
-
-
-def _set_safe(s, kind, key, val):
-    if not _has_key(s, key):
-        return
-    try:
-        if kind == 's':
-            s.set_string(key, str(val))
-        elif kind == 'b':
-            s.set_boolean(key, bool(val))
-        elif kind == 'i':
-            s.set_int(key, int(val))
-        elif kind == 'd':
-            s.set_double(key, float(val))
-    except Exception:
-        pass
+from pz_app.constantes import (  # noqa: E402
+    CLIMA_CACHE_PATH,
+    CLIMAS,
+    EXT_DIR,
+    FASES,
+    MODOS,
+    MODOS_CORTO,
+    RELEASES_URL,
+    ROTACIONES,
+    SCHEMA_DIR,
+    SCHEMA_ID,
+    STATS_META,
+    SVC_CICLO90,
+    UUID,
+    VARIANTES,
+    VERSION_ACTUAL,
+    WEB_URL_FALLBACK,
+    cargar_settings as _cargar_settings,
+    ciclo90_activo as _ciclo90_activo,
+    extension_activa as _extension_activa,
+    extension_instalada as _extension_instalada,
+    get_bool as _get_bool,
+    get_int as _get_int,
+    get_str as _get_str,
+    set_safe as _set_safe,
+)
+from pz_app.temas import (  # noqa: E402
+    SERIES_MAP,
+    SERIES_ORDEN,
+    TEMAS,
+    aplicar_fondos_gnome as _aplicar_fondos_gnome,
+    cortar_serie_prefijo as _cortar_serie_prefijo,
+    detectar_fase as _detectar_fase,
+    resolver_preview as _resolver_preview,
+    sincronizar_tema_en_ext as _sincronizar_tema_en_ext,
+)
+from pz_app.updater import (  # noqa: E402
+    consultar_ultima_release,
+    descargar_y_lanzar_instalador,
+)
 
 
 _THUMB_CACHE = {}
@@ -313,93 +99,6 @@ def _set_pic_thumb(pic, ruta, max_w=384, max_h=240):
             return
     pic.set_paintable(tex)
     pic._pz_thumb_key = key
-
-
-def _extension_instalada():
-    return os.path.isdir(EXT_DIR) and os.path.isfile(os.path.join(SCHEMA_DIR, 'gschemas.compiled'))
-
-
-_EXT_ACTIVA_CACHE = {'t': 0.0, 'v': False}
-
-
-def _extension_activa(force=False):
-    ahora = time.monotonic()
-    if not force and ahora - _EXT_ACTIVA_CACHE['t'] < 10.0:
-        return _EXT_ACTIVA_CACHE['v']
-    res = False
-    try:
-        out = subprocess.run(
-            ['gnome-extensions', 'info', UUID],
-            capture_output=True, text=True, check=False,
-        ).stdout
-        for linea in out.splitlines():
-            if 'State:' in linea or 'Estado:' in linea:
-                res = ('ACTIVE' in linea.upper()) or ('ENABLED' in linea.upper()) or ('ACTIVA' in linea.upper())
-                break
-    except Exception:
-        pass
-    _EXT_ACTIVA_CACHE['t'] = ahora
-    _EXT_ACTIVA_CACHE['v'] = res
-    return res
-
-
-def _ciclo90_activo():
-    try:
-        res = subprocess.run(
-            ['systemctl', '--user', 'is-active', SVC_CICLO90],
-            capture_output=True, text=True, check=False,
-        )
-        return res.stdout.strip() == 'active'
-    except Exception:
-        return False
-
-
-def _detectar_fase(modo, hora_fija):
-    if modo == 'fija':
-        h = float(hora_fija)
-    else:
-        import datetime
-        now = datetime.datetime.now()
-        h = now.hour + now.minute / 60.0
-    if 8.0 <= h < 17.5:
-        return 'dia'
-    if (6.0 <= h < 8.0) or (17.5 <= h < 20.0):
-        return 'dorado'
-    return 'noche'
-
-
-def _sincronizar_tema_en_ext(tema_id):
-    tema_pack = os.path.join(EXT_DIR, 'temas', tema_id)
-    if not os.path.isdir(os.path.join(tema_pack, 'images')):
-        return
-    dst_imgs = os.path.join(EXT_DIR, 'images')
-    if os.path.isdir(dst_imgs):
-        shutil.rmtree(dst_imgs, ignore_errors=True)
-    shutil.copytree(os.path.join(tema_pack, 'images'), dst_imgs)
-    for fn in ('datos.json', 'tema.json', 'fondo.png'):
-        src_fn = os.path.join(tema_pack, fn)
-        if os.path.isfile(src_fn):
-            shutil.copy2(src_fn, os.path.join(EXT_DIR, fn))
-
-
-def _aplicar_fondos_gnome(tema_id, fase, fp, fb, usar_bloqueo):
-    bg_dir = os.path.expanduser('~/.local/share/backgrounds')
-    os.makedirs(bg_dir, exist_ok=True)
-    src_p = _resolver_preview(tema_id, fase, fp)
-    if src_p and os.path.isfile(src_p):
-        dst_p = os.path.join(bg_dir, 'pixelzen.png')
-        shutil.copy2(src_p, dst_p)
-        uri_p = f'file://{dst_p}'
-        subprocess.run(['gsettings', 'set', 'org.gnome.desktop.background', 'picture-uri', uri_p], check=False)
-        subprocess.run(['gsettings', 'set', 'org.gnome.desktop.background', 'picture-uri-dark', uri_p], check=False)
-        subprocess.run(['gsettings', 'set', 'org.gnome.desktop.background', 'picture-options', 'zoom'], check=False)
-    if usar_bloqueo:
-        src_b = _resolver_preview(tema_id, fase, fb) or src_p
-        if src_b and os.path.isfile(src_b):
-            dst_b = os.path.join(bg_dir, 'pixelzen-lock.png')
-            shutil.copy2(src_b, dst_b)
-            uri_b = f'file://{dst_b}'
-            subprocess.run(['gsettings', 'set', 'org.gnome.desktop.screensaver', 'picture-uri', uri_b], check=False)
 
 
 def _detectar_monitores():
@@ -2802,36 +2501,19 @@ class PixelZenWindow(Adw.ApplicationWindow):
         Gio.AppInfo.launch_default_for_uri(url, None)
         self.lbl_status.set_text(f'🎬 Visor animado abierto en http://127.0.0.1:{self._web_port}')
 
-    @staticmethod
-    def _parse_ver(txt):
-        nums = []
-        for parte in str(txt).lstrip('vV').split('.'):
-            try:
-                nums.append(int(parte))
-            except ValueError:
-                nums.append(0)
-        return tuple(nums)
-
     def _inicia_check_update_silenciosa(self):
         def _bg():
             try:
-                req = urllib.request.Request(RELEASES_API, headers={'User-Agent': 'PixelZenWorlds'})
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    rel = json.loads(resp.read().decode('utf-8'))
-                tag = str(rel.get('tag_name', '')).lstrip('vV')
-                if tag and self._parse_ver(tag) > self._parse_ver(VERSION_ACTUAL):
-                    asset_url = next(
-                        (a['browser_download_url'] for a in rel.get('assets', []) if a.get('name') == 'PixelZenWorlds-Linux-Setup.run'),
-                        None,
-                    )
-                    GLib.idle_add(self._mostrar_actualizacion_disponible, tag, asset_url or rel.get('html_url', RELEASES_URL))
+                _msg, tag, url, sha_url = consultar_ultima_release()
+                if tag and url:
+                    GLib.idle_add(self._mostrar_actualizacion_disponible, tag, url, sha_url)
             except Exception:
                 pass
         threading.Thread(target=_bg, daemon=True).start()
         return False
 
-    def _mostrar_actualizacion_disponible(self, tag, url):
-        self._pending_update = (tag, url)
+    def _mostrar_actualizacion_disponible(self, tag, url, sha_url=None):
+        self._pending_update = (tag, url, sha_url)
         self.btn_update.set_label(f'⬆️ Actualizar v{tag}')
         self.btn_update.set_visible(True)
         self.btn_upd.set_label(f'⬆️ Actualizar a v{tag}')
@@ -2840,8 +2522,8 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
     def _on_buscar_actualizacion(self, *_args):
         if self._pending_update:
-            tag, url = self._pending_update
-            self._fin_check_update(f'✨ Nueva versión v{tag} disponible.', tag, url)
+            tag, url, sha_url = self._pending_update
+            self._fin_check_update(f'✨ Nueva versión v{tag} disponible.', tag, url, sha_url)
             return
         self.btn_update.set_sensitive(False)
         self.btn_upd.set_sensitive(False)
@@ -2849,28 +2531,18 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
         def _worker():
             try:
-                req = urllib.request.Request(RELEASES_API, headers={'User-Agent': 'PixelZenWorlds'})
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    rel = json.loads(resp.read().decode('utf-8'))
-                tag = str(rel.get('tag_name', '')).lstrip('vV')
-                if self._parse_ver(tag) <= self._parse_ver(VERSION_ACTUAL):
-                    GLib.idle_add(self._fin_check_update, f'✅ Ya tienes la última versión (v{VERSION_ACTUAL}).', None, None)
-                    return
-                asset_url = next(
-                    (a['browser_download_url'] for a in rel.get('assets', []) if a.get('name') == 'PixelZenWorlds-Linux-Setup.run'),
-                    None,
-                )
-                GLib.idle_add(self._fin_check_update, f'✨ Nueva versión v{tag} disponible.', tag, asset_url or rel.get('html_url', RELEASES_URL))
+                msg, tag, url, sha_url = consultar_ultima_release()
+                GLib.idle_add(self._fin_check_update, msg, tag, url, sha_url)
             except Exception:
-                GLib.idle_add(self._fin_check_update, '⚠️ No se pudo comprobar automáticamente. Abriendo Releases...', 'web', RELEASES_URL)
+                GLib.idle_add(self._fin_check_update, '⚠️ No se pudo comprobar automáticamente. Abriendo Releases...', 'web', RELEASES_URL, None)
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _fin_check_update(self, msg, tag, url):
+    def _fin_check_update(self, msg, tag, url, sha_url=None):
         self.btn_update.set_sensitive(True)
         self.btn_upd.set_sensitive(True)
         if tag and tag != 'web' and url:
-            self._mostrar_actualizacion_disponible(tag, url)
+            self._mostrar_actualizacion_disponible(tag, url, sha_url)
         elif not tag:
             self._pending_update = None
             self.btn_update.set_visible(False)
@@ -2888,20 +2560,15 @@ class PixelZenWindow(Adw.ApplicationWindow):
         dlg.add_response('cancel', 'Más tarde')
         dlg.add_response('install', 'Descargar e instalar')
         dlg.set_response_appearance('install', Adw.ResponseAppearance.SUGGESTED)
-        dlg.connect('response', lambda _d, r: self._ejecutar_update_linux(url) if r == 'install' else None)
+        dlg.connect('response', lambda _d, r: self._ejecutar_update_linux(url, sha_url) if r == 'install' else None)
         dlg.present(self)
 
-    def _ejecutar_update_linux(self, url):
+    def _ejecutar_update_linux(self, url, sha_url=None):
         self.lbl_status.set_text('⬇️ Descargando actualización...')
 
         def _dl():
             try:
-                dst = '/tmp/PixelZenWorlds-Linux-Setup.run'
-                req = urllib.request.Request(url, headers={'User-Agent': 'PixelZenWorlds'})
-                with urllib.request.urlopen(req, timeout=60) as resp, open(dst, 'wb') as f:
-                    shutil.copyfileobj(resp, f)
-                os.chmod(dst, os.stat(dst).st_mode | stat.S_IXUSR)
-                subprocess.Popen([dst], start_new_session=True)
+                descargar_y_lanzar_instalador(url, sha_url)
                 GLib.idle_add(self.get_application().quit)
             except Exception as exc:
                 GLib.idle_add(self.lbl_status.set_text, f'❌ Error al actualizar: {exc}')

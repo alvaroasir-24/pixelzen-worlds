@@ -25,6 +25,7 @@ try {
     foreach ($fn in @('PixelZenMenu.ps1', 'PixelZenMotor.ps1', 'PixelZenHud.ps1', 'PixelZenCiclo.ps1', 'PixelZenApp.vbs', 'pixelzen_win.py', 'datos_win.py', 'pixelzen.ico')) {
         Copy-Item -Path (Join-Path $Raiz "windows\$fn") -Destination (Join-Path $AppStage $fn) -Force
     }
+    Copy-Item -Path (Join-Path $Raiz 'src\worlds_meta.json') -Destination (Join-Path $AppStage 'worlds_meta.json') -Force
     Copy-Item -Path (Join-Path $Raiz 'windows\installer\Desinstalar.ps1') -Destination (Join-Path $AppStage 'Desinstalar.ps1') -Force
 
     $LivelyDst = Join-Path $AppStage 'lively'

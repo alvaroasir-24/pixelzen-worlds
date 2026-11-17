@@ -31,7 +31,7 @@ Sync-Tree (Join-Path $OutRoot 'docs\previews') (Join-Path $Raiz 'docs\previews')
 Sync-Tree (Join-Path $OutRoot 'windows\lively\temas') (Join-Path $Raiz 'windows\lively\temas')
 Sync-Tree (Join-Path $OutRoot 'escenas') (Join-Path $Raiz 'escenas')
 
-Write-Host '==> 3/5 Sincronizando pixelzen-canvas.js y temas-bundle.js...' -ForegroundColor Cyan
+Write-Host '==> 3/5 Sincronizando pixelzen-canvas.js, pixelzen-heroes.js y temas-bundle.js...' -ForegroundColor Cyan
 $SrcCanvas = Join-Path $Raiz 'src\pixelzen-canvas.js'
 foreach ($dst in @(
     (Join-Path $Raiz 'docs\pixelzen-canvas.js'),
@@ -40,11 +40,19 @@ foreach ($dst in @(
 )) {
     Copy-Item -Path $SrcCanvas -Destination $dst -Force
 }
+$SrcHeroes = Join-Path $Raiz 'src\pixelzen-heroes.js'
+foreach ($dst in @(
+    (Join-Path $Raiz 'docs\pixelzen-heroes.js'),
+    (Join-Path $Raiz 'windows\lively\pixelzen-heroes.js'),
+    (Join-Path $StageWeb 'pixelzen-heroes.js')
+)) {
+    Copy-Item -Path $SrcHeroes -Destination $dst -Force
+}
 Copy-Item -Path (Join-Path $StageWeb 'temas-bundle.js') -Destination (Join-Path $Raiz 'docs\temas-bundle.js') -Force
 
 Write-Host "==> 4/5 Actualizando carpeta completa del Escritorio ($DesktopWeb)..." -ForegroundColor Cyan
 Sync-Tree $StageWeb $DesktopWeb
-foreach ($webFile in @('index.html', 'styles.css', 'app.js', 'pixelzen-canvas.js', 'Instalar-PixelZenWorlds.bat', 'Instalar-PixelZenWorlds.ps1')) {
+foreach ($webFile in @('index.html', 'styles.css', 'app.js', 'pixelzen-heroes.js', 'pixelzen-canvas.js', 'Instalar-PixelZenWorlds.bat', 'Instalar-PixelZenWorlds.ps1')) {
     $srcF = Join-Path $Raiz "docs\$webFile"
     if (Test-Path $srcF) {
         Copy-Item -Path $srcF -Destination (Join-Path $DesktopWeb $webFile) -Force
