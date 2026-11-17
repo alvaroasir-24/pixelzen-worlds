@@ -43,9 +43,18 @@
   const { state } = renderer;
   let timer = null;
   function reprogramar() {
-    if (timer) clearInterval(timer);
+    if (timer) { clearInterval(timer); timer = null; }
+    if (document.hidden) return;
     timer = setInterval(() => { state.tick++; renderer.render(); }, Math.round(1000 / Math.max(2, Math.min(24, state.fps))));
   }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (timer) { clearInterval(timer); timer = null; }
+    } else {
+      renderer.render();
+      reprogramar();
+    }
+  });
 
   async function aplicaEstadoJson(cfg) {
     if (!cfg || typeof cfg !== 'object') return;

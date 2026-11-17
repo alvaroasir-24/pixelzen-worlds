@@ -29,14 +29,96 @@ const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 const op255 = v => Math.round(clamp01(v) * 255);
 
 const cacheRgb = new Map();
-function px(cr, hex, op, ax, ay, aw = 1, ah = 1) {
-    if (op <= 0.004) return;
+const IS_LE = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
+let _coglCtx = null;
+
+function _getRgb(hex) {
     let c = cacheRgb.get(hex);
-    if (!c) { c = hexA(hex).map(v => v / 255); cacheRgb.set(hex, c); }
-    cr.setSourceRGBA(c[0], c[1], c[2], op > 1 ? 1 : op);
-    cr.rectangle(Math.round(ax), Math.round(ay), aw, ah);
-    cr.fill();
+    if (!c) {
+        const [r, g, b] = hexA(hex);
+        c = [r, g, b, (b << 16) | (g << 8) | r];
+        cacheRgb.set(hex, c);
+    }
+    return c;
 }
+
+function px(buf, hex, op, ax, ay, aw = 1, ah = 1) {
+    if (op <= 0.004) return;
+    const sa = op >= 1 ? 255 : Math.round(op * 255);
+    if (sa <= 0) return;
+    const c = _getRgb(hex);
+    const x0 = Math.round(ax);
+    const y0 = Math.round(ay);
+    const rw = aw <= 1 ? (aw > 0 ? 1 : 0) : Math.round(aw);
+    const rh = ah <= 1 ? (ah > 0 ? 1 : 0) : Math.round(ah);
+    if (rw <= 0 || rh <= 0) return;
+    const xStart = x0 < 0 ? 0 : x0;
+    const yStart = y0 < 0 ? 0 : y0;
+    const xEnd = x0 + rw > W ? W : x0 + rw;
+    const yEnd = y0 + rh > H ? H : y0 + rh;
+    if (xStart >= xEnd || yStart >= yEnd) return;
+
+    if (IS_LE && sa === 255) {
+        const col32 = ((255 << 24) | c[3]) >>> 0;
+        for (let y = yStart; y < yEnd; y++) {
+            const row = y * W;
+            for (let x = xStart; x < xEnd; x++) buf[row + x] = col32;
+        }
+        return;
+    }
+
+    const sr = c[0], sg = c[1], sb = c[2];
+    const colOpaque = IS_LE ? (((sa << 24) | c[3]) >>> 0) : 0;
+    const inv = 255 - sa;
+    for (let y = yStart; y < yEnd; y++) {
+        const row = y * W;
+        for (let x = xStart; x < xEnd; x++) {
+            const idx = row + x;
+            const dst = buf[idx];
+            if (dst === 0 && IS_LE) {
+                buf[idx] = colOpaque;
+                continue;
+            }
+            if (IS_LE) {
+                const da = dst >>> 24;
+                if (da === 0 || sa === 255) {
+                    buf[idx] = ((sa << 24) | c[3]) >>> 0;
+                } else {
+                    const dr = dst & 0xff;
+                    const dg = (dst >>> 8) & 0xff;
+                    const db = (dst >>> 16) & 0xff;
+                    if (da === 255) {
+                        const r = (sr * sa + dr * inv + 127) / 255 | 0;
+                        const g = (sg * sa + dg * inv + 127) / 255 | 0;
+                        const b = (sb * sa + db * inv + 127) / 255 | 0;
+                        buf[idx] = (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+                    } else {
+                        const aTmp = (da * inv + 127) / 255 | 0;
+                        const outA = sa + aTmp;
+                        const r = ((sr * sa + dr * aTmp) / outA) | 0;
+                        const g = ((sg * sa + dg * aTmp) / outA) | 0;
+                        const b = ((sb * sa + db * aTmp) / outA) | 0;
+                        buf[idx] = ((outA << 24) | (b << 16) | (g << 8) | r) >>> 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+function _setContentBytes(cont, bytes, w, h, stride) {
+    if (_coglCtx) {
+        cont.set_bytes(_coglCtx, bytes, Cogl.PixelFormat.RGBA_8888, w, h, stride);
+        return;
+    }
+    try {
+        cont.set_bytes(bytes, Cogl.PixelFormat.RGBA_8888, w, h, stride);
+    } catch (_e) {
+        _coglCtx = global.stage.context.get_backend().get_cogl_context();
+        cont.set_bytes(_coglCtx, bytes, Cogl.PixelFormat.RGBA_8888, w, h, stride);
+    }
+}
+
 function fija(a, op) {
     const o = op255(op);
     const v = o > 1;
@@ -980,10 +1062,20 @@ export class Escena {
     }
 
     ajustesCambiados() {
+        const prevAnim = this.animar;
+        const prevFps = this.fps;
         this._leeAjustes();
         this.recalcula();
-        this.pinta();
-        this._programa();
+        if (!this.animar || !prevAnim || prevFps !== this.fps) {
+            this.pinta();
+            this._programa();
+        }
+    }
+
+    actualizaHoraSimulada() {
+        this.horaSim = this._settings.get_double('hora-simulada');
+        this.recalcula();
+        if (!this.animar) this.pinta();
     }
 
     static suave(t) { t = clamp01(t); return t * t * (3 - 2 * t); }
@@ -1059,28 +1151,18 @@ export class Escena {
         const l = {pack};
         const raiz = new Clutter.Actor({width: W, height: H});
         l.raiz = raiz;
-        const area = fn => {
-            const a = new St.DrawingArea({width: W, height: H});
-            a.set_content_scaling_filters(Clutter.ScalingFilter.NEAREST, Clutter.ScalingFilter.NEAREST);
-            a.connect('repaint', ar => {
-                const cr = ar.get_context();
-                try {
-                    const [sw] = ar.get_surface_size();
-                    cr.scale(sw / W, sw / W);
-                    cr.setAntialias(Cairo.Antialias.NONE);
-                    fn(cr);
-                } catch (e) {
-                    logError(e, 'PixelZen escena');
-                } finally {
-                    cr.$dispose();
-                }
-            });
-            raiz.add_child(a);
-            return a;
+        const capaBuf = () => {
+            const u8 = new Uint8Array(W * H * 4);
+            const u32 = new Uint32Array(u8.buffer);
+            const cont = St.ImageContent.new_with_preferred_size(W, H);
+            const actor = imagen(raiz, cont, W, H);
+            return {u8, u32, cont, actor};
         };
 
         l.cielo = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`cielo-${f}`], W, H));
-        l.atras = area(cr => this._pintaAtras(cr, pack));
+        l.atrasLayer = capaBuf();
+        l.atras = l.atrasLayer.actor;
+        l.atrasKey = '';
         l.sol = imagen(raiz, T.sol, 208, 208);
         l.luna = imagen(raiz, T.luna, 208, 208);
         l.nubes = D.nubes.map((nb, i) => ['noche', 'dorado', 'dia'].map(f => {
@@ -1089,7 +1171,8 @@ export class Escena {
             return a;
         }));
         l.escena = ['noche', 'dorado', 'dia'].map(f => imagen(raiz, T[`escena-${f}`], W, H));
-        l.delante = area(cr => this._pintaDelante(cr, pack));
+        l.delanteLayer = capaBuf();
+        l.delante = l.delanteLayer.actor;
         return l;
     }
 
@@ -1304,26 +1387,49 @@ export class Escena {
         const noche = this.elev < 0;
         const opNub = [noche ? 1 - this.wA : 0, noche ? this.wA : 1 - this.wB, this.wB];
 
-        fija(l.cielo[1], this.wA); fija(l.cielo[2], this.wB);
+        const diaOp = op255(this.wB);
+        const dorOp = op255(this.wA);
+        if (diaOp >= 255) {
+            if (l.cielo[0].visible) l.cielo[0].visible = false;
+            if (l.cielo[1].visible) l.cielo[1].visible = false;
+            fija(l.cielo[2], 1);
+        } else if (dorOp >= 255 && diaOp <= 1) {
+            if (l.cielo[0].visible) l.cielo[0].visible = false;
+            fija(l.cielo[1], 1);
+            fija(l.cielo[2], 0);
+        } else {
+            if (!l.cielo[0].visible) l.cielo[0].visible = true;
+            fija(l.cielo[1], this.wA);
+            fija(l.cielo[2], this.wB);
+        }
         fija(l.escena[1], this.wA); fija(l.escena[2], this.wB);
 
         const conAstro = l === this._lienzo;
-        l.sol.set_position(Math.round(this.solX - 104), Math.round(this.solY - 104));
-        fija(l.sol, conAstro ? this.solOp : 0);
-        l.luna.set_position(Math.round(this.lunaX - 104), Math.round(this.lunaY - 104));
-        fija(l.luna, conAstro ? this.lunaOp : 0);
+        if (fija(l.sol, conAstro ? this.solOp : 0)) {
+            const sx = Math.round(this.solX - 104), sy = Math.round(this.solY - 104);
+            if (l.sol.x !== sx || l.sol.y !== sy) l.sol.set_position(sx, sy);
+        }
+        if (fija(l.luna, conAstro ? this.lunaOp : 0)) {
+            const lx = Math.round(this.lunaX - 104), ly = Math.round(this.lunaY - 104);
+            if (l.luna.x !== lx || l.luna.y !== ly) l.luna.set_position(lx, ly);
+        }
 
-        l.pack.D.nubes.forEach((nb, i) => {
+        const nubes = l.pack.D.nubes;
+        for (let i = 0; i < nubes.length; i++) {
+            const nb = nubes[i];
             const v = 0.035 + (i % 4) * 0.012;
             const cx = Math.round(((nb[0] + nb[2] + t * v) % (640 + nb[2])) - nb[2]);
             for (let k = 0; k < 3; k++) {
                 const a = l.nubes[i][k];
                 if (fija(a, opNub[k]) && a.x !== cx) a.x = cx;
             }
-        });
+        }
 
-        l.atras.queue_repaint();
-        l.delante.queue_repaint();
+        if (this._pintaAtras(l, l.pack)) {
+            _setContentBytes(l.atrasLayer.cont, GLib.Bytes.new(l.atrasLayer.u8), W, H, W * 4);
+        }
+        this._pintaDelante(l.delanteLayer.u32, l.pack);
+        _setContentBytes(l.delanteLayer.cont, GLib.Bytes.new(l.delanteLayer.u8), W, H, W * 4);
     }
 
     pinta() {
@@ -1331,43 +1437,62 @@ export class Escena {
         this._pintaLienzo(this._lienzo2);
     }
 
-    _pintaAtras(cr, pack = this._packPrim) {
+    _pintaAtras(l, pack = this._packPrim) {
         const t = this.tick, D = pack.D, T = pack.T, brillantes = pack.brillantes, ef = this.estrellaF;
-        cr.setOperator(Cairo.Operator.CLEAR); cr.paint(); cr.setOperator(Cairo.Operator.OVER);
-        if (ef > 0.01) {
-            D.estrellas.forEach((e, i) => {
-                const o = i % 3 === 0 ? 0.3 + 0.7 * this.osc(0.10 + (i % 7) * 0.02, i * 1.3) : 1;
-                px(cr, e[2], ef * o, e[0], e[1]);
-            });
-            brillantes.forEach((e, i) => {
-                const o = ef * 0.8 * Math.max(0, this.osc(0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
-                if (o <= 0.004) return;
-                px(cr, '#c7ccff', o, e[0] - 1, e[1]); px(cr, '#c7ccff', o, e[0] + 1, e[1]);
-                px(cr, '#c7ccff', o, e[0], e[1] - 1); px(cr, '#c7ccff', o, e[0], e[1] + 1);
-            });
-        }
         const alas = T.modo_pajaros === 'wyverns' ? ALAS_WYVERN : ALAS_GRULLA;
         const cuadro = [0, 1, 2, 1][Math.floor(t / 5) % 4];
-        for (const [cx, cy] of [
-            [((t * 0.22 + 40) % 760) - 60, 126 + 4 * Math.sin(t * 0.03)],
-            [((t * 0.22 + 22) % 760) - 60, 116 + 4 * Math.sin(t * 0.03 + 1)],
-            [((t * 0.20 + 5) % 760) - 60, 138 + 4 * Math.sin(t * 0.025 + 2)],
-        ]) {
-            for (const [dx, dy] of alas[cuadro]) px(cr, T.color_pajaros, 1, cx + dx, cy + dy);
-            px(cr, T.color_pajaros, 1, cx, cy + 1);
-        }
+        const b0x = Math.round(((t * 0.22 + 40) % 760) - 60), b0y = Math.round(126 + 4 * Math.sin(t * 0.03));
+        const b1x = Math.round(((t * 0.22 + 22) % 760) - 60), b1y = Math.round(116 + 4 * Math.sin(t * 0.03 + 1));
+        const b2x = Math.round(((t * 0.20 + 5) % 760) - 60), b2y = Math.round(138 + 4 * Math.sin(t * 0.025 + 2));
+
         const periodo = this.fps * 38;
         const ciclo = Math.floor(t / periodo), fase = t % periodo;
-        if (fase < 14 && ef > 0.5) {
+        const fugaz = fase < 14 && ef > 0.5;
+
+        if (ef <= 0.01 && !fugaz) {
+            const key = `${cuadro}:${b0x},${b0y}:${b1x},${b1y}:${b2x},${b2y}:${T.modo_pajaros}:${T.color_pajaros}`;
+            if (l.atrasKey === key) return false;
+            l.atrasKey = key;
+        } else {
+            l.atrasKey = '';
+        }
+
+        const cr = l.atrasLayer.u32;
+        cr.fill(0);
+
+        if (ef > 0.01) {
+            const est = D.estrellas;
+            for (let i = 0; i < est.length; i++) {
+                const e = est[i];
+                const o = i % 3 === 0 ? 0.3 + 0.7 * this.osc(0.10 + (i % 7) * 0.02, i * 1.3) : 1;
+                px(cr, e[2], ef * o, e[0], e[1]);
+            }
+            for (let i = 0; i < brillantes.length; i++) {
+                const e = brillantes[i];
+                const o = ef * 0.8 * Math.max(0, this.osc(0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
+                if (o <= 0.004) continue;
+                px(cr, '#c7ccff', o, e[0] - 1, e[1]); px(cr, '#c7ccff', o, e[0] + 1, e[1]);
+                px(cr, '#c7ccff', o, e[0], e[1] - 1); px(cr, '#c7ccff', o, e[0], e[1] + 1);
+            }
+        }
+        const alasF = alas[cuadro];
+        const bCoords = [[b0x, b0y], [b1x, b1y], [b2x, b2y]];
+        for (let b = 0; b < 3; b++) {
+            const cx = bCoords[b][0], cy = bCoords[b][1];
+            for (let k = 0; k < alasF.length; k++) px(cr, T.color_pajaros, 1, cx + alasF[k][0], cy + alasF[k][1]);
+            px(cr, T.color_pajaros, 1, cx, cy + 1);
+        }
+        if (fugaz) {
             const x0 = 60 + ((ciclo * 137) % 300), y0 = 20 + ((ciclo * 53) % 70);
             for (let i = 0; i < 7; i++)
                 px(cr, i === 0 ? '#fff8e6' : '#c7ccff', 1 - i / 8, x0 + (fase - i) * 5, y0 + (fase - i) * 2.4);
         }
+        return true;
     }
 
     _pintaDelante(cr, pack = this._packPrim) {
         const t = this.tick, D = pack.D, T = pack.T, nf = this.nocheF;
-        cr.setOperator(Cairo.Operator.CLEAR); cr.paint(); cr.setOperator(Cairo.Operator.OVER);
+        cr.fill(0);
 
         if (T.modo_heroe === 'miles_morales') {
             pintaFerry(cr, t, nf);
@@ -1429,19 +1554,23 @@ export class Escena {
         }
 
         if (nf > 0.02) {
-            D.ventanas.forEach((v, i) => {
+            const vens = D.ventanas;
+            for (let i = 0; i < vens.length; i++) {
+                const v = vens[i];
                 const p = nf * (((Math.floor(t / 24) + i) % 13 === 0) ? 0.25
                     : 0.7 + 0.3 * Math.sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
                 px(cr, T.color_ventanas, 0.12 * p, v[0] - 1, v[1] - 1, 4, 6);
                 px(cr, T.color_ventanas, p, v[0], v[1], 2, 4);
-            });
-            D.faroles.forEach((fr, i) => {
+            }
+            const fars = D.faroles;
+            for (let i = 0; i < fars.length; i++) {
+                const fr = fars[i];
                 const p = nf * (0.65 + 0.35 * Math.sin(t * 0.11 + i * 1.7));
                 const g = Math.max(2, Math.round(fr[2] / 3));
                 px(cr, T.color_faroles_halo, 0.06 * p, fr[0] - g * 2, fr[1] - g * 2, g * 4 + 1, g * 4 + 1);
                 px(cr, T.color_faroles_halo, 0.14 * p, fr[0] - g, fr[1] - g, g * 2 + 1, g * 2 + 1);
                 px(cr, T.color_faroles_centro, p, fr[0], fr[1], 1, 2);
-            });
+            }
             if (D.runas) {
                 const pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.sin(t * 0.08));
                 for (let i = 0; i < D.runas.length; i++) {
@@ -1452,9 +1581,12 @@ export class Escena {
                 }
             }
         }
-        for (const o of this.olas) {
+        const olas = this.olas;
+        const olaDay = 1 - 0.6 * this.wB;
+        for (let i = 0; i < olas.length; i++) {
+            const o = olas[i];
             px(cr, o[5] ? T.color_olas[0] : T.color_olas[1],
-                (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * (1 - 0.6 * this.wB),
+                (0.08 + 0.55 * Math.max(0, Math.sin(t * 0.04 + o[3]))) * olaDay,
                 o[0] + 6 * Math.sin(t * o[4] + o[3]), o[1], o[2], 1);
         }
         const conAstro = !this._packSec || pack !== this._packSec;
@@ -1467,18 +1599,22 @@ export class Escena {
                     this.cuerpoX - w / 2 + 3 * Math.sin(t * 0.05 + i * 1.3), 280 + d, w * (0.45 + 0.55 * this.osc(0.09, i * 2.2)), 1);
             }
             const dx = this.cuerpoX - 352;
-            D.destellos.forEach((ds, i) => {
+            const dest = D.destellos;
+            for (let i = 0; i < dest.length; i++) {
+                const ds = dest[i];
                 const o = co * Math.pow(Math.max(0, Math.sin(t * 0.16 + i * 0.9)), 3);
                 if (o > 0.004) px(cr, T.color_destello, o, ds[0] + dx, ds[1], 2, 1);
-            });
+            }
         }
         const esBrasas = T.modo_particulas === 'brasas_mana';
-        this.hojas.forEach((p, i) => {
+        const hojas = this.hojas;
+        for (let i = 0; i < hojas.length; i++) {
+            const p = hojas[i];
             const esMana = p[5] === 3;
             const ax = (p[0] + t * p[3] + 18 * Math.sin(t * 0.03 + p[4])) % 660 - 10;
             const dirY = (esMana || esBrasas) ? -p[2] * 0.45 : p[2];
             const ay = ((p[1] + t * dirY) % 420 + 420) % 420 - 10;
-            if (ay >= 395) return;
+            if (ay >= 395) continue;
             if (esMana) {
                 const mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.sin(t * 0.11 + i));
                 px(cr, T.color_mana_halo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
@@ -1490,9 +1626,10 @@ export class Escena {
                 const h = Math.floor(t / 7 + i) % 2;
                 px(cr, T.colores_hojas[p[5] % T.colores_hojas.length], 0.92, ax, ay, h ? 2 : 1, h ? 1 : 2);
             }
-        });
+        }
         if (nf > 0.25) {
-            MOTAS_MANA.forEach((lc, i) => {
+            for (let i = 0; i < MOTAS_MANA.length; i++) {
+                const lc = MOTAS_MANA[i];
                 const fx = lc[0] + 9 * Math.sin(t * (0.021 + i * 0.002) + i * 2.3);
                 const fy = lc[1] + 5 * Math.sin(t * (0.017 + i * 0.0015) + i * 1.1);
                 const b = nf * Math.pow(Math.max(0, Math.sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
@@ -1500,7 +1637,7 @@ export class Escena {
                 const core = T.color_fuegos_centro[i % T.color_fuegos_centro.length];
                 px(cr, halo, 0.28 * b, fx - 1, fy - 1, 3, 3);
                 px(cr, core, 0.2 + 0.8 * b, fx, fy, 1, 1);
-            });
+            }
         }
         this._pintaEventoEspecial(cr, t);
         this._pintaClima(cr, t, this.wB, nf, this.fechaEfectiva());

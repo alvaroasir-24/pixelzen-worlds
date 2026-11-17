@@ -10,11 +10,22 @@
   "modo_pajaros": "cuervos",
   "color_pajaros": "#160a0c",
   "modo_particulas": "brasas",
-  "colores_hojas": ["#ff5a28", "#fbbf24", "#dc2626", "#94a3b8"],
+  "colores_hojas": [
+    "#ff5a28",
+    "#fbbf24",
+    "#dc2626",
+    "#94a3b8"
+  ],
   "color_mana_halo": "#ea580c",
   "color_mana_centro": "#fef08a",
-  "color_fuegos_halo": ["#f97316", "#ef4444"],
-  "color_fuegos_centro": ["#fef08a", "#fed7aa"],
+  "color_fuegos_halo": [
+    "#f97316",
+    "#ef4444"
+  ],
+  "color_fuegos_centro": [
+    "#fef08a",
+    "#fed7aa"
+  ],
   "color_ventanas": "#fb923c",
   "color_faroles_halo": "#f97316",
   "color_faroles_centro": "#ffedd5",
@@ -22,13 +33,29 @@
   "color_runas_centro": "#bbf7d0",
   "color_humo_dia": "#e2e8f0",
   "color_humo_noche": "#6b4c4c",
-  "color_olas": ["#fb923c", "#7c2d12"],
+  "color_olas": [
+    "#fb923c",
+    "#7c2d12"
+  ],
   "color_reflejo_sol": "#fed7aa",
   "color_reflejo_luna": "#fca5a5",
   "color_destello": "#fef3c7",
   "citas": [
-    {"sub": "Cuerpo de Exploración · Shinzo wo Sasageyo", "es": "«Entrega tu corazón; si ganamos vivimos, si perdemos morimos. No podemos ganar si no luchamos.»", "au": "Eren Jaeger & Erwin Smith"},
-    {"sub": "El Retumbar · Más allá de las murallas", "es": "«El mundo es cruel, pero aun así sigo amándote y protegiéndote hasta el final.»", "au": "Mikasa Ackerman"},
-    {"sub": "Capitán Levi Ackerman", "es": "«Elige la decisión de la que menos te arrepientas, sin importar cuán oscuro sea el horizonte.»", "au": "Levi Ackerman"}
-  ]
+    {
+      "sub": "Cuerpo de Exploración · Shinzo wo Sasageyo",
+      "es": "«Entrega tu corazón; si ganamos vivimos, si perdemos morimos. No podemos ganar si no luchamos.»",
+      "au": "Eren Jaeger & Erwin Smith"
+    },
+    {
+      "sub": "El Retumbar · Más allá de las murallas",
+      "es": "«El mundo es cruel, pero aun así sigo amándote y protegiéndote hasta el final.»",
+      "au": "Mikasa Ackerman"
+    },
+    {
+      "sub": "Capitán Levi Ackerman",
+      "es": "«Elige la decisión de la que menos te arrepientas, sin importar cuán oscuro sea el horizonte.»",
+      "au": "Levi Ackerman"
+    }
+  ],
+  "titulo": "El Retumbar y la Muralla"
 }

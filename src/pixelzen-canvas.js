@@ -1624,9 +1624,15 @@
       const conAstro = state.pantalla !== 'secundaria';
 
       ctx.globalAlpha = 1;
-      ctx.drawImage(I['cielo-noche'], 0, 0);
-      if (wA > 0.01) { ctx.globalAlpha = wA; ctx.drawImage(I['cielo-dorado'], 0, 0); }
-      if (wB > 0.01) { ctx.globalAlpha = wB; ctx.drawImage(I['cielo-dia'], 0, 0); }
+      if (wB >= 0.996) {
+        ctx.drawImage(I['cielo-dia'], 0, 0);
+      } else if (wA >= 0.996 && wB <= 0.01) {
+        ctx.drawImage(I['cielo-dorado'], 0, 0);
+      } else {
+        ctx.drawImage(I['cielo-noche'], 0, 0);
+        if (wA > 0.01) { ctx.globalAlpha = wA; ctx.drawImage(I['cielo-dorado'], 0, 0); }
+        if (wB > 0.01) { ctx.globalAlpha = wB; ctx.drawImage(I['cielo-dia'], 0, 0); }
+      }
 
       if (ef > 0.01) {
         D.estrellas.forEach((e, i) => {
@@ -1856,9 +1862,16 @@
       return nombre;
     }
 
-    function actualizaHud(fecha, T, { quoteIntervalMs = 90000, stats = null, hudStats = null } = {}) {
+    function actualizaHud(fecha, T, { quoteIntervalMs = 90000, stats = null, hudStats = null, force = false } = {}) {
       const hudEl = document.getElementById('hud');
       if (!hudEl) return;
+      const nowMs = Date.now();
+      const hudKey = `${state.mostrarHud}|${state.tema}|${state.hudCompacto}|${state.modoHora}|${state.clima}`;
+      if (!force && state._lastHudKey === hudKey && state._lastHudMs && (nowMs - state._lastHudMs) < 950) {
+        return;
+      }
+      state._lastHudKey = hudKey;
+      state._lastHudMs = nowMs;
       const hs = hudStats || state.hudStats || {};
       const vis = {
         tiempo: hs.tiempo !== false,

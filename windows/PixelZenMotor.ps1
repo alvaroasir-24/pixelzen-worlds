@@ -58,6 +58,8 @@ if (-not $EsInstalada) {
     if (Test-Path $altTemas) {
         $TemasBase = $altTemas
         $EsInstalada = $true
+    } elseif (Test-Path (Join-Path $Raiz 'docs\temas')) {
+        $TemasBase = Join-Path $Raiz 'docs\temas'
     } else {
         $TemasBase = Join-Path $Raiz 'windows\lively\temas'
     }
@@ -87,6 +89,11 @@ public class PzmCloud {
 
 public class PzmLight {
     public int X, Y, R;
+}
+
+public class PzmImgPx {
+    public int W, H;
+    public int[] Px;
 }
 
 public class PzmSceneData {
@@ -130,28 +137,39 @@ public class PzmSceneData {
     public Bitmap NubesNoche, NubesDorado, NubesDia;
     public Bitmap Sol, Luna;
 
+    public PzmImgPx CieloNochePx, CieloDoradoPx, CieloDiaPx;
+    public PzmImgPx EscenaNochePx, EscenaDoradoPx, EscenaDiaPx;
+    public PzmImgPx NubesNochePx, NubesDoradoPx, NubesDiaPx;
+    public PzmImgPx SolPx, LunaPx;
+
     public static Color ParseHex(string hex, Color fallback) {
         if (string.IsNullOrEmpty(hex)) return fallback;
         try { return ColorTranslator.FromHtml(hex); } catch { return fallback; }
     }
 
-    static Bitmap LoadPArgb(string path) {
-        if (!File.Exists(path) && !string.IsNullOrEmpty(path)) {
-            string norm = path.Replace('/', '\\');
-            int idx = norm.IndexOf(@"\temas\", StringComparison.OrdinalIgnoreCase);
-            if (idx >= 0) {
-                string fb = Path.Combine(@"C:\Users\david\.gemini\antigravity-cli\brain\8747b389-799a-4632-897a-f7f55a4233c0\scratch\out_root\windows\lively\temas", norm.Substring(idx + 7));
-                if (File.Exists(fb)) path = fb;
-            }
-        }
+    static Bitmap LoadPArgb(string path, out PzmImgPx imgPx) {
+        imgPx = null;
         if (!File.Exists(path)) return null;
         using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
         using (var raw = Image.FromStream(fs)) {
-            var bmp = new Bitmap(raw.Width, raw.Height, PixelFormat.Format32bppPArgb);
+            int w = raw.Width, h = raw.Height;
+            var bmp = new Bitmap(w, h, PixelFormat.Format32bppPArgb);
             using (var g = Graphics.FromImage(bmp)) {
                 g.CompositingMode = CompositingMode.SourceCopy;
                 g.DrawImageUnscaled(raw, 0, 0);
             }
+            var px = new int[w * h];
+            var bd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+            try {
+                if (bd.Stride == w * 4) {
+                    Marshal.Copy(bd.Scan0, px, 0, px.Length);
+                } else {
+                    for (int r = 0; r < h; r++) Marshal.Copy(IntPtr.Add(bd.Scan0, r * bd.Stride), px, r * w, w);
+                }
+            } finally {
+                bmp.UnlockBits(bd);
+            }
+            imgPx = new PzmImgPx { W = w, H = h, Px = px };
             return bmp;
         }
     }
@@ -159,17 +177,17 @@ public class PzmSceneData {
     public void LoadImages() {
         DisposeImages();
         string imgDir = Path.Combine(TemaDir, "images");
-        CieloNoche = LoadPArgb(Path.Combine(imgDir, "cielo-noche.png"));
-        CieloDorado = LoadPArgb(Path.Combine(imgDir, "cielo-dorado.png"));
-        CieloDia = LoadPArgb(Path.Combine(imgDir, "cielo-dia.png"));
-        EscenaNoche = LoadPArgb(Path.Combine(imgDir, "escena-noche.png"));
-        EscenaDorado = LoadPArgb(Path.Combine(imgDir, "escena-dorado.png"));
-        EscenaDia = LoadPArgb(Path.Combine(imgDir, "escena-dia.png"));
-        NubesNoche = LoadPArgb(Path.Combine(imgDir, "nubes-noche.png"));
-        NubesDorado = LoadPArgb(Path.Combine(imgDir, "nubes-dorado.png"));
-        NubesDia = LoadPArgb(Path.Combine(imgDir, "nubes-dia.png"));
-        Sol = LoadPArgb(Path.Combine(imgDir, "sol.png"));
-        Luna = LoadPArgb(Path.Combine(imgDir, "luna.png"));
+        CieloNoche = LoadPArgb(Path.Combine(imgDir, "cielo-noche.png"), out CieloNochePx);
+        CieloDorado = LoadPArgb(Path.Combine(imgDir, "cielo-dorado.png"), out CieloDoradoPx);
+        CieloDia = LoadPArgb(Path.Combine(imgDir, "cielo-dia.png"), out CieloDiaPx);
+        EscenaNoche = LoadPArgb(Path.Combine(imgDir, "escena-noche.png"), out EscenaNochePx);
+        EscenaDorado = LoadPArgb(Path.Combine(imgDir, "escena-dorado.png"), out EscenaDoradoPx);
+        EscenaDia = LoadPArgb(Path.Combine(imgDir, "escena-dia.png"), out EscenaDiaPx);
+        NubesNoche = LoadPArgb(Path.Combine(imgDir, "nubes-noche.png"), out NubesNochePx);
+        NubesDorado = LoadPArgb(Path.Combine(imgDir, "nubes-dorado.png"), out NubesDoradoPx);
+        NubesDia = LoadPArgb(Path.Combine(imgDir, "nubes-dia.png"), out NubesDiaPx);
+        Sol = LoadPArgb(Path.Combine(imgDir, "sol.png"), out SolPx);
+        Luna = LoadPArgb(Path.Combine(imgDir, "luna.png"), out LunaPx);
     }
 
     public void DisposeImages() {
@@ -182,6 +200,8 @@ public class PzmSceneData {
         foreach (var b in all) if (b != null) b.Dispose();
         CieloNoche = CieloDorado = CieloDia = EscenaNoche = EscenaDorado = EscenaDia = null;
         NubesNoche = NubesDorado = NubesDia = Sol = Luna = null;
+        CieloNochePx = CieloDoradoPx = CieloDiaPx = EscenaNochePx = EscenaDoradoPx = EscenaDiaPx = null;
+        NubesNochePx = NubesDoradoPx = NubesDiaPx = SolPx = LunaPx = null;
     }
 }
 
@@ -246,6 +266,7 @@ public class PzmRenderer {
     readonly ImageAttributes _ia = new ImageAttributes();
     readonly ColorMatrix _cm = new ColorMatrix();
     public readonly Bitmap Frame = new Bitmap(640, 400, PixelFormat.Format32bppPArgb);
+    public readonly int[] FrameBuf = new int[640 * 400];
     public string ClimaMode = "normal";
     public string RealClimaEfecto = "";
     public double RealLat = 40.4;
@@ -293,30 +314,110 @@ public class PzmRenderer {
         if (op <= 0.004) return;
         int alpha = (int)Math.Round(op * c.A);
         if (alpha <= 1) return;
-        _brush.Color = Color.FromArgb(alpha, c.R, c.G, c.B);
-        g.FillRectangle(_brush, (int)Math.Round(ax), (int)Math.Round(ay), Math.Max(1, (int)Math.Round(aw)), Math.Max(1, (int)Math.Round(ah)));
-    }
+        int x0 = (int)Math.Round(ax);
+        int y0 = (int)Math.Round(ay);
+        int rw = Math.Max(1, (int)Math.Round(aw));
+        int rh = Math.Max(1, (int)Math.Round(ah));
+        int xStart = x0 < 0 ? 0 : x0;
+        int yStart = y0 < 0 ? 0 : y0;
+        int xEnd = x0 + rw > 640 ? 640 : x0 + rw;
+        int yEnd = y0 + rh > 400 ? 400 : y0 + rh;
+        if (xStart >= xEnd || yStart >= yEnd) return;
 
-    void DrawAlpha(Graphics g, Bitmap bmp, int x, int y, double op) {
-        if (bmp == null || op <= 0.01) return;
-        if (op >= 0.99) {
-            g.DrawImageUnscaled(bmp, x, y);
+        int[] buf = FrameBuf;
+        if (alpha >= 255) {
+            int col = unchecked((int)0xFF000000) | (c.R << 16) | (c.G << 8) | c.B;
+            for (int y = yStart; y < yEnd; y++) {
+                int row = y * 640;
+                for (int x = xStart; x < xEnd; x++) buf[row + x] = col;
+            }
             return;
         }
-        _cm.Matrix33 = (float)op;
-        _ia.SetColorMatrix(_cm, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-        g.DrawImage(bmp, new Rectangle(x, y, bmp.Width, bmp.Height), 0, 0, bmp.Width, bmp.Height, GraphicsUnit.Pixel, _ia);
+        int sr = (c.R * alpha + 127) / 255;
+        int sg = (c.G * alpha + 127) / 255;
+        int sb = (c.B * alpha + 127) / 255;
+        int inv = 256 - alpha;
+        for (int y = yStart; y < yEnd; y++) {
+            int row = y * 640;
+            for (int x = xStart; x < xEnd; x++) {
+                int idx = row + x;
+                int d = buf[idx];
+                int da = (d >> 24) & 0xFF;
+                int dr = (d >> 16) & 0xFF;
+                int dg = (d >> 8) & 0xFF;
+                int db = d & 0xFF;
+                int oa = alpha + ((da * inv) >> 8);
+                int or = sr + ((dr * inv) >> 8);
+                int og = sg + ((dg * inv) >> 8);
+                int ob = sb + ((db * inv) >> 8);
+                buf[idx] = (oa << 24) | (or << 16) | (og << 8) | ob;
+            }
+        }
     }
 
-    void DrawCrop(Graphics g, Bitmap bmp, int dx, int dy, int sx, int sy, int sw, int sh, double op) {
-        if (bmp == null || op <= 0.01) return;
-        if (op >= 0.99) {
-            g.DrawImage(bmp, new Rectangle(dx, dy, sw, sh), sx, sy, sw, sh, GraphicsUnit.Pixel);
+    void BlitImg(PzmImgPx img, int dx, int dy, int sx, int sy, int sw, int sh, double op, bool copyDirect) {
+        if (img == null || op <= 0.01) return;
+        int[] src = img.Px;
+        int[] dst = FrameBuf;
+        int imgW = img.W;
+        if (dx < 0) { sx -= dx; sw += dx; dx = 0; }
+        if (dy < 0) { sy -= dy; sh += dy; dy = 0; }
+        if (dx + sw > 640) sw = 640 - dx;
+        if (dy + sh > 400) sh = 400 - dy;
+        if (sw <= 0 || sh <= 0) return;
+
+        if (copyDirect && op >= 0.99) {
+            if (sx == 0 && dx == 0 && sw == 640 && imgW == 640) {
+                Array.Copy(src, sy * 640, dst, dy * 640, sh * 640);
+            } else {
+                for (int r = 0; r < sh; r++) Array.Copy(src, (sy + r) * imgW + sx, dst, (dy + r) * 640 + dx, sw);
+            }
             return;
         }
-        _cm.Matrix33 = (float)op;
-        _ia.SetColorMatrix(_cm, ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-        g.DrawImage(bmp, new Rectangle(dx, dy, sw, sh), sx, sy, sw, sh, GraphicsUnit.Pixel, _ia);
+
+        int a256 = op >= 0.99 ? 256 : (int)Math.Round(op * 256.0);
+        if (a256 <= 0) return;
+        if (a256 >= 256) {
+            for (int r = 0; r < sh; r++) {
+                int sOff = (sy + r) * imgW + sx;
+                int dOff = (dy + r) * 640 + dx;
+                for (int c = 0; c < sw; c++) {
+                    int sp = src[sOff + c];
+                    int sa = (sp >> 24) & 0xFF;
+                    if (sa == 0) continue;
+                    if (sa == 255) { dst[dOff + c] = sp; continue; }
+                    int d = dst[dOff + c];
+                    int inv = 256 - sa;
+                    int oa = sa + ((((d >> 24) & 0xFF) * inv) >> 8);
+                    int or = ((sp >> 16) & 0xFF) + ((((d >> 16) & 0xFF) * inv) >> 8);
+                    int og = ((sp >> 8) & 0xFF) + ((((d >> 8) & 0xFF) * inv) >> 8);
+                    int ob = (sp & 0xFF) + (((d & 0xFF) * inv) >> 8);
+                    dst[dOff + c] = (oa << 24) | (or << 16) | (og << 8) | ob;
+                }
+            }
+        } else {
+            for (int r = 0; r < sh; r++) {
+                int sOff = (sy + r) * imgW + sx;
+                int dOff = (dy + r) * 640 + dx;
+                for (int c = 0; c < sw; c++) {
+                    int sp = src[sOff + c];
+                    int sa0 = (sp >> 24) & 0xFF;
+                    if (sa0 == 0) continue;
+                    int sa = (sa0 * a256) >> 8;
+                    if (sa <= 0) continue;
+                    int sr = (((sp >> 16) & 0xFF) * a256) >> 8;
+                    int sg = (((sp >> 8) & 0xFF) * a256) >> 8;
+                    int sb = ((sp & 0xFF) * a256) >> 8;
+                    int d = dst[dOff + c];
+                    int inv = 256 - sa;
+                    int oa = sa + ((((d >> 24) & 0xFF) * inv) >> 8);
+                    int or = sr + ((((d >> 16) & 0xFF) * inv) >> 8);
+                    int og = sg + ((((d >> 8) & 0xFF) * inv) >> 8);
+                    int ob = sb + (((d & 0xFF) * inv) >> 8);
+                    dst[dOff + c] = (oa << 24) | (or << 16) | (og << 8) | ob;
+                }
+            }
+        }
     }
 
     public static void Solar(DateTime dt, double lat, double lon, out double elev, out double az, out double H, out double H0) {
@@ -1521,7 +1622,11 @@ public class PzmRenderer {
     }
 
     public void Render(PzmSceneData S, DateTime fecha, int t) {
-        if (S == null || S.CieloNoche == null || S.EscenaNoche == null) return;
+        Render(S, fecha, t, true);
+    }
+
+    public void Render(PzmSceneData S, DateTime fecha, int t, bool syncBitmap) {
+        if (S == null || S.CieloNochePx == null || S.EscenaNochePx == null) return;
         double e, az, H, H0;
         Solar(fecha, RealLat, RealLon, out e, out az, out H, out H0);
         double wA = e <= -14 ? 0 : (e >= 0 ? 1 : Suave((e + 14) / 14));
@@ -1540,195 +1645,208 @@ public class PzmRenderer {
         double cuerpoX = e > -1 ? solX : lunaX;
         double cuerpoOp = e > -1 ? Clamp01((e + 2) / 6) : lunaOp;
 
-        using (var g = Graphics.FromImage(Frame)) {
-            g.InterpolationMode = InterpolationMode.NearestNeighbor;
-            g.PixelOffsetMode = PixelOffsetMode.Half;
+        Graphics g = null;
+        if (wB >= 0.99 && S.CieloDiaPx != null) {
+            BlitImg(S.CieloDiaPx, 0, 0, 0, 0, 640, 400, 1.0, true);
+        } else if (wA >= 0.99 && wB <= 0.01 && S.CieloDoradoPx != null) {
+            BlitImg(S.CieloDoradoPx, 0, 0, 0, 0, 640, 400, 1.0, true);
+        } else {
+            BlitImg(S.CieloNochePx, 0, 0, 0, 0, 640, 400, 1.0, true);
+            BlitImg(S.CieloDoradoPx, 0, 0, 0, 0, 640, 400, wA, false);
+            BlitImg(S.CieloDiaPx, 0, 0, 0, 0, 640, 400, wB, false);
+        }
 
-            g.CompositingMode = CompositingMode.SourceCopy;
-            g.DrawImageUnscaled(S.CieloNoche, 0, 0);
-            g.CompositingMode = CompositingMode.SourceOver;
-            DrawAlpha(g, S.CieloDorado, 0, 0, wA);
-            DrawAlpha(g, S.CieloDia, 0, 0, wB);
-
-            if (ef > 0.01 && S.Estrellas != null) {
-                for (int i = 0; i < S.Estrellas.Length; i++) {
-                    var st = S.Estrellas[i];
-                    double o = (i % 3 == 0) ? 0.3 + 0.7 * Osc(t, 0.10 + (i % 7) * 0.02, i * 1.3) : 1.0;
-                    Px(g, st.Col, ef * o, st.X, st.Y);
-                }
-                Color haloStar = Color.FromArgb(199, 204, 255);
-                for (int i = 0; i < S.Brillantes.Length; i++) {
-                    var st = S.Brillantes[i];
-                    double o = ef * 0.8 * Math.Max(0, Osc(t, 0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
-                    if (o <= 0.004) continue;
-                    Px(g, haloStar, o, st.X - 1, st.Y);
-                    Px(g, haloStar, o, st.X + 1, st.Y);
-                    Px(g, haloStar, o, st.X, st.Y - 1);
-                    Px(g, haloStar, o, st.X, st.Y + 1);
-                }
+        if (ef > 0.01 && S.Estrellas != null) {
+            for (int i = 0; i < S.Estrellas.Length; i++) {
+                var st = S.Estrellas[i];
+                double o = (i % 3 == 0) ? 0.3 + 0.7 * Osc(t, 0.10 + (i % 7) * 0.02, i * 1.3) : 1.0;
+                Px(g, st.Col, ef * o, st.X, st.Y);
             }
-
-            var alasSet = S.ModoWyvern ? AlasWyvern : AlasGrulla;
-            int cuadro = new int[] { 0, 1, 2, 1 }[(t / 5) % 4];
-            var birdPos = new double[,] {
-                { ((t * 0.22 + 40) % 760) - 60, 126 + 4 * Math.Sin(t * 0.03) },
-                { ((t * 0.22 + 22) % 760) - 60, 116 + 4 * Math.Sin(t * 0.03 + 1) },
-                { ((t * 0.20 + 5) % 760) - 60, 138 + 4 * Math.Sin(t * 0.025 + 2) }
-            };
-            for (int b = 0; b < 3; b++) {
-                double bx = birdPos[b, 0], by = birdPos[b, 1];
-                foreach (var pt in alasSet[cuadro]) Px(g, S.ColorPajaros, 1.0, bx + pt[0], by + pt[1]);
-                Px(g, S.ColorPajaros, 1.0, bx, by + 1);
+            Color haloStar = Color.FromArgb(199, 204, 255);
+            for (int i = 0; i < S.Brillantes.Length; i++) {
+                var st = S.Brillantes[i];
+                double o = ef * 0.8 * Math.Max(0, Osc(t, 0.07 + (i % 5) * 0.01, i * 2.1) - 0.55) / 0.45;
+                if (o <= 0.004) continue;
+                Px(g, haloStar, o, st.X - 1, st.Y);
+                Px(g, haloStar, o, st.X + 1, st.Y);
+                Px(g, haloStar, o, st.X, st.Y - 1);
+                Px(g, haloStar, o, st.X, st.Y + 1);
             }
+        }
 
-            if (S.ConAstro && solOp > 0.01) DrawAlpha(g, S.Sol, (int)Math.Round(solX - 104), (int)Math.Round(solY - 104), solOp);
-            if (S.ConAstro && lunaOp > 0.01) DrawAlpha(g, S.Luna, (int)Math.Round(lunaX - 104), (int)Math.Round(lunaY - 104), lunaOp);
+        var alasSet = S.ModoWyvern ? AlasWyvern : AlasGrulla;
+        int cuadro = new int[] { 0, 1, 2, 1 }[(t / 5) % 4];
+        var birdPos = new double[,] {
+            { ((t * 0.22 + 40) % 760) - 60, 126 + 4 * Math.Sin(t * 0.03) },
+            { ((t * 0.22 + 22) % 760) - 60, 116 + 4 * Math.Sin(t * 0.03 + 1) },
+            { ((t * 0.20 + 5) % 760) - 60, 138 + 4 * Math.Sin(t * 0.025 + 2) }
+        };
+        for (int b = 0; b < 3; b++) {
+            double bx = birdPos[b, 0], by = birdPos[b, 1];
+            foreach (var pt in alasSet[cuadro]) Px(g, S.ColorPajaros, 1.0, bx + pt[0], by + pt[1]);
+            Px(g, S.ColorPajaros, 1.0, bx, by + 1);
+        }
 
-            if (S.Nubes != null) {
-                bool noche = e < 0;
-                double[] opNub = new double[] { noche ? 1 - wA : 0, noche ? wA : 1 - wB, wB };
-                Bitmap[] imgNub = new Bitmap[] { S.NubesNoche, S.NubesDorado, S.NubesDia };
-                for (int i = 0; i < S.Nubes.Length; i++) {
-                    var nb = S.Nubes[i];
-                    double v = 0.11 + (i % 4) * 0.035;
-                    int cx = (int)Math.Round(((nb.X + nb.W + t * v) % (640 + nb.W)) - nb.W);
-                    for (int k = 0; k < 3; k++) {
-                        if (opNub[k] > 0.01 && imgNub[k] != null) {
-                            DrawCrop(g, imgNub[k], cx, nb.Y, 0, nb.SheetY, nb.W, nb.H, opNub[k]);
-                        }
+        if (S.ConAstro && solOp > 0.01 && S.SolPx != null) BlitImg(S.SolPx, (int)Math.Round(solX - 104), (int)Math.Round(solY - 104), 0, 0, S.SolPx.W, S.SolPx.H, solOp, false);
+        if (S.ConAstro && lunaOp > 0.01 && S.LunaPx != null) BlitImg(S.LunaPx, (int)Math.Round(lunaX - 104), (int)Math.Round(lunaY - 104), 0, 0, S.LunaPx.W, S.LunaPx.H, lunaOp, false);
+
+        if (S.Nubes != null) {
+            bool noche = e < 0;
+            double[] opNub = new double[] { noche ? 1 - wA : 0, noche ? wA : 1 - wB, wB };
+            PzmImgPx[] imgNub = new PzmImgPx[] { S.NubesNochePx, S.NubesDoradoPx, S.NubesDiaPx };
+            for (int i = 0; i < S.Nubes.Length; i++) {
+                var nb = S.Nubes[i];
+                double v = 0.11 + (i % 4) * 0.035;
+                int cx = (int)Math.Round(((nb.X + nb.W + t * v) % (640 + nb.W)) - nb.W);
+                for (int k = 0; k < 3; k++) {
+                    if (opNub[k] > 0.01 && imgNub[k] != null) {
+                        BlitImg(imgNub[k], cx, nb.Y, 0, nb.SheetY, nb.W, nb.H, opNub[k], false);
                     }
                 }
             }
+        }
 
-            if (S.ModoHeroe != null && S.ModoHeroe.StartsWith("stranger_")) {
-                PintaTormentaStranger(g, t, nf, S.ModoHeroe);
+        if (S.ModoHeroe != null && S.ModoHeroe.StartsWith("stranger_")) {
+            PintaTormentaStranger(g, t, nf, S.ModoHeroe);
+        }
+
+        BlitImg(S.EscenaNochePx, 0, 0, 0, 0, 640, 400, 1.0, false);
+        BlitImg(S.EscenaDoradoPx, 0, 0, 0, 0, 640, 400, wA, false);
+        BlitImg(S.EscenaDiaPx, 0, 0, 0, 0, 640, 400, wB, false);
+
+        if (S.ModoMiles) { PintaFerry(g, t, nf); PintaMiles(g, t, nf); }
+        else if (S.ModoMilesColgado) { PintaFerry(g, t, nf); PintaMilesColgado(g, t, nf); }
+        else if (S.ModoHeroe == "stranger_azotamentes") { PintaStrangerPrincipal(g, t, nf); }
+        else if (S.ModoHeroe == "stranger_demogorgon") { PintaStrangerDemogorgon(g, t, nf); }
+        else if (S.ModoHeroe == "stranger_reloj") { PintaStrangerReloj(g, t, nf); }
+        else if (S.ModoHeroe == "demon_rengoku") { PintaDemonRengoku(g, t, nf); }
+        else if (S.ModoHeroe == "demon_tokito") { PintaDemonTokito(g, t, nf); }
+        else if (S.ModoHeroe == "demon_glicinias") { PintaDemonGlicinias(g, t, nf); }
+        else if (S.ModoHeroe == "naruto_baryon") { PintaNarutoBaryon(g, t, nf); }
+        else if (S.ModoHeroe == "naruto_konoha") { PintaNarutoKonoha(g, t, nf); }
+        else if (S.ModoHeroe == "naruto_valle") { PintaNarutoValle(g, t, nf); }
+        else if (S.ModoHeroe == "jujutsu") { PintaJujutsu(g, t, nf); }
+        else if (S.ModoHeroe == "jujutsu_sec") { PintaJujutsuSec(g, t, nf); }
+        else if (S.ModoHeroe == "jujutsu_bloq") { PintaJujutsuBloq(g, t, nf); }
+        else if (S.ModoHeroe == "aot_rumbling") { PintaAotRumbling(g, t, nf); }
+        else if (S.ModoHeroe == "aot_shiganshina") { PintaAotShiganshina(g, t, nf); }
+        else if (S.ModoHeroe == "aot_paths") { PintaAotPaths(g, t, nf); }
+        else if (S.ModoHeroe == "op_gear5") { PintaOpGear5(g, t, nf); }
+        else if (S.ModoHeroe == "op_sunny") { PintaOpSunny(g, t, nf); }
+        else if (S.ModoHeroe == "op_poneglyph") { PintaOpPoneglyph(g, t, nf); }
+        else if (S.ModoHeroe == "dbz_ui") { PintaDbzUi(g, t, nf); }
+        else if (S.ModoHeroe == "dbz_namek") { PintaDbzNamek(g, t, nf); }
+        else if (S.ModoHeroe == "dbz_kame") { PintaDbzKame(g, t, nf); }
+        else if (S.ModoHeroe == "cyber_sandevistan") { PintaCyberSandevistan(g, t, nf); }
+        else if (S.ModoHeroe == "cyber_moon") { PintaCyberMoon(g, t, nf); }
+        else if (S.ModoHeroe == "cyber_bloq") { PintaCyberBloq(g, t, nf); }
+
+        if (S.Chimenea != null && S.Chimenea.Length >= 2) {
+            int hx = S.Chimenea[0], hy = S.Chimenea[1];
+            Color hc = wB > 0.5 ? S.ColorHumoDia : S.ColorHumoNoche;
+            for (int i = 0; i < 9; i++) {
+                double fase = ((t * 0.25 + i * 5) % 45) / 45.0;
+                double sx = hx + Math.Sin(t * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
+                double sy = hy - fase * 26;
+                int sz = fase < 0.35 ? 2 : 3;
+                Px(g, hc, (1 - fase) * (0.28 + 0.16 * nf), sx, sy, sz, sz - 1);
             }
+        }
 
-            DrawAlpha(g, S.EscenaNoche, 0, 0, 1.0);
-            DrawAlpha(g, S.EscenaDorado, 0, 0, wA);
-            DrawAlpha(g, S.EscenaDia, 0, 0, wB);
-
-            if (S.ModoMiles) { PintaFerry(g, t, nf); PintaMiles(g, t, nf); }
-            else if (S.ModoMilesColgado) { PintaFerry(g, t, nf); PintaMilesColgado(g, t, nf); }
-            else if (S.ModoHeroe == "stranger_azotamentes") { PintaStrangerPrincipal(g, t, nf); }
-            else if (S.ModoHeroe == "stranger_demogorgon") { PintaStrangerDemogorgon(g, t, nf); }
-            else if (S.ModoHeroe == "stranger_reloj") { PintaStrangerReloj(g, t, nf); }
-            else if (S.ModoHeroe == "demon_rengoku") { PintaDemonRengoku(g, t, nf); }
-            else if (S.ModoHeroe == "demon_tokito") { PintaDemonTokito(g, t, nf); }
-            else if (S.ModoHeroe == "demon_glicinias") { PintaDemonGlicinias(g, t, nf); }
-            else if (S.ModoHeroe == "naruto_baryon") { PintaNarutoBaryon(g, t, nf); }
-            else if (S.ModoHeroe == "naruto_konoha") { PintaNarutoKonoha(g, t, nf); }
-            else if (S.ModoHeroe == "naruto_valle") { PintaNarutoValle(g, t, nf); }
-            else if (S.ModoHeroe == "jujutsu") { PintaJujutsu(g, t, nf); }
-            else if (S.ModoHeroe == "jujutsu_sec") { PintaJujutsuSec(g, t, nf); }
-            else if (S.ModoHeroe == "jujutsu_bloq") { PintaJujutsuBloq(g, t, nf); }
-            else if (S.ModoHeroe == "aot_rumbling") { PintaAotRumbling(g, t, nf); }
-            else if (S.ModoHeroe == "aot_shiganshina") { PintaAotShiganshina(g, t, nf); }
-            else if (S.ModoHeroe == "aot_paths") { PintaAotPaths(g, t, nf); }
-            else if (S.ModoHeroe == "op_gear5") { PintaOpGear5(g, t, nf); }
-            else if (S.ModoHeroe == "op_sunny") { PintaOpSunny(g, t, nf); }
-            else if (S.ModoHeroe == "op_poneglyph") { PintaOpPoneglyph(g, t, nf); }
-            else if (S.ModoHeroe == "dbz_ui") { PintaDbzUi(g, t, nf); }
-            else if (S.ModoHeroe == "dbz_namek") { PintaDbzNamek(g, t, nf); }
-            else if (S.ModoHeroe == "dbz_kame") { PintaDbzKame(g, t, nf); }
-            else if (S.ModoHeroe == "cyber_sandevistan") { PintaCyberSandevistan(g, t, nf); }
-            else if (S.ModoHeroe == "cyber_moon") { PintaCyberMoon(g, t, nf); }
-            else if (S.ModoHeroe == "cyber_bloq") { PintaCyberBloq(g, t, nf); }
-
-            if (S.Chimenea != null && S.Chimenea.Length >= 2) {
-                int hx = S.Chimenea[0], hy = S.Chimenea[1];
-                Color hc = wB > 0.5 ? S.ColorHumoDia : S.ColorHumoNoche;
-                for (int i = 0; i < 9; i++) {
-                    double fase = ((t * 0.25 + i * 5) % 45) / 45.0;
-                    double sx = hx + Math.Sin(t * 0.06 + i * 1.4) * (1.5 + fase * 5) + fase * 4;
-                    double sy = hy - fase * 26;
-                    int sz = fase < 0.35 ? 2 : 3;
-                    Px(g, hc, (1 - fase) * (0.28 + 0.16 * nf), sx, sy, sz, sz - 1);
-                }
+        if (nf > 0.02) {
+            for (int i = 0; i < S.Ventanas.Length; i++) {
+                var v = S.Ventanas[i];
+                double p = nf * (((t / 24 + i) % 13 == 0) ? 0.25 : 0.7 + 0.3 * Math.Sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
+                Px(g, S.ColorVentanas, 0.12 * p, v.X - 1, v.Y - 1, 4, 6);
+                Px(g, S.ColorVentanas, p, v.X, v.Y, 2, 4);
             }
-
-            if (nf > 0.02) {
-                for (int i = 0; i < S.Ventanas.Length; i++) {
-                    var v = S.Ventanas[i];
-                    double p = nf * (((t / 24 + i) % 13 == 0) ? 0.25 : 0.7 + 0.3 * Math.Sin(t * 0.09 * (1 + (i % 4) * 0.15) + i * 2.1));
-                    Px(g, S.ColorVentanas, 0.12 * p, v.X - 1, v.Y - 1, 4, 6);
-                    Px(g, S.ColorVentanas, p, v.X, v.Y, 2, 4);
-                }
-                for (int i = 0; i < S.Faroles.Length; i++) {
-                    var fr = S.Faroles[i];
-                    double p = nf * (0.65 + 0.35 * Math.Sin(t * 0.11 + i * 1.7));
-                    int gr = Math.Max(2, (int)Math.Round(fr.R / 3.0));
-                    Px(g, S.ColorFarolesHalo, 0.06 * p, fr.X - gr * 2, fr.Y - gr * 2, gr * 4 + 1, gr * 4 + 1);
-                    Px(g, S.ColorFarolesHalo, 0.14 * p, fr.X - gr, fr.Y - gr, gr * 2 + 1, gr * 2 + 1);
-                    Px(g, S.ColorFarolesCentro, p, fr.X, fr.Y, 1, 2);
-                }
-                if (S.Runas.Length > 0) {
-                    double pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.Sin(t * 0.08));
-                    for (int i = 0; i < S.Runas.Length; i++) {
-                        var rn = S.Runas[i];
-                        double pulse = pr * (0.75 + 0.25 * Math.Sin(t * 0.12 + i * 0.4));
-                        Px(g, S.ColorRunasHalo, 0.14 * pulse, rn.X - 1, rn.Y - 1, 3, 3);
-                        Px(g, S.ColorRunasCentro, pulse, rn.X, rn.Y, 1, 1);
-                    }
-                }
+            for (int i = 0; i < S.Faroles.Length; i++) {
+                var fr = S.Faroles[i];
+                double p = nf * (0.65 + 0.35 * Math.Sin(t * 0.11 + i * 1.7));
+                int gr = Math.Max(2, (int)Math.Round(fr.R / 3.0));
+                Px(g, S.ColorFarolesHalo, 0.06 * p, fr.X - gr * 2, fr.Y - gr * 2, gr * 4 + 1, gr * 4 + 1);
+                Px(g, S.ColorFarolesHalo, 0.14 * p, fr.X - gr, fr.Y - gr, gr * 2 + 1, gr * 2 + 1);
+                Px(g, S.ColorFarolesCentro, p, fr.X, fr.Y, 1, 2);
             }
-
-            if (!S.SinLago) {
-                foreach (var o in _olas) {
-                    Px(g, o.Light ? S.ColorOlas[0] : S.ColorOlas[1 % S.ColorOlas.Length],
-                        (0.08 + 0.55 * Math.Max(0, Math.Sin(t * 0.04 + o.Ph))) * (1 - 0.6 * wB),
-                        o.X + 6 * Math.Sin(t * o.Sp + o.Ph), o.Y, o.W, 1);
-                }
-
-                if (S.ConAstro && cuerpoOp > 0.02) {
-                    Color col = e > -1 ? S.ColorReflejoSol : S.ColorReflejoLuna;
-                    for (int i = 0; i < 38; i++) {
-                        double d = 8 + i * 3, w = Math.Max(3, 46 - d * 0.30);
-                        Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(t, 0.07, i * 1.7),
-                            cuerpoX - w / 2 + 3 * Math.Sin(t * 0.05 + i * 1.3), 280 + d,
-                            w * (0.45 + 0.55 * Osc(t, 0.09, i * 2.2)), 1);
-                    }
-                    double dx = cuerpoX - 352;
-                    for (int i = 0; i < S.Destellos.Length; i++) {
-                        var ds = S.Destellos[i];
-                        double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(t * 0.16 + i * 0.9)), 3);
-                        if (op > 0.004) Px(g, S.ColorDestello, op, ds.X + dx, ds.Y, 2, 1);
-                    }
+            if (S.Runas.Length > 0) {
+                double pr = (0.35 + 0.65 * nf) * (0.65 + 0.35 * Math.Sin(t * 0.08));
+                for (int i = 0; i < S.Runas.Length; i++) {
+                    var rn = S.Runas[i];
+                    double pulse = pr * (0.75 + 0.25 * Math.Sin(t * 0.12 + i * 0.4));
+                    Px(g, S.ColorRunasHalo, 0.14 * pulse, rn.X - 1, rn.Y - 1, 3, 3);
+                    Px(g, S.ColorRunasCentro, pulse, rn.X, rn.Y, 1, 1);
                 }
             }
+        }
 
-            for (int i = 0; i < _hojas.Length; i++) {
-                var p = _hojas[i];
-                bool esMana = p.Tipo == 3;
-                double ax = (p.X + t * p.Vx + 18 * Math.Sin(t * 0.03 + p.Ph)) % 660 - 10;
-                double dirY = (esMana || S.ModoBrasas) ? -p.Vy * 0.45 : p.Vy;
-                double ay = ((p.Y + t * dirY) % 420 + 420) % 420 - 10;
-                if (ay >= 395) continue;
-                if (esMana) {
-                    double mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.Sin(t * 0.11 + i));
-                    Px(g, S.ColorManaHalo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
-                    Px(g, S.ColorManaCentro, mOp, ax, ay, 1, 1);
-                } else if (S.ModoBrasas) {
-                    double bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.Sin(t * 0.13 + i));
-                    Px(g, S.ColoresHojas[p.Tipo % S.ColoresHojas.Length], bOp, ax, ay, 1, 1);
+        if (!S.SinLago) {
+            foreach (var o in _olas) {
+                Px(g, o.Light ? S.ColorOlas[0] : S.ColorOlas[1 % S.ColorOlas.Length],
+                    (0.08 + 0.55 * Math.Max(0, Math.Sin(t * 0.04 + o.Ph))) * (1 - 0.6 * wB),
+                    o.X + 6 * Math.Sin(t * o.Sp + o.Ph), o.Y, o.W, 1);
+            }
+
+            if (S.ConAstro && cuerpoOp > 0.02) {
+                Color col = e > -1 ? S.ColorReflejoSol : S.ColorReflejoLuna;
+                for (int i = 0; i < 38; i++) {
+                    double d = 8 + i * 3, w = Math.Max(3, 46 - d * 0.30);
+                    Px(g, col, cuerpoOp * (0.75 - d * 0.005) * Osc(t, 0.07, i * 1.7),
+                        cuerpoX - w / 2 + 3 * Math.Sin(t * 0.05 + i * 1.3), 280 + d,
+                        w * (0.45 + 0.55 * Osc(t, 0.09, i * 2.2)), 1);
+                }
+                double dx = cuerpoX - 352;
+                for (int i = 0; i < S.Destellos.Length; i++) {
+                    var ds = S.Destellos[i];
+                    double op = cuerpoOp * Math.Pow(Math.Max(0, Math.Sin(t * 0.16 + i * 0.9)), 3);
+                    if (op > 0.004) Px(g, S.ColorDestello, op, ds.X + dx, ds.Y, 2, 1);
+                }
+            }
+        }
+
+        for (int i = 0; i < _hojas.Length; i++) {
+            var p = _hojas[i];
+            bool esMana = p.Tipo == 3;
+            double ax = (p.X + t * p.Vx + 18 * Math.Sin(t * 0.03 + p.Ph)) % 660 - 10;
+            double dirY = (esMana || S.ModoBrasas) ? -p.Vy * 0.45 : p.Vy;
+            double ay = ((p.Y + t * dirY) % 420 + 420) % 420 - 10;
+            if (ay >= 395) continue;
+            if (esMana) {
+                double mOp = (0.25 + 0.75 * nf) * (0.45 + 0.55 * Math.Sin(t * 0.11 + i));
+                Px(g, S.ColorManaHalo, 0.25 * mOp, ax - 1, ay - 1, 3, 3);
+                Px(g, S.ColorManaCentro, mOp, ax, ay, 1, 1);
+            } else if (S.ModoBrasas) {
+                double bOp = (0.35 + 0.65 * nf) * (0.5 + 0.5 * Math.Sin(t * 0.13 + i));
+                Px(g, S.ColoresHojas[p.Tipo % S.ColoresHojas.Length], bOp, ax, ay, 1, 1);
+            } else {
+                bool hh = ((t / 7 + i) % 2) != 0;
+                Px(g, S.ColoresHojas[p.Tipo % S.ColoresHojas.Length], 0.92, ax, ay, hh ? 2 : 1, hh ? 1 : 2);
+            }
+        }
+
+        if (nf > 0.25) {
+            for (int i = 0; i < MotasMana.Length; i++) {
+                var lc = MotasMana[i];
+                double fx = lc[0] + 9 * Math.Sin(t * (0.021 + i * 0.002) + i * 2.3);
+                double fy = lc[1] + 5 * Math.Sin(t * (0.017 + i * 0.0015) + i * 1.1);
+                double b = nf * Math.Pow(Math.Max(0, Math.Sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
+                Px(g, S.ColorFuegosHalo[i % S.ColorFuegosHalo.Length], 0.28 * b, fx - 1, fy - 1, 3, 3);
+                Px(g, S.ColorFuegosCentro[i % S.ColorFuegosCentro.Length], 0.2 + 0.8 * b, fx, fy, 1, 1);
+            }
+        }
+        PintaEventoEspecial(g, t);
+        PintaClima(g, t, wB, nf, fecha);
+
+        if (syncBitmap) {
+            var bd = Frame.LockBits(new Rectangle(0, 0, 640, 400), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+            try {
+                if (bd.Stride == 640 * 4) {
+                    Marshal.Copy(FrameBuf, 0, bd.Scan0, FrameBuf.Length);
                 } else {
-                    bool hh = ((t / 7 + i) % 2) != 0;
-                    Px(g, S.ColoresHojas[p.Tipo % S.ColoresHojas.Length], 0.92, ax, ay, hh ? 2 : 1, hh ? 1 : 2);
+                    for (int r = 0; r < 400; r++) Marshal.Copy(FrameBuf, r * 640, IntPtr.Add(bd.Scan0, r * bd.Stride), 640);
                 }
+            } finally {
+                Frame.UnlockBits(bd);
             }
-
-            if (nf > 0.25) {
-                for (int i = 0; i < MotasMana.Length; i++) {
-                    var lc = MotasMana[i];
-                    double fx = lc[0] + 9 * Math.Sin(t * (0.021 + i * 0.002) + i * 2.3);
-                    double fy = lc[1] + 5 * Math.Sin(t * (0.017 + i * 0.0015) + i * 1.1);
-                    double b = nf * Math.Pow(Math.Max(0, Math.Sin(t * (0.05 + i * 0.004) + i * 1.9)), 2);
-                    Px(g, S.ColorFuegosHalo[i % S.ColorFuegosHalo.Length], 0.28 * b, fx - 1, fy - 1, 3, 3);
-                    Px(g, S.ColorFuegosCentro[i % S.ColorFuegosCentro.Length], 0.2 + 0.8 * b, fx, fy, 1, 1);
-                }
-            }
-            PintaEventoEspecial(g, t);
-            PintaClima(g, t, wB, nf, fecha);
         }
     }
 }
@@ -1839,16 +1957,23 @@ public class PzmDCompHost : IDisposable {
     }
 
     public int PresentPixels(IntPtr swapChain, int[] pixels, int w) {
+        GCHandle pin = GCHandle.Alloc(pixels, GCHandleType.Pinned);
+        try {
+            return PresentPixelsPtr(swapChain, pin.AddrOfPinnedObject(), w);
+        } finally {
+            pin.Free();
+        }
+    }
+
+    public int PresentPixelsPtr(IntPtr swapChain, IntPtr ptr, int w) {
         if (!Ready || swapChain == IntPtr.Zero) return -1;
         IntPtr tex;
         Guid iid = IidTex2D;
         int hr = VFn<FnGetBuffer>(swapChain, 9)(swapChain, 0, ref iid, out tex);
         if (hr != 0) return hr;
-        GCHandle pin = GCHandle.Alloc(pixels, GCHandleType.Pinned);
         try {
-            VFn<FnUpdateSub>(Ctx, 48)(Ctx, tex, 0, IntPtr.Zero, pin.AddrOfPinnedObject(), (uint)(w * 4), 0);
+            VFn<FnUpdateSub>(Ctx, 48)(Ctx, tex, 0, IntPtr.Zero, ptr, (uint)(w * 4), 0);
         } finally {
-            pin.Free();
             VFn<FnRel>(tex, 2)(tex);
         }
         return VFn<FnPresent>(swapChain, 8)(swapChain, 0, 0);
@@ -1876,6 +2001,7 @@ public class PzmDCompHost : IDisposable {
 
 public class PzmWallForm : Form {
     public Bitmap FrameRef;
+    public int[] FrameBufRef;
     public Rectangle ScreenBounds { get; set; }
     public PzmDCompHost DCompHost;
     public bool UseDComp = false;
@@ -1892,6 +2018,8 @@ public class PzmWallForm : Form {
     private int _dcW = 0, _dcH = 0;
     private int[] _srcBuf = new int[640 * 400];
     private int[] _dstBuf = null;
+    private GCHandle _dstPin;
+    private bool _dstPinned = false;
     private int[] _xMap = null;
     private int[] _yMap = null;
 
@@ -2000,8 +2128,16 @@ public class PzmWallForm : Form {
         if (srcY + srcH > 400f) srcY = 400f - srcH;
     }
 
+    private void ReleaseDstPin() {
+        if (_dstPinned) {
+            try { _dstPin.Free(); } catch {}
+            _dstPinned = false;
+        }
+    }
+
     private bool EnsureDCompBuffers(int w, int h) {
         if (_dcSwap != IntPtr.Zero && _dcW == w && _dcH == h) return true;
+        ReleaseDstPin();
         PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
         _dcW = 0; _dcH = 0;
         string err;
@@ -2012,6 +2148,8 @@ public class PzmWallForm : Form {
         BindErr = "ok";
         _dcW = w; _dcH = h;
         _dstBuf = new int[w * h];
+        _dstPin = GCHandle.Alloc(_dstBuf, GCHandleType.Pinned);
+        _dstPinned = true;
         _xMap = new int[w];
         _yMap = new int[h];
         float srcX, srcY, srcW, srcH;
@@ -2030,6 +2168,7 @@ public class PzmWallForm : Form {
 
     private void SwitchToLayeredFallback() {
         UseDComp = false;
+        ReleaseDstPin();
         PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
         int ex = GetWindowLong(this.Handle, -20);
         ex = (ex & ~0x00200000) | 0x00080000;
@@ -2038,21 +2177,26 @@ public class PzmWallForm : Form {
 
     public void PushFrame() {
         var f = FrameRef;
-        if (f == null || !IsHandleCreated) return;
+        var fBuf = FrameBufRef;
+        if ((f == null && fBuf == null) || !IsHandleCreated) return;
         int w = ScreenBounds.Width, h = ScreenBounds.Height;
         if (w <= 0 || h <= 0) return;
 
         if (UseDComp && DCompHost != null && DCompHost.Ready) {
             if (EnsureDCompBuffers(w, h)) {
-                var bd = f.LockBits(new Rectangle(0, 0, 640, 400), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
-                try {
-                    if (bd.Stride == 640 * 4) {
-                        Marshal.Copy(bd.Scan0, _srcBuf, 0, 640 * 400);
-                    } else {
-                        for (int r = 0; r < 400; r++) Marshal.Copy(IntPtr.Add(bd.Scan0, r * bd.Stride), _srcBuf, r * 640, 640);
+                int[] src = fBuf;
+                if (src == null && f != null) {
+                    var bd = f.LockBits(new Rectangle(0, 0, 640, 400), ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
+                    try {
+                        if (bd.Stride == 640 * 4) {
+                            Marshal.Copy(bd.Scan0, _srcBuf, 0, 640 * 400);
+                        } else {
+                            for (int r = 0; r < 400; r++) Marshal.Copy(IntPtr.Add(bd.Scan0, r * bd.Stride), _srcBuf, r * 640, 640);
+                        }
+                    } finally {
+                        f.UnlockBits(bd);
                     }
-                } finally {
-                    f.UnlockBits(bd);
+                    src = _srcBuf;
                 }
                 int prevSy = -1;
                 int prevRowOff = 0;
@@ -2063,12 +2207,12 @@ public class PzmWallForm : Form {
                         Array.Copy(_dstBuf, prevRowOff, _dstBuf, rowOff, w);
                     } else {
                         int srcOff = sy * 640;
-                        for (int x = 0; x < w; x++) _dstBuf[rowOff + x] = _srcBuf[srcOff + _xMap[x]];
+                        for (int x = 0; x < w; x++) _dstBuf[rowOff + x] = src[srcOff + _xMap[x]];
                         prevSy = sy;
                         prevRowOff = rowOff;
                     }
                 }
-                int hrP = DCompHost.PresentPixels(_dcSwap, _dstBuf, w);
+                int hrP = DCompHost.PresentPixelsPtr(_dcSwap, _dstPin.AddrOfPinnedObject(), w);
                 LastPresentHr = hrP;
                 if (hrP >= 0) {
                     PaintCount++;
@@ -2137,6 +2281,7 @@ public class PzmWallForm : Form {
     }
 
     protected override void Dispose(bool disposing) {
+        ReleaseDstPin();
         PzmDCompHost.ReleaseBind(ref _dcTarget, ref _dcVisual, ref _dcSwap);
         ReleaseDib();
         base.Dispose(disposing);
@@ -2649,8 +2794,10 @@ function Recargar-Escenas {
     foreach ($fItem in $script:forms) {
         if ($fItem.EsSecundario -and $script:sceneSec) {
             $fItem.Form.FrameRef = $script:rendSec.Frame
+            $fItem.Form.FrameBufRef = $script:rendSec.FrameBuf
         } else {
             $fItem.Form.FrameRef = $script:rendPrim.Frame
+            $fItem.Form.FrameBufRef = $script:rendPrim.FrameBuf
         }
     }
     Write-MotorLog "Escenas cargadas: tema=$($script:temaAct) secTema=$tSecId mon=$($script:monAct) clima=$($script:climaAct)"
@@ -2709,8 +2856,16 @@ function Render-MotorFrame([int]$t) {
         $d = [DateTime]::new($d.Year, $d.Month, $d.Day, $hh, $mm, [Math]::Min(59, $ss))
     }
 
-    if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t) }
-    if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t) }
+    $needBmpPrim = $false
+    $needBmpSec = $false
+    foreach ($fItem in $script:forms) {
+        if (-not $fItem.Form.UseDComp) {
+            if ($fItem.EsSecundario -and $script:sceneSec) { $needBmpSec = $true }
+            else { $needBmpPrim = $true }
+        }
+    }
+    if ($script:scenePrim) { $script:rendPrim.Render($script:scenePrim, $d, $t, $needBmpPrim) }
+    if ($script:sceneSec)  { $script:rendSec.Render($script:sceneSec, $d, $t, $needBmpSec) }
     foreach ($fItem in $script:forms) {
         $fItem.Form.PushFrame()
     }
@@ -2808,6 +2963,11 @@ $timer.Add_Tick({
                         $script:sw.Restart()
                     }
                     if ($null -ne $nc.horaFija) { $script:horaAct = [double]$nc.horaFija }
+                    if ($null -ne $nc.fps) {
+                        $nfps = [Math]::Max(2, [Math]::Min(24, [int]$nc.fps))
+                        $nint = [Math]::Max(42, [int](1000 / $nfps))
+                        if ($timer.Interval -ne $nint) { $timer.Interval = $nint }
+                    }
                     if ($cambio) { Recargar-Escenas }
                 }
             }

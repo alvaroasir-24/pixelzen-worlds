@@ -27,6 +27,9 @@ if (-not (Test-Path $TemasBase)) {
     $TemasBase = Join-Path $Aqui 'temas'
 }
 if (-not (Test-Path $TemasBase)) {
+    $TemasBase = Join-Path $Raiz 'docs\temas'
+}
+if (-not (Test-Path $TemasBase)) {
     $TemasBase = Join-Path $Raiz 'windows\lively\temas'
 }
 $TemaDir = Join-Path $TemasBase $Tema

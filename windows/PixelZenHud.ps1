@@ -8,6 +8,8 @@ $TemasDir = if (Test-Path (Join-Path $Aqui 'lively\temas')) {
     Join-Path $Aqui 'lively\temas'
 } elseif (Test-Path (Join-Path $Aqui 'temas')) {
     Join-Path $Aqui 'temas'
+} elseif (Test-Path (Join-Path $Raiz 'docs\temas')) {
+    Join-Path $Raiz 'docs\temas'
 } else {
     Join-Path $Raiz 'windows\lively\temas'
 }
@@ -263,6 +265,59 @@ public class PzWinStyle {
     [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
     [DllImport("user32.dll", CharSet = CharSet.Auto)] public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out PzRect lpRect);
+    [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
+    [DllImport("kernel32.dll")] public static extern ulong GetTickCount64();
+
+    [StructLayout(LayoutKind.Sequential)] public struct PzRect { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MEMORYSTATUSEX {
+        public uint dwLength, dwMemoryLoad;
+        public ulong ullTotalPhys, ullAvailPhys, ullTotalPageFile, ullAvailPageFile, ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SYSTEM_POWER_STATUS {
+        public byte ACLineStatus, BatteryFlag, BatteryLifePercent, SystemStatusFlag;
+        public uint BatteryLifeTime, BatteryFullLifeTime;
+    }
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+    [DllImport("kernel32.dll")] private static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS lpSystemPowerStatus);
+
+    public static bool GetMemory(out ulong totalBytes, out ulong availBytes, out uint pct) {
+        var ms = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX)) };
+        if (GlobalMemoryStatusEx(ref ms)) {
+            totalBytes = ms.ullTotalPhys;
+            availBytes = ms.ullAvailPhys;
+            pct = ms.dwMemoryLoad;
+            return true;
+        }
+        totalBytes = 0; availBytes = 0; pct = 0;
+        return false;
+    }
+
+    public static int GetBatteryPct() {
+        SYSTEM_POWER_STATUS sps;
+        if (!GetSystemPowerStatus(out sps)) return -1;
+        if (sps.BatteryFlag == 128 || sps.BatteryLifePercent > 100) return -1;
+        return sps.BatteryLifePercent;
+    }
+
+    public static bool IsFullscreenActive() {
+        try {
+            IntPtr fg = GetForegroundWindow();
+            if (fg == IntPtr.Zero || !IsWindowVisible(fg)) return false;
+            var sb = new StringBuilder(64);
+            GetClassName(fg, sb, sb.Capacity);
+            string cls = sb.ToString();
+            if (cls == "Progman" || cls == "WorkerW" || cls == "Shell_TrayWnd" || cls == "Shell_SecondaryTrayWnd" || cls == "Windows.UI.Core.CoreWindow") return false;
+            PzRect r;
+            if (!GetWindowRect(fg, out r)) return false;
+            var scr = System.Windows.Forms.Screen.FromHandle(fg).Bounds;
+            return (r.Right - r.Left) >= (scr.Width - 2) && (r.Bottom - r.Top) >= (scr.Height - 2);
+        } catch { return false; }
+    }
 
     public static string FindSpotifyTitle() {
         var pids = new System.Collections.Generic.HashSet<uint>();
@@ -659,6 +714,18 @@ $script:worldAudio = @{
 $script:cpuCounter = New-Object System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total")
 $null = $script:cpuCounter.NextValue()
 $script:lastSlow = [datetime]::MinValue
+$script:lastGpuPoll = [datetime]::MinValue
+$script:lastDevPoll = [datetime]::MinValue
+$script:lastNetMetaPoll = [datetime]::MinValue
+$script:lastDiskPoll = [datetime]::MinValue
+$script:lastCfgWrite = [datetime]::MinValue
+$script:hasNvSmi = [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue)
+$script:pyOkCached = $null
+$script:netIfaceCached = 'RED'
+$script:netIpCached = '--'
+$script:netNicIdCached = $null
+$script:diskPctCached = 0
+$script:lastCpuVal = 0
 
 function Limpia-AppAudio($raw) {
     if (-not $raw) { return 'MEDIA' }
@@ -831,7 +898,8 @@ function Elige-MejorSesion($sessions) {
 
 function Obtener-MediaActual {
     $ahora = Get-Date
-    if (($ahora - $script:mediaCache.t).TotalSeconds -lt 2.5) {
+    $cacheSec = if ($PSVersionTable.PSVersion.Major -eq 5) { 3.5 } else { 5.0 }
+    if (($ahora - $script:mediaCache.t).TotalSeconds -lt $cacheSec) {
         return $script:mediaCache
     }
     $res = @{ t = $ahora; ok = $false; app = ''; playing = $false; title = ''; artist = ''; posSec = 0.0; durSec = 0.0; polledAt = [DateTimeOffset]::UtcNow }
@@ -1041,19 +1109,27 @@ function Refresca-Hud {
     $now = Get-Date
     if ($win.WindowState -eq 'Minimized') { $win.WindowState = 'Normal' }
     if ((([int]$now.Second) % 3) -eq 0) {
-        $script:cfg = Normaliza-Config (Leer-Config)
-        if ($script:cfg.hud -eq $false) { $win.Close(); return }
-        if (-not $script:cfg.soloWidgets) {
-            $tp = Join-Path $TemasDir "$($script:cfg.tema)\tema.json"
-            if (Test-Path $tp) {
-                try { $script:temaData = Get-Content $tp -Raw -Encoding UTF8 | ConvertFrom-Json } catch {}
-            }
+        if (Test-Path $ConfigPath) {
+            try {
+                $wt = (Get-Item $ConfigPath).LastWriteTimeUtc
+                if ($wt -ne $script:lastCfgWrite) {
+                    $script:lastCfgWrite = $wt
+                    $script:cfg = Normaliza-Config (Leer-Config)
+                    if ($script:cfg.hud -eq $false) { $win.Close(); return }
+                    if (-not $script:cfg.soloWidgets) {
+                        $tp = Join-Path $TemasDir "$($script:cfg.tema)\tema.json"
+                        if (Test-Path $tp) {
+                            try { $script:temaData = Get-Content $tp -Raw -Encoding UTF8 | ConvertFrom-Json } catch {}
+                        }
+                    }
+                    Aplica-Visibilidad $script:cfg
+                }
+            } catch {}
         }
-        if ($script:hudHwnd -and $script:hudHwnd -ne [IntPtr]::Zero) {
+        if ((([int]$now.Second) % 15) -eq 0 -and $script:hudHwnd -and $script:hudHwnd -ne [IntPtr]::Zero) {
             [PzWinStyle]::SetWindowPos($script:hudHwnd, [IntPtr]::new(1), 0, 0, 0, 0, (0x0013 -bor 0x0040)) | Out-Null
         }
     }
-    Aplica-Visibilidad $script:cfg
     $st = $script:cfg.stats
 
     if ($st.tiempo) {
@@ -1135,8 +1211,9 @@ function Refresca-Hud {
         $el.TxtQTxt.Text = $cita.es
     }
 
-    if (($now - $script:lastSlow).TotalSeconds -ge 2) {
+    if (($now - $script:lastSlow).TotalSeconds -ge 3) {
         $script:lastSlow = $now
+        if ($script:cfg.pausaJuego -and [PzWinStyle]::IsFullscreenActive()) { return }
         if ($st.audio) {
             try {
                 $media = Obtener-MediaActual
@@ -1150,33 +1227,44 @@ function Refresca-Hud {
                 }
             } catch {}
         }
+        if ($st.sistema -or $st.gpu) {
+            try {
+                $script:lastCpuVal = [math]::Round($script:cpuCounter.NextValue())
+            } catch {}
+        }
         if ($st.gpu) {
             try {
                 $sb = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-                $nvOut = $null
-                try { $nvOut = & nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>$null } catch {}
-                if ($nvOut -and $nvOut.Trim()) {
-                    $line = ($nvOut -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 1)
-                    $p = $line.Split(',') | ForEach-Object { $_.Trim() }
-                    if ($p.Count -ge 5) {
-                        $script:gpuNombre = $p[0]
-                        $gpuUso = [math]::Max(0, [math]::Min(100, [int]$p[1]))
-                        $el.TxtGpuNombre.Text = $script:gpuNombre
-                        $el.TxtGpuMeta.Text = "$($p[2])°C · $($script:cfg.fps) FPS"
-                        $el.TxtGpuUso.Text = "$gpuUso%"
-                        $el.BarGpu.Value = $gpuUso
-                        $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · VRAM $($p[3])/$($p[4]) MB"
+                $gpuReciente = ($now - $script:lastGpuPoll).TotalSeconds -ge 10
+                if ($script:hasNvSmi -and $gpuReciente) {
+                    $script:lastGpuPoll = $now
+                    $nvOut = $null
+                    try { $nvOut = & nvidia-smi --query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total --format=csv,noheader,nounits 2>$null } catch {}
+                    if ($nvOut -and $nvOut.Trim()) {
+                        $line = ($nvOut -split "`r?`n" | Where-Object { $_.Trim() } | Select-Object -First 1)
+                        $p = $line.Split(',') | ForEach-Object { $_.Trim() }
+                        if ($p.Count -ge 5) {
+                            $script:gpuNombre = $p[0]
+                            $gpuUso = [math]::Max(0, [math]::Min(100, [int]$p[1]))
+                            $el.TxtGpuNombre.Text = $script:gpuNombre
+                            $el.TxtGpuMeta.Text = "$($p[2])°C · $($script:cfg.fps) FPS"
+                            $el.TxtGpuUso.Text = "$gpuUso%"
+                            $el.BarGpu.Value = $gpuUso
+                            $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · VRAM $($p[3])/$($p[4]) MB"
+                        }
                     }
-                } else {
+                } elseif (-not $script:hasNvSmi) {
                     if (-not $script:gpuNombre) {
-                        $vc = Get-CimInstance Win32_VideoController | Where-Object { $_.Name -notmatch 'Basic|spacedesk|Virtual|Parsec' } | Select-Object -First 1
-                        $script:gpuNombre = if ($vc -and $vc.Name) { $vc.Name } else { 'MOTOR GDI+ WIN' }
+                        try {
+                            $regGpus = Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0*' -ErrorAction SilentlyContinue |
+                                Where-Object { $_.DriverDesc -and $_.DriverDesc -notmatch 'Basic|spacedesk|Virtual|Parsec' } | Select-Object -First 1
+                            $script:gpuNombre = if ($regGpus -and $regGpus.DriverDesc) { [string]$regGpus.DriverDesc } else { 'MOTOR WIN DCOMP' }
+                        } catch { $script:gpuNombre = 'MOTOR WIN DCOMP' }
                     }
                     $el.TxtGpuNombre.Text = $script:gpuNombre
                     $el.TxtGpuMeta.Text = "$($script:cfg.fps) FPS"
                     $el.TxtGpuRes.Text = "$($sb.Width)×$($sb.Height) · MOTOR C#"
-                    $gpuSum = (Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'engtype_3D' } | Measure-Object -Property UtilizationPercentage -Sum).Sum
-                    $gpuEst = if ($null -ne $gpuSum) { [math]::Max(0, [math]::Min(100, [int][math]::Round($gpuSum))) } else { [math]::Max(2, [math]::Min(95, [math]::Round($script:cpuCounter.NextValue() * 0.55 + 4))) }
+                    $gpuEst = [math]::Max(2, [math]::Min(95, [math]::Round($script:lastCpuVal * 0.55 + 4)))
                     $el.TxtGpuUso.Text = "$gpuEst%"
                     $el.BarGpu.Value = $gpuEst
                 }
@@ -1184,80 +1272,81 @@ function Refresca-Hud {
         }
         if ($st.sistema) {
             try {
-                $cpu = [math]::Round($script:cpuCounter.NextValue())
+                $cpu = $script:lastCpuVal
                 $el.TxtCpu.Text = "$cpu%"
                 $el.BarCpu.Value = [math]::Max(0, [math]::Min(100, $cpu))
-                $os = Get-CimInstance Win32_OperatingSystem
-                $totG = [math]::Round($os.TotalVisibleMemorySize / 1MB, 0)
-                $usedG = [math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / 1MB, 1)
-                $ramPct = [math]::Round((($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / $os.TotalVisibleMemorySize) * 100)
-                $el.TxtRam.Text = "$usedG/${totG}G"
-                $el.BarRam.Value = $ramPct
-                $drv = Get-PSDrive C
-                $dPct = [math]::Round(($drv.Used / ($drv.Used + $drv.Free)) * 100)
-                $el.TxtDisco.Text = "DISCO $dPct%"
-                $bat = Get-CimInstance Win32_Battery | Select-Object -First 1
-                $el.TxtBat.Text = if ($bat) { "BAT $($bat.EstimatedChargeRemaining)%" } else { "AC" }
-                $up = $now - $os.LastBootUpTime
-                $el.TxtUp.Text = "UP $([int]$up.TotalHours)h$($up.Minutes.ToString('00'))"
+                [uint64]$totB = 0; [uint64]$availB = 0; [uint32]$ramPct = 0
+                if ([PzWinStyle]::GetMemory([ref]$totB, [ref]$availB, [ref]$ramPct)) {
+                    $totG = [math]::Round($totB / 1GB, 0)
+                    $usedG = [math]::Round(($totB - $availB) / 1GB, 1)
+                    $el.TxtRam.Text = "$usedG/${totG}G"
+                    $el.BarRam.Value = [int]$ramPct
+                }
+                if (($now - $script:lastDiskPoll).TotalSeconds -ge 30) {
+                    $script:lastDiskPoll = $now
+                    $drv = Get-PSDrive C -ErrorAction SilentlyContinue
+                    if ($drv -and ($drv.Used + $drv.Free) -gt 0) {
+                        $script:diskPctCached = [math]::Round(($drv.Used / ($drv.Used + $drv.Free)) * 100)
+                    }
+                }
+                $el.TxtDisco.Text = "DISCO $($script:diskPctCached)%"
+                $batPct = [PzWinStyle]::GetBatteryPct()
+                $el.TxtBat.Text = if ($batPct -ge 0) { "BAT $batPct%" } else { "AC" }
+                $upSec = [math]::Floor([PzWinStyle]::GetTickCount64() / 1000)
+                $upH = [int][math]::Floor($upSec / 3600)
+                $upM = [int](($upSec % 3600) / 60)
+                $el.TxtUp.Text = "UP ${upH}h$($upM.ToString('00'))"
             } catch {}
         }
         if ($st.red) {
             try {
-                $defRoute = Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Sort-Object { $_.RouteMetric + $_.InterfaceMetric } | Select-Object -First 1
-                $nic = $null
-                if ($defRoute) {
-                    $nic = Get-NetIPAddress -InterfaceIndex $defRoute.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-                        Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1
-                }
-                if (-not $nic) {
-                    try {
-                        $udp = New-Object System.Net.Sockets.UdpClient
-                        $udp.Connect('8.8.8.8', 80)
-                        $localIp = $udp.Client.LocalEndPoint.Address.ToString()
-                        $udp.Close()
-                        if ($localIp) {
-                            $nic = Get-NetIPAddress -AddressFamily IPv4 -IPAddress $localIp -ErrorAction SilentlyContinue | Select-Object -First 1
-                            if (-not $nic) { $nic = [pscustomobject]@{ InterfaceAlias = 'RED ACTIVA'; IPAddress = $localIp } }
+                $allNics = [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()
+                if (($now - $script:lastNetMetaPoll).TotalSeconds -ge 20) {
+                    $script:lastNetMetaPoll = $now
+                    $picked = $allNics | Where-Object {
+                        $_.OperationalStatus -eq 'Up' -and
+                        $_.NetworkInterfaceType -ne 'Loopback' -and
+                        $_.Name -notmatch 'VirtualBox|vEthernet|VMware|Loopback'
+                    } | Sort-Object { if ($_.GetIPProperties().GatewayAddresses.Count -gt 0) { 0 } else { 1 } } | Select-Object -First 1
+                    if ($picked) {
+                        $script:netNicIdCached = $picked.Id
+                        $ifaceTxt = $picked.Name.ToUpper()
+                        if ($picked.NetworkInterfaceType -eq 'Wireless80211' -or $ifaceTxt -match 'WI-?FI|WLAN|WIRELESS') {
+                            try {
+                                $wlan = (netsh wlan show interfaces 2>$null | Select-String '^\s*SSID\s*:\s*(.+)$' | Select-Object -First 1)
+                                if ($wlan -and $wlan.Matches[0].Groups[1].Value.Trim()) {
+                                    $ifaceTxt = "WIFI · $($wlan.Matches[0].Groups[1].Value.Trim())"
+                                }
+                            } catch {}
                         }
-                    } catch {}
+                        $script:netIfaceCached = $ifaceTxt
+                        $ip4 = $picked.GetIPProperties().UnicastAddresses | Where-Object { $_.Address.AddressFamily -eq 'InterNetwork' } | Select-Object -First 1
+                        $script:netIpCached = if ($ip4) { $ip4.Address.ToString() } else { '--' }
+                    }
                 }
-                if (-not $nic) {
-                    $nic = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
-                        Where-Object { $_.InterfaceAlias -notmatch 'Loopback|VirtualBox|vEthernet|VMware' -and $_.IPAddress -notlike '169.254.*' -and $_.IPAddress -ne '127.0.0.1' } |
-                        Select-Object -First 1
+                $el.TxtIface.Text = $script:netIfaceCached
+                $el.TxtIp.Text = $script:netIpCached
+                $activeNic = if ($script:netNicIdCached) {
+                    $allNics | Where-Object { $_.Id -eq $script:netNicIdCached } | Select-Object -First 1
+                } else {
+                    $allNics | Where-Object { $_.OperationalStatus -eq 'Up' -and $_.NetworkInterfaceType -ne 'Loopback' } | Select-Object -First 1
                 }
-                $ifaceTxt = if ($nic -and $nic.InterfaceAlias) { $nic.InterfaceAlias.ToUpper() } else { 'RED' }
-                if ($ifaceTxt -match 'WI-?FI|WLAN|WIRELESS') {
-                    try {
-                        $wlan = (netsh wlan show interfaces 2>$null | Select-String '^\s*SSID\s*:\s*(.+)$' | Select-Object -First 1)
-                        if ($wlan -and $wlan.Matches[0].Groups[1].Value.Trim()) {
-                            $ifaceTxt = "WIFI · $($wlan.Matches[0].Groups[1].Value.Trim())"
-                        }
-                    } catch {}
-                }
-                $el.TxtIface.Text = $ifaceTxt
-                $el.TxtIp.Text = if ($nic) { $nic.IPAddress } else { '--' }
-                $stats = if ($nic -and $nic.InterfaceAlias) {
-                    Get-NetAdapterStatistics -Name $nic.InterfaceAlias -ErrorAction SilentlyContinue | Select-Object -First 1
-                } else { $null }
-                if (-not $stats) {
-                    $stats = Get-NetAdapterStatistics -ErrorAction SilentlyContinue | Where-Object { $_.ReceivedBytes -gt 0 -and $_.Name -notmatch 'VirtualBox|Loopback' } | Sort-Object ReceivedBytes -Descending | Select-Object -First 1
-                }
-                if ($stats) {
+                if ($activeNic) {
+                    $stNet = $activeNic.GetIPv4Statistics()
                     $tNow = [DateTime]::UtcNow
                     if ($script:prevNet) {
                         $dt = ($tNow - $script:prevNet.t).TotalSeconds
                         if ($dt -gt 0.2) {
-                            $el.TxtRx.Text = ([char]0x2193) + " " + (Formato-Tasa ([math]::Max(0, ($stats.ReceivedBytes - $script:prevNet.rx) / $dt)))
-                            $el.TxtTx.Text = ([char]0x2191) + " " + (Formato-Tasa ([math]::Max(0, ($stats.SentBytes - $script:prevNet.tx) / $dt)))
+                            $el.TxtRx.Text = ([char]0x2193) + " " + (Formato-Tasa ([math]::Max(0, ($stNet.BytesReceived - $script:prevNet.rx) / $dt)))
+                            $el.TxtTx.Text = ([char]0x2191) + " " + (Formato-Tasa ([math]::Max(0, ($stNet.BytesSent - $script:prevNet.tx) / $dt)))
                         }
                     }
-                    $script:prevNet = @{ rx = $stats.ReceivedBytes; tx = $stats.SentBytes; t = $tNow }
+                    $script:prevNet = @{ rx = $stNet.BytesReceived; tx = $stNet.BytesSent; t = $tNow }
                 }
             } catch {}
         }
-        if ($st.dev) {
+        if ($st.dev -and (($now - $script:lastDevPoll).TotalSeconds -ge 20)) {
+            $script:lastDevPoll = $now
             $el.TxtHost.Text = $env:COMPUTERNAME
             try {
                 $br = (git -C $Raiz rev-parse --abbrev-ref HEAD 2>$null)
@@ -1266,9 +1355,11 @@ function Refresca-Hud {
             } catch {
                 $el.TxtRepo.Text = "pixelzen-worlds"
             }
-            $pyExe = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
-            $pyOk = (Get-Command python -ErrorAction SilentlyContinue) -or (Test-Path $pyExe)
-            $el.TxtTc.Text = "PS $($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor)" + $(if ($pyOk) { " · PY 3.12" } else { "" }) + " · MON $($script:cfg.monitores)"
+            if ($null -eq $script:pyOkCached) {
+                $pyExe = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
+                $script:pyOkCached = [bool]((Get-Command python -ErrorAction SilentlyContinue) -or (Test-Path $pyExe))
+            }
+            $el.TxtTc.Text = "PS $($PSVersionTable.PSVersion.Major).$($PSVersionTable.PSVersion.Minor)" + $(if ($script:pyOkCached) { " · PY 3.12" } else { "" }) + " · MON $($script:cfg.monitores)"
         }
     }
 }

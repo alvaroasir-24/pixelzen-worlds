@@ -30,7 +30,12 @@ RAIZ = os.path.dirname(AQUI)
 LIVELY_DIR = os.path.join(AQUI, 'lively')
 _TEMAS_LIVELY = os.path.join(LIVELY_DIR, 'temas')
 _TEMAS_LEGACY = os.path.join(AQUI, 'temas')
-TEMAS_DIR = _TEMAS_LIVELY if os.path.isdir(_TEMAS_LIVELY) else (_TEMAS_LEGACY if os.path.isdir(_TEMAS_LEGACY) else os.path.join(LIVELY_DIR, 'temas'))
+_TEMAS_DOCS = os.path.join(os.path.dirname(AQUI), 'docs', 'temas')
+TEMAS_DIR = (
+    _TEMAS_LIVELY if os.path.isdir(_TEMAS_LIVELY)
+    else (_TEMAS_LEGACY if os.path.isdir(_TEMAS_LEGACY)
+          else (_TEMAS_DOCS if os.path.isdir(_TEMAS_DOCS) else _TEMAS_LIVELY))
+)
 if os.path.isdir(_TEMAS_LIVELY) or os.path.isdir(_TEMAS_LEGACY):
     _DATA_DIR = os.path.join(os.environ.get('LOCALAPPDATA', AQUI), 'PixelZenWorlds')
     os.makedirs(_DATA_DIR, exist_ok=True)

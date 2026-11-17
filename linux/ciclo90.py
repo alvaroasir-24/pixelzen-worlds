@@ -8,7 +8,7 @@ import time
 from gi.repository import Gio
 
 DURACION_S = 5400.0
-INTERVALO_S = 5.0
+INTERVALO_S = 10.0
 SCHEMA_DIR = os.path.expanduser(
     '~/.local/share/gnome-shell/extensions/pixelzen@mosqui1988.github.io/schemas'
 )
@@ -47,7 +47,6 @@ def main():
         transcurrido = time.monotonic() - t0
         hora = (hora_inicio + (transcurrido / duracion) * 24.0) % 24.0
         settings.set_double('hora-simulada', round(hora, 4))
-        Gio.Settings.sync()
 
         fin = time.monotonic() + INTERVALO_S
         while not parar and time.monotonic() < fin:

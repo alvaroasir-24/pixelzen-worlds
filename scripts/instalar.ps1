@@ -45,7 +45,12 @@ function Copy-RuntimeDesdeRepo([string]$Raiz, [string]$DestApp) {
 
     $TemasDst = Join-Path $LivelyDst 'temas'
     if (Test-Path $TemasDst) { Remove-Item $TemasDst -Recurse -Force -ErrorAction SilentlyContinue }
-    Copy-Item -Path (Join-Path $Raiz 'windows\lively\temas') -Destination $TemasDst -Recurse -Force
+    $TemasSrc = if (Test-Path (Join-Path $Raiz 'docs\temas')) {
+        Join-Path $Raiz 'docs\temas'
+    } else {
+        Join-Path $Raiz 'windows\lively\temas'
+    }
+    Copy-Item -Path $TemasSrc -Destination $TemasDst -Recurse -Force
 
     foreach ($temaDir in Get-ChildItem -Path $TemasDst -Directory) {
         $tid = $temaDir.Name

@@ -7,11 +7,22 @@
   "modo_pajaros": "wyverns",
   "color_pajaros": "#16071e",
   "modo_particulas": "brasas_mana",
-  "colores_hojas": ["#ff7c48", "#e84878", "#b84cff", "#ffd070"],
+  "colores_hojas": [
+    "#ff7c48",
+    "#e84878",
+    "#b84cff",
+    "#ffd070"
+  ],
   "color_mana_halo": "#e84878",
   "color_mana_centro": "#ffd4e6",
-  "color_fuegos_halo": ["#e84878", "#9e5cff"],
-  "color_fuegos_centro": ["#ffd6e8", "#e6ccff"],
+  "color_fuegos_halo": [
+    "#e84878",
+    "#9e5cff"
+  ],
+  "color_fuegos_centro": [
+    "#ffd6e8",
+    "#e6ccff"
+  ],
   "color_ventanas": "#ff8c4a",
   "color_faroles_halo": "#c848ff",
   "color_faroles_centro": "#f8d4ff",
@@ -19,16 +30,45 @@
   "color_runas_centro": "#ffc4da",
   "color_humo_dia": "#8e7288",
   "color_humo_noche": "#5e3c68",
-  "color_olas": ["#c85a8e", "#602c66"],
+  "color_olas": [
+    "#c85a8e",
+    "#602c66"
+  ],
   "color_reflejo_sol": "#ff9e66",
   "color_reflejo_luna": "#f0a8c4",
   "color_destello": "#ffd8e6",
   "citas": [
-    {"sub": "K410 · Ciudad de Rikarisu", "es": "«En el Continente Demoníaco, dudar un segundo cuesta la vida.»", "au": "Ruijerd"},
-    {"sub": "Grupo Dead End", "es": "«Superaremos estas tierras juntos y volveremos a casa.»", "au": "Rudeus"},
-    {"sub": "Aldea Migurd", "es": "«El maná fluye espeso en las rocas rojas del continente lejano.»", "au": "Roxy"},
-    {"sub": "Tierras de Biegoya", "es": "«Cuanto más feroz la bestia, más afilada debe ser la hoja.»", "au": "Eris"},
-    {"sub": "Crónicas de Laplace", "es": "«Incluso bajo cielos carmesí arde una chispa de esperanza.»", "au": "Rikarisu"},
-    {"sub": "Camino del Demonio", "es": "«Guarda tu lanza en alto y protege a los niños del grupo.»", "au": "Superd"}
-  ]
+    {
+      "sub": "K410 · Ciudad de Rikarisu",
+      "es": "«En el Continente Demoníaco, dudar un segundo cuesta la vida.»",
+      "au": "Ruijerd"
+    },
+    {
+      "sub": "Grupo Dead End",
+      "es": "«Superaremos estas tierras juntos y volveremos a casa.»",
+      "au": "Rudeus"
+    },
+    {
+      "sub": "Aldea Migurd",
+      "es": "«El maná fluye espeso en las rocas rojas del continente lejano.»",
+      "au": "Roxy"
+    },
+    {
+      "sub": "Tierras de Biegoya",
+      "es": "«Cuanto más feroz la bestia, más afilada debe ser la hoja.»",
+      "au": "Eris"
+    },
+    {
+      "sub": "Crónicas de Laplace",
+      "es": "«Incluso bajo cielos carmesí arde una chispa de esperanza.»",
+      "au": "Rikarisu"
+    },
+    {
+      "sub": "Camino del Demonio",
+      "es": "«Guarda tu lanza en alto y protege a los niños del grupo.»",
+      "au": "Superd"
+    }
+  ],
+  "serie": "Mushoku Tensei",
+  "titulo": "Continente Demoníaco"
 }

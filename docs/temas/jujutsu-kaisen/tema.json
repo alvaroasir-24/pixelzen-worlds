@@ -10,11 +10,22 @@
   "modo_pajaros": "ninguno",
   "color_pajaros": "#12081a",
   "modo_particulas": "brasas_mana",
-  "colores_hojas": ["#c084fc", "#f43f5e", "#38bdf8", "#fde047"],
+  "colores_hojas": [
+    "#c084fc",
+    "#f43f5e",
+    "#38bdf8",
+    "#fde047"
+  ],
   "color_mana_halo": "#9333ea",
   "color_mana_centro": "#e9d5ff",
-  "color_fuegos_halo": ["#f43f5e", "#38bdf8"],
-  "color_fuegos_centro": ["#ffe4e6", "#e0f2fe"],
+  "color_fuegos_halo": [
+    "#f43f5e",
+    "#38bdf8"
+  ],
+  "color_fuegos_centro": [
+    "#ffe4e6",
+    "#e0f2fe"
+  ],
   "color_ventanas": "#fb7185",
   "color_faroles_halo": "#f43f5e",
   "color_faroles_centro": "#ffe4e6",
@@ -22,14 +33,34 @@
   "color_runas_centro": "#f5d0fe",
   "color_humo_dia": "#cbd5e1",
   "color_humo_noche": "#4c1d4b",
-  "color_olas": ["#c084fc", "#4c1d95"],
+  "color_olas": [
+    "#c084fc",
+    "#4c1d95"
+  ],
   "color_reflejo_sol": "#fbcfe8",
   "color_reflejo_luna": "#c4b5fd",
   "color_destello": "#f5d0fe",
   "citas": [
-    {"sub": "Satoru Gojo · Vacío Infinito", "es": "«En el cielo y en la tierra, solo yo merezco ser honrado.»", "au": "Satoru Gojo"},
-    {"sub": "Ryomen Sukuna · Sagrario Malevolente", "es": "«Conoce tu lugar, necio. Esto es la verdadera cúspide de la hechicería.»", "au": "Ryomen Sukuna"},
-    {"sub": "Batalla de Shinjuku · Técnica Maldita", "es": "«Cuando el Rojo y el Azul chocan y convergen, nace el Púrpura Vacío que todo lo borra.»", "au": "Satoru Gojo"},
-    {"sub": "Rey de las Maldiciones · Dominio Abierto", "es": "«Extiende el sagrario sin barrera; cada corte alcanza hasta el último fragmento del cielo.»", "au": "Narrador"}
-  ]
+    {
+      "sub": "Satoru Gojo · Vacío Infinito",
+      "es": "«En el cielo y en la tierra, solo yo merezco ser honrado.»",
+      "au": "Satoru Gojo"
+    },
+    {
+      "sub": "Ryomen Sukuna · Sagrario Malevolente",
+      "es": "«Conoce tu lugar, necio. Esto es la verdadera cúspide de la hechicería.»",
+      "au": "Ryomen Sukuna"
+    },
+    {
+      "sub": "Batalla de Shinjuku · Técnica Maldita",
+      "es": "«Cuando el Rojo y el Azul chocan y convergen, nace el Púrpura Vacío que todo lo borra.»",
+      "au": "Satoru Gojo"
+    },
+    {
+      "sub": "Rey de las Maldiciones · Dominio Abierto",
+      "es": "«Extiende el sagrario sin barrera; cada corte alcanza hasta el último fragmento del cielo.»",
+      "au": "Narrador"
+    }
+  ],
+  "titulo": "Expansión de Dominio"
 }

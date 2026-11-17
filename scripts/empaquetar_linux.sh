@@ -22,7 +22,9 @@ cp "$RAIZ/fuentes/DepartureMono-Regular.otf" "$PKG/fuentes/"
 cp "$RAIZ/LICENSE" "$PKG/"
 [ -f "$RAIZ/VERSION" ] && cp "$RAIZ/VERSION" "$PKG/"
 
-if [ -d "$RAIZ/windows/lively/temas" ]; then
+if [ -d "$RAIZ/docs/temas" ]; then
+  cp -a "$RAIZ/docs/temas/." "$PKG/temas/"
+elif [ -d "$RAIZ/windows/lively/temas" ]; then
   cp -a "$RAIZ/windows/lively/temas/." "$PKG/temas/"
 fi
 

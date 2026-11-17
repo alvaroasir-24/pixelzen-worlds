@@ -7,11 +7,22 @@
   "modo_pajaros": "grullas",
   "color_pajaros": "#13222e",
   "modo_particulas": "hojas_mana",
-  "colores_hojas": ["#6ee07a", "#3cb868", "#f0d460", "#48e8d8"],
+  "colores_hojas": [
+    "#6ee07a",
+    "#3cb868",
+    "#f0d460",
+    "#48e8d8"
+  ],
   "color_mana_halo": "#48f09c",
   "color_mana_centro": "#d4ffe8",
-  "color_fuegos_halo": ["#54f09c", "#48b8ff"],
-  "color_fuegos_centro": ["#d8ffe8", "#cdefff"],
+  "color_fuegos_halo": [
+    "#54f09c",
+    "#48b8ff"
+  ],
+  "color_fuegos_centro": [
+    "#d8ffe8",
+    "#cdefff"
+  ],
   "color_ventanas": "#ffd074",
   "color_faroles_halo": "#ffb84c",
   "color_faroles_centro": "#fff4cc",
@@ -19,16 +30,45 @@
   "color_runas_centro": "#d0fff0",
   "color_humo_dia": "#eef5f8",
   "color_humo_noche": "#9eb8c8",
-  "color_olas": ["#8ce8e0", "#3a8da8"],
+  "color_olas": [
+    "#8ce8e0",
+    "#3a8da8"
+  ],
   "color_reflejo_sol": "#ffeaa8",
   "color_reflejo_luna": "#dff8f4",
   "color_destello": "#f0fff8",
   "citas": [
-    {"sub": "Isla Ballena · Gon", "es": "«Deberías disfrutar los pequeños desvíos al máximo, porque ahí encontrarás cosas más importantes.»", "au": "Ging Freecss"},
-    {"sub": "Examen del Cazador", "es": "«El primer paso para volverse más fuerte es conocer tus propios límites y superarlos.»", "au": "Gon Freecss"},
-    {"sub": "Familia Zoldyck", "es": "«Gon, eres la luz. A veces brillas tanto que no puedo mirarte directamente, pero déjame seguir a tu lado.»", "au": "Killua Zoldyck"},
-    {"sub": "Tribu Kurta", "es": "«No le temo a la muerte; solo temo que mi ira se desvanezca con el tiempo.»", "au": "Kurapika"},
-    {"sub": "Asociación de Cazadores", "es": "«No subestimes la malicia y el potencial infinito del ser humano.»", "au": "Isaac Netero"},
-    {"sub": "Árbol del Mundo", "es": "«Lo que de verdad buscas está esperando más allá de la cima más alta.»", "au": "Ging Freecss"}
-  ]
+    {
+      "sub": "Isla Ballena · Gon",
+      "es": "«Deberías disfrutar los pequeños desvíos al máximo, porque ahí encontrarás cosas más importantes.»",
+      "au": "Ging Freecss"
+    },
+    {
+      "sub": "Examen del Cazador",
+      "es": "«El primer paso para volverse más fuerte es conocer tus propios límites y superarlos.»",
+      "au": "Gon Freecss"
+    },
+    {
+      "sub": "Familia Zoldyck",
+      "es": "«Gon, eres la luz. A veces brillas tanto que no puedo mirarte directamente, pero déjame seguir a tu lado.»",
+      "au": "Killua Zoldyck"
+    },
+    {
+      "sub": "Tribu Kurta",
+      "es": "«No le temo a la muerte; solo temo que mi ira se desvanezca con el tiempo.»",
+      "au": "Kurapika"
+    },
+    {
+      "sub": "Asociación de Cazadores",
+      "es": "«No subestimes la malicia y el potencial infinito del ser humano.»",
+      "au": "Isaac Netero"
+    },
+    {
+      "sub": "Árbol del Mundo",
+      "es": "«Lo que de verdad buscas está esperando más allá de la cima más alta.»",
+      "au": "Ging Freecss"
+    }
+  ],
+  "serie": "Hunter × Hunter",
+  "titulo": "Isla Ballena"
 }

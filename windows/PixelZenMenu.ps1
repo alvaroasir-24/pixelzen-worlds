@@ -13,6 +13,8 @@ $TemasDir = if (Test-Path (Join-Path $Aqui 'lively\temas')) {
     Join-Path $Aqui 'lively\temas'
 } elseif (Test-Path (Join-Path $Aqui 'temas')) {
     Join-Path $Aqui 'temas'
+} elseif (Test-Path (Join-Path $Raiz 'docs\temas')) {
+    Join-Path $Raiz 'docs\temas'
 } else {
     Join-Path $Raiz 'windows\lively\temas'
 }
@@ -36,19 +38,19 @@ function Resolver-Preview([string]$temaId, [string]$fase, [string]$variante = 'p
     $temaDirEsc = Join-Path $Raiz "escenas\$temaId"
     $baseLocal = if ($sub) { Join-Path $temaDirLocal $sub } else { $temaDirLocal }
     $baseEsc = if ($sub) { Join-Path $temaDirEsc $sub } else { $temaDirEsc }
-    $fbRoot = 'C:\Users\david\.gemini\antigravity-cli\brain\8747b389-799a-4632-897a-f7f55a4233c0\scratch\out_root'
+    $fbRoot = Join-Path $Raiz 'docs'
     $pref = switch ($sub) {
         'secundario' { 'm2-' }
         'bloqueo'    { 'm3-' }
         default      { '' }
     }
-    $fbTema = if ($sub) { Join-Path $fbRoot "windows\lively\temas\$temaId\$sub" } else { Join-Path $fbRoot "windows\lively\temas\$temaId" }
+    $fbTema = if ($sub) { Join-Path $fbRoot "temas\$temaId\$sub" } else { Join-Path $fbRoot "temas\$temaId" }
     $cands = @(
         (Join-Path $baseLocal "preview\$fase\v3.png"),
         (Join-Path $baseEsc "preview\$fase\v3.png"),
         (Join-Path $baseLocal 'fondo.png'),
         (Join-Path $temaDirLocal 'fondo.png'),
-        (Join-Path $fbRoot "docs\previews\$temaId\${pref}$fase.png"),
+        (Join-Path $fbRoot "previews\$temaId\${pref}$fase.png"),
         (Join-Path $fbTema "images\escena-$fase.png")
     )
     foreach ($p in $cands) {
@@ -1209,7 +1211,7 @@ $xaml = @"
           <DockPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" VerticalAlignment="Center">
               <Image x:Name="ImgTitleBonsai" Width="22" Height="22" Margin="0,0,8,0" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-              <TextBlock x:Name="TxtTitleBar" Text="Pixelzen - Fondos &amp; Widgets v1.2.1" Foreground="#F6F2E8" FontSize="13" FontWeight="Bold" VerticalAlignment="Center">
+              <TextBlock x:Name="TxtTitleBar" Text="Pixelzen - Fondos &amp; Widgets" Foreground="#F6F2E8" FontSize="13" FontWeight="Bold" VerticalAlignment="Center">
                 <TextBlock.Effect>
                   <DropShadowEffect Color="#0A0D19" ShadowDepth="1.5" BlurRadius="0" Direction="315"/>
                 </TextBlock.Effect>

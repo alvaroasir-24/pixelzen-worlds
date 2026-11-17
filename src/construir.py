@@ -80,9 +80,10 @@ def construye_tema(nombre):
             _construye_con_tmp(sub_dir, os.path.join(pack_dir, sub_name), preview_root=sub_prev)
             sub_prevs[sub_name] = sub_prev
 
-    win_dst = os.path.join(WIN_TEMAS_DIR, nombre)
-    _copia_arbol(pack_dir, win_dst)
-    print(f'  [{nombre}] sincronizado con windows/lively/temas/{nombre}', flush=True)
+    if os.environ.get('PZ_SYNC_WIN_TEMAS') == '1' or os.path.isdir(WIN_TEMAS_DIR):
+        win_dst = os.path.join(WIN_TEMAS_DIR, nombre)
+        _copia_arbol(pack_dir, win_dst)
+        print(f'  [{nombre}] sincronizado con windows/lively/temas/{nombre}', flush=True)
 
     doc_tema = os.path.join(DOCS_DIR, 'temas', nombre)
     _copia_arbol(pack_dir, doc_tema)

@@ -8,6 +8,7 @@ Diseño y funcionalidades equivalentes a PixelZenMenu.ps1 (v1.2.1):
 - Estudio en vivo a la derecha con simulación HUD de 9 tarjetas
 - Clima real (Open-Meteo), rotación automática, eventos épicos y modo Solo Widgets
 """
+import datetime
 import functools
 import http.server
 import json
@@ -18,6 +19,7 @@ import stat
 import subprocess
 import sys
 import threading
+import time
 import urllib.request
 
 try:
@@ -110,7 +112,7 @@ def _leer_version():
                     return txt
             except Exception:
                 pass
-    return '1.2.2'
+    return '1.2.3'
 
 
 def _cortar_serie_prefijo(txt):
@@ -288,11 +290,43 @@ def _set_safe(s, kind, key, val):
         pass
 
 
+_THUMB_CACHE = {}
+
+
+def _set_pic_thumb(pic, ruta, max_w=384, max_h=240):
+    if not ruta:
+        return
+    key = (ruta, max_w, max_h)
+    if getattr(pic, '_pz_thumb_key', None) == key:
+        return
+    tex = _THUMB_CACHE.get(key)
+    if tex is None:
+        try:
+            pb = GdkPixbuf.Pixbuf.new_from_file_at_scale(ruta, max_w, max_h, True)
+            tex = Gdk.Texture.new_for_pixbuf(pb)
+            if len(_THUMB_CACHE) > 96:
+                _THUMB_CACHE.clear()
+            _THUMB_CACHE[key] = tex
+        except Exception:
+            pic.set_filename(ruta)
+            pic._pz_thumb_key = key
+            return
+    pic.set_paintable(tex)
+    pic._pz_thumb_key = key
+
+
 def _extension_instalada():
     return os.path.isdir(EXT_DIR) and os.path.isfile(os.path.join(SCHEMA_DIR, 'gschemas.compiled'))
 
 
-def _extension_activa():
+_EXT_ACTIVA_CACHE = {'t': 0.0, 'v': False}
+
+
+def _extension_activa(force=False):
+    ahora = time.monotonic()
+    if not force and ahora - _EXT_ACTIVA_CACHE['t'] < 10.0:
+        return _EXT_ACTIVA_CACHE['v']
+    res = False
     try:
         out = subprocess.run(
             ['gnome-extensions', 'info', UUID],
@@ -300,10 +334,13 @@ def _extension_activa():
         ).stdout
         for linea in out.splitlines():
             if 'State:' in linea or 'Estado:' in linea:
-                return ('ACTIVE' in linea.upper()) or ('ENABLED' in linea.upper()) or ('ACTIVA' in linea.upper())
+                res = ('ACTIVE' in linea.upper()) or ('ENABLED' in linea.upper()) or ('ACTIVA' in linea.upper())
+                break
     except Exception:
         pass
-    return False
+    _EXT_ACTIVA_CACHE['t'] = ahora
+    _EXT_ACTIVA_CACHE['v'] = res
+    return res
 
 
 def _ciclo90_activo():
@@ -1634,7 +1671,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
         pic.set_content_fit(Gtk.ContentFit.COVER)
         ruta = _resolver_preview(preview_tema_id, 'dorado', 'principal') or _resolver_preview(preview_tema_id, 'noche', 'principal')
         if ruta:
-            pic.set_filename(ruta)
+            _set_pic_thumb(pic, ruta, 284, 172)
         card.append(pic)
 
         info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -2146,6 +2183,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
     def _on_activar_ext(self, *_args):
         subprocess.run(['gnome-extensions', 'enable', UUID], check=False)
+        _extension_activa(force=True)
         self._comprobar_estado_extension()
         self._actualiza_vista()
         self.lbl_status.set_text('Extensión activada en GNOME Shell.')
@@ -2458,10 +2496,10 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self.lbl_status.set_text('Valores recomendados cargados. Pulsa Aplicar a mi escritorio.')
 
     def _tick_reloj(self):
-        import datetime
-        self.lbl_hub_clock.set_markup(
-            f'<span foreground="#66F4EA" size="xx-large" weight="bold" font_family="monospace">{datetime.datetime.now().strftime("%H:%M")}</span>'
-        )
+        if self.get_visible():
+            self.lbl_hub_clock.set_markup(
+                f'<span foreground="#66F4EA" size="xx-large" weight="bold" font_family="monospace">{datetime.datetime.now().strftime("%H:%M")}</span>'
+            )
         return GLib.SOURCE_CONTINUE
 
     def _cargar_clima_async(self):
@@ -2540,7 +2578,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
         for pi in self._picker_items:
             p = prev_cache.get(pi['escena'])
             if p:
-                pi['pic'].set_filename(p)
+                _set_pic_thumb(pi['pic'], p, 240, 150)
             pi['lbl'].set_text(var_names.get(pi['escena'], pi['escena']))
             es_sel = (sel_map[pi['rol']] == pi['escena']) and (pi['rol'] != 'bloqueo' or usar_bloq)
             pi['chk'].set_visible(es_sel)
@@ -2549,19 +2587,19 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
         # Estudio en vivo (columna derecha)
         if prev_cache.get(fp_tag):
-            self.pic_prev1.set_filename(prev_cache[fp_tag])
+            _set_pic_thumb(self.pic_prev1, prev_cache[fp_tag], 480, 300)
         self.lbl_prev1_title.set_text(f"PANTALLA 1 · {var_names.get(fp_tag, fp_tag)}")
 
         tid_sec = ts_id if (ts_id != 'igual' and ts_id != self.tema_sel) else self.tema_sel
         p2 = _resolver_preview(tid_sec, self.fase_sel, fs_tag)
         if p2:
-            self.pic_prev2.set_filename(p2)
+            _set_pic_thumb(self.pic_prev2, p2, 480, 300)
         tsec_meta = next((t for t in TEMAS if t['id'] == tid_sec), None) if tid_sec != self.tema_sel else None
         self.lbl_prev2_title.set_text(f"PANTALLA 2 · {tsec_meta['titulo']}" if tsec_meta else f"PANTALLA 2 · {var_names.get(fs_tag, fs_tag)}")
         self.box_prev2.set_visible(dos_mon)
 
         if prev_cache.get(fb_tag):
-            self.pic_prev_bloq.set_filename(prev_cache[fb_tag])
+            _set_pic_thumb(self.pic_prev_bloq, prev_cache[fb_tag], 480, 300)
         self.lbl_prev_bloq_title.set_text(f"🔒 BLOQUEO · {var_names.get(fb_tag, fb_tag)}")
         self.box_prev_bloq.set_visible(usar_bloq)
 
@@ -2574,13 +2612,14 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self._mock_cards['hud-tiempo'].set_text(f"21:34 · {'FONDO EXTERNO' if solo_w else tmeta['titulo']}")
 
         # Botones barra inferior y badge cabecera
+        ext_on = _extension_activa()
         self.btn_toggle_hud.set_label('👁️ Ocultar HUD' if hud_on else '👁️ Mostrar HUD')
         if solo_w:
             self.btn_solo_bar.set_label('🧩 Solo Widgets ON')
             self.btn_aplicar.set_label('✦ APLICAR SOLO WIDGETS')
             self.lbl_motor_badge.set_text('● MODO SOLO WIDGETS')
             self.lbl_motor_badge.set_css_classes(['pz-badge-solo'])
-        elif _extension_activa():
+        elif ext_on:
             self.btn_solo_bar.set_label('🧩 Solo Widgets')
             self.btn_aplicar.set_label('✦ APLICAR A MI ESCRITORIO')
             self.lbl_motor_badge.set_text('● EXTENSIÓN ACTIVA')
@@ -2613,7 +2652,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
             vis_names.append(tm_item['serie'])
             p = _resolver_preview(tm_item['id'], self.fase_sel, 'principal') or _resolver_preview(tm_item['id'], 'noche', 'principal')
             if p:
-                self._hub_slots[si]['pic'].set_filename(p)
+                _set_pic_thumb(self._hub_slots[si]['pic'], p, 240, 180)
             self._hub_slots[si]['lbl'].set_text(tm_item['titulo'])
             fr = self._hub_slots[si]['frame']
             is_sel = (tm_item['id'] == self.tema_sel)
@@ -2621,11 +2660,11 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self.btn_hub_temas_lista.set_label(f"Temas: {', '.join(vis_names)}  ({self.hub_page_idx + 1}/{total_pages})")
 
         if prev_cache.get(fp_tag):
-            self.pic_hub_anim.set_filename(prev_cache[fp_tag])
+            _set_pic_thumb(self.pic_hub_anim, prev_cache[fp_tag], 240, 180)
         self.lbl_hub_anim_sub.set_text(f"{'2 Pantallas' if dos_mon else '1 Pantalla'} · {tmeta['titulo']}")
         p_est = _resolver_preview(self.tema_sel, 'noche', fb_tag if usar_bloq else fp_tag)
         if p_est:
-            self.pic_hub_est.set_filename(p_est)
+            _set_pic_thumb(self.pic_hub_est, p_est, 240, 180)
         f_nom = {'dia': 'Día', 'dorado': 'Dorado', 'noche': 'Noche'}.get(self.fase_sel, 'Noche')
         self.lbl_hub_est_sub.set_text(f"Fase: {f_nom} · {'Bloqueo ON' if usar_bloq else 'Solo Escritorio'}")
 
@@ -2649,7 +2688,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
         mons = _detectar_monitores()
         cl_diag = f"{cl_r['city']} ({cl_r['temp']}°C, {cl_r['desc']})" if (cl_r and cl_r.get('ok')) else 'Sin datos en caché'
-        ext_diag = 'Activa en GNOME Shell' if _extension_activa() else ('Instalada (desactivada)' if _extension_instalada() else 'No instalada')
+        ext_diag = 'Activa en GNOME Shell' if ext_on else ('Instalada (desactivada)' if _extension_instalada() else 'No instalada')
         self.lbl_diag.set_text(
             f"ℹ️ Versión instalada: v{VERSION_ACTUAL}\n"
             f"✅ {len(mons) or 1} pantalla(s) detectadas.\n"

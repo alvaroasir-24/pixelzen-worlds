@@ -130,7 +130,10 @@ def check_temas_y_packs():
             for campo in campos_req:
                 assert campo in data and data[campo], f'Falta "{campo}" en {tjson}'
 
-            for base_rel in (os.path.join('windows', 'lively', 'temas', tema, *sub), os.path.join('docs', 'temas', tema, *sub)):
+            pack_bases = [os.path.join('docs', 'temas', tema, *sub)]
+            if os.path.isdir(os.path.join(ROOT, 'windows', 'lively', 'temas')):
+                pack_bases.append(os.path.join('windows', 'lively', 'temas', tema, *sub))
+            for base_rel in pack_bases:
                 bdir = os.path.join(ROOT, base_rel)
                 for req in ('datos.json', 'tema.json'):
                     assert os.path.isfile(os.path.join(bdir, req)), f'Falta {base_rel}/{req}'
@@ -177,7 +180,9 @@ def check_windows_renderer():
 
     with tempfile.TemporaryDirectory() as tmp:
         out_png = os.path.join(tmp, 'frame.png')
-        tema_dir = os.path.join(ROOT, 'windows', 'lively', 'temas', 'spiderman-miles-morales')
+        tema_dir = os.path.join(ROOT, 'docs', 'temas', 'spiderman-miles-morales')
+        if not os.path.isdir(tema_dir):
+            tema_dir = os.path.join(ROOT, 'windows', 'lively', 'temas', 'spiderman-miles-morales')
         pixelzen_win.render_frame_pillow(tema_dir, datetime.datetime(2026, 6, 21, 18, 45, 0), out_png)
         with Image.open(out_png) as im:
             assert im.size == (1920, 1200), f'Tamaño inesperado: {im.size}'

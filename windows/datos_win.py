@@ -187,20 +187,20 @@ def red_rapida():
             break
 
     if sys.platform == 'win32':
-        wlan = _run_quiet(['netsh', 'wlan', 'show', 'interfaces'], timeout=2)
-        ssid_found = False
-        for l in wlan.splitlines():
-            if 'SSID' in l and 'BSSID' not in l and ':' in l:
-                ssid = l.split(':', 1)[1].strip()
-                if ssid:
-                    iface = ssid[:18]
-                    ssid_found = True
-                    break
-        if not ssid_found:
-            now_if = time.monotonic()
-            if _CACHE_IFACE['ip'] == ip and now_if - _CACHE_IFACE['t'] < 30:
-                iface = _CACHE_IFACE['iface']
-            else:
+        now_if = time.monotonic()
+        if _CACHE_IFACE['ip'] == ip and now_if - _CACHE_IFACE['t'] < 20:
+            iface = _CACHE_IFACE['iface']
+        else:
+            wlan = _run_quiet(['netsh', 'wlan', 'show', 'interfaces'], timeout=2)
+            ssid_found = False
+            for l in wlan.splitlines():
+                if 'SSID' in l and 'BSSID' not in l and ':' in l:
+                    ssid = l.split(':', 1)[1].strip()
+                    if ssid:
+                        iface = ssid[:18]
+                        ssid_found = True
+                        break
+            if not ssid_found:
                 addr_out = _run_quiet(['netsh', 'interface', 'ipv4', 'show', 'addresses'], timeout=2)
                 cur_if = ''
                 detected = 'ETHERNET'
@@ -211,8 +211,8 @@ def red_rapida():
                     elif ip and ip in line and cur_if:
                         detected = cur_if.upper()[:18]
                         break
-                _CACHE_IFACE.update({'t': now_if, 'ip': ip, 'iface': detected})
                 iface = detected
+            _CACHE_IFACE.update({'t': now_if, 'ip': ip, 'iface': iface})
     return {'iface': iface, 'ip': ip, 'rx': rx_s, 'tx': tx_s}
 
 
@@ -288,7 +288,7 @@ def gpu_lento():
 
 def _nvidia_smi():
     now = time.monotonic()
-    if now - _CACHE_NV['t'] < 2.5:
+    if now - _CACHE_NV['t'] < 8.0:
         return _CACHE_NV['data']
     info = None
     if sys.platform == 'win32' and shutil.which('nvidia-smi'):

@@ -10,11 +10,22 @@
   "modo_pajaros": "gaviotas",
   "color_pajaros": "#cbd5e1",
   "modo_particulas": "brasas_mana",
-  "colores_hojas": ["#ffffff", "#ef4444", "#38bdf8", "#facc15"],
+  "colores_hojas": [
+    "#ffffff",
+    "#ef4444",
+    "#38bdf8",
+    "#facc15"
+  ],
   "color_mana_halo": "#f8fafc",
   "color_mana_centro": "#ffffff",
-  "color_fuegos_halo": ["#ef4444", "#f97316"],
-  "color_fuegos_centro": ["#fef08a", "#ffffff"],
+  "color_fuegos_halo": [
+    "#ef4444",
+    "#f97316"
+  ],
+  "color_fuegos_centro": [
+    "#fef08a",
+    "#ffffff"
+  ],
   "color_ventanas": "#fb923c",
   "color_faroles_halo": "#f97316",
   "color_faroles_centro": "#fef3c7",
@@ -22,13 +33,29 @@
   "color_runas_centro": "#fef08a",
   "color_humo_dia": "#ffffff",
   "color_humo_noche": "#64748b",
-  "color_olas": ["#38bdf8", "#1e3a8a"],
+  "color_olas": [
+    "#38bdf8",
+    "#1e3a8a"
+  ],
   "color_reflejo_sol": "#fef08a",
   "color_reflejo_luna": "#f8fafc",
   "color_destello": "#ffffff",
   "citas": [
-    {"sub": "Monkey D. Luffy · Gear 5", "es": "«¡Esta es mi cima! Los Tambores de la Liberación retumban bajo la luna y nadie volverá a pasar hambre.»", "au": "Monkey D. Luffy (Nika)"},
-    {"sub": "Kaido · El Señor de las Bestias", "es": "«Worororo… ¡Muestra hasta dónde puede llegar ese sombrero bajo este cielo en llamas!»", "au": "Kaido"},
-    {"sub": "Gol D. Roger · La Era de los Piratas", "es": "«¡Los sueños de la gente nunca mueren mientras siga soplando el viento en el mar!»", "au": "Marshall D. Teach / Narrador"}
-  ]
+    {
+      "sub": "Monkey D. Luffy · Gear 5",
+      "es": "«¡Esta es mi cima! Los Tambores de la Liberación retumban bajo la luna y nadie volverá a pasar hambre.»",
+      "au": "Monkey D. Luffy (Nika)"
+    },
+    {
+      "sub": "Kaido · El Señor de las Bestias",
+      "es": "«Worororo… ¡Muestra hasta dónde puede llegar ese sombrero bajo este cielo en llamas!»",
+      "au": "Kaido"
+    },
+    {
+      "sub": "Gol D. Roger · La Era de los Piratas",
+      "es": "«¡Los sueños de la gente nunca mueren mientras siga soplando el viento en el mar!»",
+      "au": "Marshall D. Teach / Narrador"
+    }
+  ],
+  "titulo": "Gear 5 & Onigashima"
 }

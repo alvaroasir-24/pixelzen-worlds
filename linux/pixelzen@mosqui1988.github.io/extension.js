@@ -62,10 +62,17 @@ export default class PixelZenExtension extends Extension {
                 this._programaRotacion();
             } else if (clave === 'hud' || clave === 'hud-monitor' || clave === 'todos-monitores' || clave === 'num-monitores') {
                 this._construye();
-            } else if (clave.startsWith('hud-') || clave === 'clima') {
-                this._escena?.ajustesCambiados();
+            } else if (clave.startsWith('hud-')) {
+                this._hud?.ajustesCambiados?.();
                 this._colocaHud();
                 this._hud?.actor?.queue_repaint();
+            } else if (clave === 'clima') {
+                this._escena?.ajustesCambiados();
+                this._hud?.ajustesCambiados?.();
+                this._colocaHud();
+                this._hud?.actor?.queue_repaint();
+            } else if (clave === 'hora-simulada') {
+                this._escena?.actualizaHoraSimulada();
             } else {
                 this._escena?.ajustesCambiados();
             }
@@ -137,8 +144,16 @@ export default class PixelZenExtension extends Extension {
     _actualizaPausa() {
         const bloqueada = Main.sessionMode.isLocked || Main.sessionMode.isGreeter;
         const lm = Main.layoutManager;
-        const completa = lm.primaryIndex >= 0 && global.display.get_monitor_in_fullscreen(lm.primaryIndex);
-        this._escena?.pausa(bloqueada || completa);
+        let completa = false;
+        for (let i = 0; i < lm.monitors.length; i++) {
+            if (global.display.get_monitor_in_fullscreen(i)) {
+                completa = true;
+                break;
+            }
+        }
+        const pausado = bloqueada || completa;
+        this._escena?.pausa(pausado);
+        this._hud?.pausa?.(pausado);
     }
 
     _programaRotacion() {

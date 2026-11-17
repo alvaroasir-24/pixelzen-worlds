@@ -7,5 +7,7 @@ Thumbs.db
 *.log
 gschemas.compiled
 escenas/*/pack/
+escenas/*/*/pack/
+windows/lively/temas/
 windows/config.json
 dist/

@@ -118,21 +118,96 @@ export class Hud {
         this._timers = [];
         this._cancel = new Gio.Cancellable();
         this._fuentes = new Map();
+        this._rgbCache = new Map();
         this._lastArea = null;
         this._lastAltoDisp = 900;
+        this._pausa = false;
+        this._workerProc = null;
+        this._workerOut = null;
+        this._workerIn = null;
+        this._workerQueue = [];
+        this._workerBusy = false;
+        this._moonKey = -1;
+        this._moonCells = null;
 
         this.actor = new St.DrawingArea({reactive: false});
         this.actor.connect('repaint', a => this._pinta(a));
 
+        this._iniciaTimers();
         this._lanza('rapido'); this._lanza('lento');
         this._lanzaClima();
         this._lanzaMedia();
-        this._cada(2000, () => this._lanza('rapido'));
-        this._cada(3000, () => this._lanzaMedia());
-        this._cada(20000, () => this._lanza('lento'));
+    }
+
+    _ver(k) {
+        if (!this._settings) return true;
+        try { return this._settings.get_boolean(k); } catch (_e) { return true; }
+    }
+
+    _seccionesRapido() {
+        const s = [];
+        if (this._ver('hud-sistema')) s.push('sistema');
+        if (this._ver('hud-gpu')) s.push('gpu');
+        if (this._ver('hud-red')) s.push('red');
+        return s;
+    }
+
+    _seccionesLento() {
+        const s = [];
+        if (this._ver('hud-red')) s.push('red');
+        if (this._ver('hud-dev')) s.push('dev');
+        return s;
+    }
+
+    _necesitaTick1s() {
+        if (this._ver('hud-tiempo') || this._ver('hud-foco')) return true;
+        return Boolean(this._ver('hud-audio') && this.media?.ok && this.media.playing && this.media.durSec > 0);
+    }
+
+    _iniciaTimers() {
+        this._paraTimers();
+        if (this._pausa) return;
+        let secCnt = 0;
+        this._cada(3000, () => this._lanza('rapido'));
+        this._cada(4000, () => this._lanzaMedia());
+        this._cada(30000, () => this._lanza('lento'));
         this._cada(900000, () => this._lanzaClima());
-        this._cada(1000, () => this.actor.queue_repaint());
-        this._cada(90000, () => this._cambiaHaiku());
+        this._cada(1000, () => {
+            secCnt++;
+            if (this._necesitaTick1s() || secCnt % 60 === 0) {
+                this.actor.queue_repaint();
+            }
+        });
+        this._cada(90000, () => {
+            if (this._ver('hud-grimorio') && !this._ver('solo-widgets')) this._cambiaHaiku();
+        });
+    }
+
+    _paraTimers() {
+        for (const t of this._timers) GLib.source_remove(t);
+        this._timers = [];
+    }
+
+    pausa(p) {
+        const np = !!p;
+        if (np === this._pausa) return;
+        this._pausa = np;
+        if (np) {
+            this._paraTimers();
+        } else {
+            this._iniciaTimers();
+            this._lanza('rapido');
+            this._lanzaMedia();
+            this.actor?.queue_repaint();
+        }
+    }
+
+    ajustesCambiados() {
+        if (!this._pausa) {
+            this._lanza('rapido');
+            this._lanza('lento');
+            this._lanzaMedia();
+        }
     }
 
     ponUbicacion(lat, lon) {
@@ -253,38 +328,111 @@ export class Hud {
         this._timers.push(GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => { fn(); return GLib.SOURCE_CONTINUE; }));
     }
 
-    _lanza(modo) {
-        if (this._ocupado[modo]) return;
-        this._ocupado[modo] = true;
-        let proc;
+    _aseguraWorker() {
+        if (this._workerProc) return true;
         try {
-            proc = Gio.Subprocess.new(['python3', '-I', this._script, modo, 'gnome'],
-                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE);
+            const proc = Gio.Subprocess.new(
+                ['python3', '-I', this._script, 'worker', 'gnome'],
+                Gio.SubprocessFlags.STDIN_PIPE | Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
+            );
+            this._workerProc = proc;
+            this._workerIn = new Gio.DataOutputStream({base_stream: proc.get_stdin_pipe()});
+            this._workerOut = new Gio.DataInputStream({base_stream: proc.get_stdout_pipe()});
+            this._workerBusy = false;
+            proc.wait_async(this._cancel, () => {
+                if (this._workerProc === proc) {
+                    this._workerProc = null;
+                    this._workerIn = null;
+                    this._workerOut = null;
+                    this._workerBusy = false;
+                    this._workerQueue = [];
+                    this._ocupado.rapido = false;
+                    this._ocupado.lento = false;
+                }
+            });
+            return true;
         } catch (_e) {
-            this._ocupado[modo] = false;
+            this._workerProc = null;
+            return false;
+        }
+    }
+
+    _bombeaWorker() {
+        if (this._workerBusy || !this._workerQueue.length) return;
+        if (!this._aseguraWorker()) {
+            while (this._workerQueue.length) {
+                const it = this._workerQueue.shift();
+                this._ocupado[it.modo] = false;
+            }
             return;
         }
-        proc.communicate_utf8_async(null, this._cancel, (p, res) => {
-            this._ocupado[modo] = false;
-            try {
-                const [, out] = p.communicate_utf8_finish(res);
-                const j = JSON.parse(out);
-                if (modo === 'rapido') {
-                    const hadBat = Boolean(this.d?.bat);
-                    this.d = j;
-                    this.cpuH = this._push(this.cpuH, j.cpu, 120);
-                    this.rxH = this._push(this.rxH, j.net?.rx ?? 0, 120);
-                    if (Boolean(j?.bat) !== hadBat && this._lastArea) this.coloca(this._lastArea);
-                } else {
-                    this.s = j;
-                    if (this._lastArea) this.coloca(this._lastArea);
+        const item = this._workerQueue.shift();
+        this._workerBusy = true;
+        try {
+            const cmd = item.secc ? `${item.modo}:${item.secc}\n` : `${item.modo}\n`;
+            this._workerIn.put_string(cmd, this._cancel);
+            this._workerOut.read_line_async(GLib.PRIORITY_DEFAULT, this._cancel, (stream, res) => {
+                this._workerBusy = false;
+                this._ocupado[item.modo] = false;
+                try {
+                    const [line] = stream.read_line_finish_utf8(res);
+                    if (line === null) {
+                        this._cierraWorker();
+                    } else {
+                        const j = JSON.parse(line);
+                        if (j && !j.error) {
+                            this._aplicaDatos(item.modo, j);
+                        }
+                    }
+                } catch (_e) {
+                    this._cierraWorker();
                 }
-                this.actor.queue_repaint();
-            } catch (_e) { /* reintento */ }
-        });
+                this._bombeaWorker();
+            });
+        } catch (_e) {
+            this._workerBusy = false;
+            this._ocupado[item.modo] = false;
+            this._cierraWorker();
+        }
+    }
+
+    _cierraWorker() {
+        try { this._workerIn?.close(null); } catch (_e) {}
+        try { this._workerOut?.close(null); } catch (_e) {}
+        try { this._workerProc?.force_exit(); } catch (_e) {}
+        this._workerProc = null;
+        this._workerIn = null;
+        this._workerOut = null;
+        this._workerBusy = false;
+        this._workerQueue = [];
+    }
+
+    _aplicaDatos(modo, j) {
+        if (modo === 'rapido') {
+            const hadBat = Boolean(this.d?.bat);
+            this.d = j;
+            this.cpuH = this._push(this.cpuH, j.cpu ?? 0, 120);
+            this.rxH = this._push(this.rxH, j.net?.rx ?? 0, 120);
+            if (Boolean(j?.bat) !== hadBat && this._lastArea) this.coloca(this._lastArea);
+        } else {
+            this.s = j;
+            if (this._lastArea) this.coloca(this._lastArea);
+        }
+        this.actor.queue_repaint();
+    }
+
+    _lanza(modo) {
+        if (this._pausa || this._ocupado[modo]) return;
+        const seccList = modo === 'rapido' ? this._seccionesRapido() : this._seccionesLento();
+        if (!seccList.length) return;
+        this._ocupado[modo] = true;
+        this._workerQueue.push({modo, secc: seccList.join(',')});
+        this._bombeaWorker();
     }
 
     _lanzaClima() {
+        const clModo = (() => { try { return this._settings?.get_string('clima') || 'normal'; } catch (_e) { return 'normal'; } })();
+        if (!this._ver('hud-clima') && clModo !== 'auto') return;
         if (this._ocupado.clima || !GLib.file_test(this._climaScript, GLib.FileTest.EXISTS)) return;
         this._ocupado.clima = true;
         try {
@@ -311,7 +459,7 @@ export class Hud {
     }
 
     _lanzaMedia() {
-        if (this._ocupado.media) return;
+        if (this._pausa || !this._ver('hud-audio') || this._ocupado.media) return;
         this._ocupado.media = true;
         Gio.DBus.session.call(
             'org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'ListNames',
@@ -406,14 +554,27 @@ export class Hud {
         }
         return this._fuentes.get(k);
     }
-    _col(hex, a = 1) { const [r, g, b] = rgb(hex); this.cr.setSourceRGBA(r, g, b, a); }
+    _col(hex, a = 1) {
+        let c = this._rgbCache.get(hex);
+        if (!c) { c = rgb(hex); this._rgbCache.set(hex, c); }
+        this.cr.setSourceRGBA(c[0], c[1], c[2], a);
+    }
     _rect(x, y, w, h, hex, a = 1) { this._col(hex, a); this.cr.rectangle(x, y, w, h); this.cr.fill(); }
     _t(x, y, txt, o = {}) {
         const cr = this.cr;
-        const lay = PangoCairo.create_layout(cr);
+        const lay = this._pangoLay || PangoCairo.create_layout(cr);
         lay.set_font_description(this._fuente(o.fam ?? MONO, o.px ?? 12));
-        if (o.wrap && o.w) { lay.set_width(o.w * Pango.SCALE); lay.set_wrap(Pango.WrapMode.WORD); }
-        else if (o.w && !o.align) { lay.set_width(o.w * Pango.SCALE); lay.set_ellipsize(Pango.EllipsizeMode.END); }
+        if (o.wrap && o.w) {
+            lay.set_ellipsize(Pango.EllipsizeMode.NONE);
+            lay.set_width(o.w * Pango.SCALE);
+            lay.set_wrap(Pango.WrapMode.WORD);
+        } else if (o.w && !o.align) {
+            lay.set_width(o.w * Pango.SCALE);
+            lay.set_ellipsize(Pango.EllipsizeMode.END);
+        } else {
+            lay.set_width(-1);
+            lay.set_ellipsize(Pango.EllipsizeMode.NONE);
+        }
         lay.set_text(String(txt), -1);
         const [tw] = lay.get_pixel_size();
         let xx = x;
@@ -492,17 +653,26 @@ export class Hud {
             this._t(b.x, b.y + 39, `${DIAS[now.getDay()]} ${now.getDate()} ${MESES[now.getMonth()]} ${now.getFullYear()}`, {px: 11.5});
             this._t(b.x, b.y + 56, soloW ? (s.host ?? 'FONDO EXTERNO') : this.eraSub, {px: 10.5, col: P.flor, w: b.w - 58});
 
-            const L = luna(), q = Math.cos(2 * Math.PI * L.p);
-            const lx = b.x + b.w - 40, ly = b.y + 1;
-            for (let j = 0; j < 9; j++) {
-                for (let i = 0; i < 9; i++) {
-                    const nx = (i - 4) / 4.5, ny = (j - 4) / 4.5;
-                    if (nx * nx + ny * ny > 1.02) continue;
-                    const ill = Math.sqrt(Math.max(0, 1 - ny * ny));
-                    const lit = L.p < 0.5 ? nx >= q * ill : nx <= -Math.cos(2 * Math.PI * (1 - L.p)) * ill;
-                    this._rect(lx + i * 4, ly + j * 4, 4, 4, lit ? '#f6ecd4' : '#1e2c48');
+            const L = luna();
+            const mKey = Math.round(L.age * 4);
+            if (this._moonKey !== mKey || !this._moonCells) {
+                this._moonKey = mKey;
+                const q = Math.cos(2 * Math.PI * L.p);
+                const q2 = Math.cos(2 * Math.PI * (1 - L.p));
+                const cells = [];
+                for (let j = 0; j < 9; j++) {
+                    for (let i = 0; i < 9; i++) {
+                        const nx = (i - 4) / 4.5, ny = (j - 4) / 4.5;
+                        if (nx * nx + ny * ny > 1.02) continue;
+                        const ill = Math.sqrt(Math.max(0, 1 - ny * ny));
+                        const lit = L.p < 0.5 ? nx >= q * ill : nx <= -q2 * ill;
+                        cells.push([i * 4, j * 4, lit ? '#f6ecd4' : '#1e2c48']);
+                    }
                 }
+                this._moonCells = cells;
             }
+            const lx = b.x + b.w - 40, ly = b.y + 1;
+            for (const [dx, dy, col] of this._moonCells) this._rect(lx + dx, ly + dy, 4, 4, col);
             this._t(b.x + b.w - 50, b.y + 39, 'LUNA ' + Math.round(L.age) + 'd', {px: 9.5, col: P.dim, w: 50, align: 'center'});
         } else if (id === 'clima') {
             const hf = st ? st.get_double('hora-simulada') : -1;
@@ -585,7 +755,9 @@ export class Hud {
             let pxX = b.x;
             for (const pt of (s.puertos ?? []).slice(0, 6)) {
                 const txt = pt.p + (pt.n ? ' ' + pt.n.substring(0, 5) : '');
-                const lay = PangoCairo.create_layout(this.cr);
+                const lay = this._pangoLay || PangoCairo.create_layout(this.cr);
+                lay.set_width(-1);
+                lay.set_ellipsize(Pango.EllipsizeMode.NONE);
                 lay.set_font_description(this._fuente(MONO, 10)); lay.set_text(txt, -1);
                 const tw = lay.get_pixel_size()[0] + 8;
                 if (pxX + tw > b.x + b.w) { pxX = b.x; fy += 18; if (fy > y + h - 30) break; }
@@ -668,6 +840,7 @@ export class Hud {
     _pinta(area) {
         const cr = area.get_context();
         this.cr = cr;
+        this._pangoLay = PangoCairo.create_layout(cr);
         this._pal = this._paleta();
         try {
             const [sw] = area.get_surface_size();
@@ -686,6 +859,7 @@ export class Hud {
         } catch (e) {
             logError(e, 'PixelZen HUD');
         } finally {
+            this._pangoLay = null;
             cr.$dispose();
             this.cr = null;
         }
@@ -693,8 +867,8 @@ export class Hud {
 
     destroy() {
         this._cancel.cancel();
-        for (const t of this._timers) GLib.source_remove(t);
-        this._timers = [];
+        this._cierraWorker();
+        this._paraTimers();
         this.actor.destroy();
     }
 }

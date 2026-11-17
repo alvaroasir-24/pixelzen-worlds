@@ -33,7 +33,11 @@ try {
         Copy-Item -Path $webItem.FullName -Destination (Join-Path $LivelyDst $webItem.Name) -Force
     }
 
-    $TemasSrc = Join-Path $Raiz 'windows\lively\temas'
+    $TemasSrc = if (Test-Path (Join-Path $Raiz 'docs\temas')) {
+        Join-Path $Raiz 'docs\temas'
+    } else {
+        Join-Path $Raiz 'windows\lively\temas'
+    }
     $TemasDst = Join-Path $LivelyDst 'temas'
     Copy-Item -Path $TemasSrc -Destination $TemasDst -Recurse -Force
 

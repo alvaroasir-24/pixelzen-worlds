@@ -31,7 +31,7 @@ done
 ver="$(gnome-shell --version | grep -oE '[0-9]+' | head -1)"
 [ "${ver:-0}" -ge 46 ] || { echo "GNOME Shell $ver no soportado (minimo 46)." >&2; exit 1; }
 
-if [ ! -d "$RAIZ/temas/$TEMA/images" ] && [ ! -d "$RAIZ/escenas/$TEMA/pack/images" ]; then
+if [ ! -d "$RAIZ/temas/$TEMA/images" ] && [ ! -d "$RAIZ/docs/temas/$TEMA/images" ] && [ ! -d "$RAIZ/windows/lively/temas/$TEMA/images" ] && [ ! -d "$RAIZ/escenas/$TEMA/pack/images" ]; then
   echo "==> Compilando tema '$TEMA'..."
   python3 "$RAIZ/src/construir.py" "$TEMA"
 fi
@@ -46,6 +46,8 @@ cp "$RAIZ/LICENSE" "$EXT/"
 
 if [ -d "$RAIZ/temas" ]; then
   cp -a "$RAIZ/temas/." "$EXT/temas/"
+elif [ -d "$RAIZ/docs/temas" ]; then
+  cp -a "$RAIZ/docs/temas/." "$EXT/temas/"
 elif [ -d "$RAIZ/windows/lively/temas" ]; then
   cp -a "$RAIZ/windows/lively/temas/." "$EXT/temas/"
 fi

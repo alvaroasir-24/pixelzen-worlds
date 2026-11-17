@@ -71,53 +71,126 @@ def bateria():
         return dict(pct=cap, estado=est, min=minutos, w=watts)
     return None
 
+_BIN_CACHE = {}
+
+
+def _which(cmd):
+    if cmd not in _BIN_CACHE:
+        _BIN_CACHE[cmd] = shutil.which(cmd)
+    return _BIN_CACHE[cmd]
+
+
+def _default_route_proc():
+    try:
+        with open('/proc/net/route') as f:
+            next(f, None)
+            for line in f:
+                cols = line.split()
+                if len(cols) >= 3 and cols[1] == '00000000':
+                    iface = cols[0]
+                    gw_hex = cols[2]
+                    gw = None
+                    if len(gw_hex) == 8 and gw_hex != '00000000':
+                        b = bytes.fromhex(gw_hex)
+                        gw = f'{b[3]}.{b[2]}.{b[1]}.{b[0]}'
+                    return iface, gw
+    except Exception:
+        pass
+    return None, None
+
+
 def red(e):
-    r = sh(['ip', '-o', 'route', 'show', 'default']); m = re.search(r'dev (\S+)', r); iface = m.group(1) if m else None
-    gw = re.search(r'via (\S+)', r)
-    out = dict(iface=iface, ip=None, ssid=None, senal=None, rx=0, tx=0, gw=gw.group(1) if gw else None, vpn=dict(on=False, iface=None, ip=None))
     ahora = time.time()
+    iface, gw = _default_route_proc()
+    if iface is None:
+        r = sh(['ip', '-o', 'route', 'show', 'default'])
+        m = re.search(r'dev (\S+)', r)
+        iface = m.group(1) if m else None
+        mg = re.search(r'via (\S+)', r)
+        gw = mg.group(1) if mg else None
+
+    meta = e.get('net_meta')
+    if not meta or meta.get('iface') != iface or ahora - meta.get('t', 0) >= 20:
+        ip = None
+        ssid = None
+        senal = None
+        vpn = dict(on=False, iface=None, ip=None)
+        if iface:
+            a = sh(['ip', '-o', '-4', 'addr', 'show', iface])
+            m = re.search(r'inet (\S+?)/', a)
+            ip = m.group(1) if m else None
+            if os.path.exists(f'/sys/class/net/{iface}/wireless'):
+                if _which('iw'):
+                    l = sh(['iw', 'dev', iface, 'link'])
+                    m = re.search(r'SSID: (.+)', l)
+                    ssid = m.group(1).strip() if m else None
+                    m = re.search(r'signal: (-?\d+) dBm', l)
+                    if m:
+                        senal = max(0, min(100, 2 * (int(m.group(1)) + 100)))
+                else:
+                    for l in sh(['nmcli', '-t', '-f', 'IN-USE,SIGNAL,SSID', 'dev', 'wifi', 'list', 'ifname', iface, '--rescan', 'no']).splitlines():
+                        if l.startswith('*:'):
+                            _, sen, ss = l.split(':', 2)
+                            ssid = ss.replace('\\:', ':') or None
+                            senal = int(sen) if sen.isdigit() else None
+                            break
+        for v in sorted(os.listdir('/sys/class/net')):
+            if re.match(r'(tailscale|tun|wg|proton|nordlynx|vpn)', v) and leer(f'/sys/class/net/{v}/operstate') != 'down':
+                a = sh(['ip', '-o', '-4', 'addr', 'show', v])
+                m = re.search(r'inet (\S+?)/', a)
+                vpn = dict(on=True, iface=v, ip=m.group(1) if m else None)
+                break
+        meta = dict(t=ahora, iface=iface, ip=ip, ssid=ssid, senal=senal, vpn=vpn)
+        e['net_meta'] = meta
+
+    out = dict(iface=iface, ip=meta['ip'], ssid=meta['ssid'], senal=meta['senal'], rx=0, tx=0, gw=gw, vpn=meta['vpn'])
     if iface:
-        a = sh(['ip', '-o', '-4', 'addr', 'show', iface]); m = re.search(r'inet (\S+?)/', a); out['ip'] = m.group(1) if m else None
         try:
-            rx = int(leer(f'/sys/class/net/{iface}/statistics/rx_bytes', '0')); tx = int(leer(f'/sys/class/net/{iface}/statistics/tx_bytes', '0'))
+            rx = int(leer(f'/sys/class/net/{iface}/statistics/rx_bytes', '0'))
+            tx = int(leer(f'/sys/class/net/{iface}/statistics/tx_bytes', '0'))
             ant = e.get('net')
             if ant and ant[0] == iface and ahora > ant[3]:
-                dt = ahora - ant[3]; out['rx'] = max(0, int((rx - ant[1]) / dt)); out['tx'] = max(0, int((tx - ant[2]) / dt))
+                dt = ahora - ant[3]
+                out['rx'] = max(0, int((rx - ant[1]) / dt))
+                out['tx'] = max(0, int((tx - ant[2]) / dt))
             e['net'] = [iface, rx, tx, ahora]
-        except Exception: pass
-        if os.path.exists(f'/sys/class/net/{iface}/wireless'):
-            if shutil.which('iw'):
-                l = sh(['iw', 'dev', iface, 'link'])
-                m = re.search(r'SSID: (.+)', l); out['ssid'] = m.group(1).strip() if m else None
-                m = re.search(r'signal: (-?\d+) dBm', l)
-                if m: out['senal'] = max(0, min(100, 2 * (int(m.group(1)) + 100)))
-            else:   # Ubuntu no trae iw: NetworkManager (sin volver a escanear)
-                for l in sh(['nmcli', '-t', '-f', 'IN-USE,SIGNAL,SSID', 'dev', 'wifi', 'list', 'ifname', iface, '--rescan', 'no']).splitlines():
-                    if l.startswith('*:'):
-                        _, sen, ssid = l.split(':', 2); out['ssid'] = ssid.replace('\\:', ':') or None
-                        out['senal'] = int(sen) if sen.isdigit() else None; break
-    for v in sorted(os.listdir('/sys/class/net')):
-        if re.match(r'(tailscale|tun|wg|proton|nordlynx|vpn)', v) and leer(f'/sys/class/net/{v}/operstate') != 'down':
-            a = sh(['ip', '-o', '-4', 'addr', 'show', v]); m = re.search(r'inet (\S+?)/', a)
-            out['vpn'] = dict(on=True, iface=v, ip=m.group(1) if m else None); break
+        except Exception:
+            pass
     return out
 
+
+def _nvidia_suspendida():
+    for dev in glob.glob('/sys/bus/pci/devices/*'):
+        if leer(dev + '/vendor') == '0x10de':
+            cls = leer(dev + '/class')
+            if cls.startswith('0x03'):
+                if leer(dev + '/power/runtime_status') == 'suspended':
+                    return True
+    return False
+
+
 def gpu_info(e):
-    """Detecta GPU (NVIDIA, AMD DRM o lspci) sin bloquear."""
-    if shutil.which('nvidia-smi'):
+    """Detecta GPU (NVIDIA, AMD DRM o lspci) sin bloquear ni despertar GPU suspendida."""
+    ahora = time.time()
+    if _which('nvidia-smi') and not _nvidia_suspendida():
+        nv_t = e.get('nv_t', 0)
+        if e.get('nv_d') and ahora - nv_t < 8:
+            return e['nv_d']
         out = sh(['nvidia-smi', '--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total', '--format=csv,noheader,nounits'], 2)
         if out.strip():
             p = [x.strip() for x in out.splitlines()[0].split(',')]
             if len(p) >= 5:
                 try:
-                    return dict(nombre=p[0], uso=int(float(p[1])), temp=int(float(p[2])), vram_u=int(float(p[3])), vram_t=int(float(p[4])))
+                    nv_d = dict(nombre=p[0], uso=int(float(p[1])), temp=int(float(p[2])), vram_u=int(float(p[3])), vram_t=int(float(p[4])))
+                    e['nv_t'] = ahora
+                    e['nv_d'] = nv_d
+                    return nv_d
                 except Exception:
                     pass
     nombre = e.get('gpu_nombre')
-    if not nombre and shutil.which('lspci'):
+    if not nombre and _which('lspci'):
         for l in sh(['lspci'], 2).splitlines():
             if any(k in l for k in ('VGA compatible controller', '3D controller', 'Display controller')):
-                m = re.search(r':\s*(.+?)(?:\s*\(rev .*\))?$', l.split(':', 2)[-1] if l.count(':') >= 2 else l)
                 cand = (l.split(':', 2)[-1] if l.count(':') >= 2 else l).strip()
                 cand = re.sub(r'\s*\(rev [^)]+\)$', '', cand)
                 cand = re.sub(r'\[[^\]]+\]\s*', '', cand).strip()
@@ -148,21 +221,62 @@ def gpu_info(e):
     return dict(nombre=nombre or 'GPU LINUX', uso=uso, temp=temp, vram_u=vram_u, vram_t=vram_t)
 
 
-def rapido():
-    e = carga_estado()
-    top = []
-    for l in sh(['ps', '-eo', 'comm,%cpu', '--sort=-%cpu', '--no-headers'], 2).splitlines()[:6]:
-        p = l.rsplit(None, 1)
-        if len(p) == 2 and p[0] not in ('ps', 'python3') and len(top) < 3: top.append([p[0], float(p[1])])
-    du = shutil.disk_usage('/')
-    cpu = cpu_pct(e)
-    g = gpu_info(e)
-    if g.get('uso') is None:
-        g['uso'] = max(2, min(95, round(cpu * 0.55 + 4)))
-    d = dict(t=int(time.time()), cpu=cpu, ram=memoria(), temp=temperatura(), bat=bateria(), net=red(e), gpu=g,
-             load=[float(x) for x in leer('/proc/loadavg').split()[:3]], up=int(float(leer('/proc/uptime', '0').split()[0])),
-             disco=round(100.0 * du.used / du.total, 1), libre=round(du.free / 2 ** 30), top=top, nuc=os.cpu_count())
-    guarda_estado(e); return d
+def rapido(e=None, secciones=None):
+    persist = e is None
+    if persist:
+        e = carga_estado()
+    ahora = time.time()
+    want_sis = not secciones or ('sistema' in secciones)
+    want_gpu = not secciones or ('gpu' in secciones)
+    want_red = not secciones or ('red' in secciones)
+
+    top = e.get('top', [])
+    if want_sis:
+        if not e.get('top_t') or ahora - e['top_t'] >= 6:
+            top = []
+            for l in sh(['ps', '-eo', 'comm,%cpu', '--sort=-%cpu', '--no-headers'], 2).splitlines()[:6]:
+                p = l.rsplit(None, 1)
+                if len(p) == 2 and p[0] not in ('ps', 'python3') and len(top) < 3:
+                    top.append([p[0], float(p[1])])
+            e['top'] = top
+            e['top_t'] = ahora
+        du = shutil.disk_usage('/')
+        cpu = cpu_pct(e)
+        ram = memoria()
+        temp = temperatura()
+        bat = bateria()
+        load = [float(x) for x in leer('/proc/loadavg').split()[:3]]
+        up = int(float(leer('/proc/uptime', '0').split()[0]))
+        disco = round(100.0 * du.used / du.total, 1)
+        libre = round(du.free / 2 ** 30)
+        nuc = os.cpu_count()
+    else:
+        cpu = 0.0
+        ram = dict(pct=0, usado=0, total=0, swap=0)
+        temp = None
+        bat = None
+        load = [0.0, 0.0, 0.0]
+        up = 0
+        disco = 0.0
+        libre = 0
+        nuc = os.cpu_count()
+
+    if want_gpu:
+        g = gpu_info(e)
+        if g.get('uso') is None:
+            if not want_sis:
+                cpu = cpu_pct(e)
+            g['uso'] = max(2, min(95, round(cpu * 0.55 + 4)))
+    else:
+        g = {}
+
+    net_d = red(e) if want_red else dict(iface=None, ip=None, ssid=None, senal=None, rx=0, tx=0, gw=None, vpn=dict(on=False, iface=None, ip=None))
+
+    d = dict(t=int(ahora), cpu=cpu, ram=ram, temp=temp, bat=bat, net=net_d, gpu=g,
+             load=load, up=up, disco=disco, libre=libre, top=top, nuc=nuc)
+    if persist:
+        guarda_estado(e)
+    return d
 
 # ----------------------------------------------------------------- lento
 PUERTOS = {22: 'ssh', 53: 'dns', 80: 'http', 443: 'https', 631: 'cups', 3000: 'dev', 3306: 'mysql', 5000: 'dev', 5173: 'vite', 5432: 'pg',
@@ -214,19 +328,43 @@ def edad_pacman():
         except Exception: pass
     return None
 
-def lento():
-    e = carga_estado()
-    fallos = len([l for l in sh(['systemctl', '--failed', '--no-legend', '--plain'], 3).splitlines() if l.strip()])
-    fallos += len([l for l in sh(['systemctl', '--user', '--failed', '--no-legend', '--plain'], 3).splitlines() if l.strip()])
-    errores = len([l for l in sh(['journalctl', '-p', '3', '-S', '-1h', '--no-pager', '-q'], 4).splitlines() if l.strip()])
-    est = len(sh(['ss', '-tnH', 'state', 'established']).splitlines())
-    vecinos = len([l for l in sh(['ip', 'neigh']).splitlines() if 'REACHABLE' in l or 'STALE' in l or 'DELAY' in l])
-    dns = re.search(r'nameserver (\S+)', leer('/etc/resolv.conf'))
-    tools = {t: bool(shutil.which(t)) for t in ('btop', 'fastfetch', 'nmap', 'wireshark', 'tcpdump', 'docker', 'podman', 'dig', 'mtr', 'ncat', 'git', 'ranger', 'yazi')}
-    d = dict(puertos=puertos(), est=est, vecinos=vecinos, dns=dns.group(1) if dns else None, repos=repos(e), fallos=fallos, errores=errores,
-             tc=dict(py=version('python3'), node=version('node'), go=version('go', ('version',)), rust=version('rustc'), docker=version('docker')),
-             tools=tools, pacman_h=edad_pacman(), kernel=os.uname().release.split('-')[0], host=os.uname().nodename)
-    guarda_estado(e); return d
+def lento(e=None, secciones=None):
+    persist = e is None
+    if persist:
+        e = carga_estado()
+    ahora = time.time()
+    want_red = not secciones or ('red' in secciones)
+    want_dev = not secciones or ('dev' in secciones)
+
+    if want_dev:
+        fallos = len([l for l in sh(['systemctl', '--failed', '--no-legend', '--plain'], 3).splitlines() if l.strip()])
+        fallos += len([l for l in sh(['systemctl', '--user', '--failed', '--no-legend', '--plain'], 3).splitlines() if l.strip()])
+        errores = len([l for l in sh(['journalctl', '-p', '3', '-S', '-1h', '--no-pager', '-q'], 4).splitlines() if l.strip()])
+        if e.get('tc_t', 0) < ahora - 600:
+            e['tc'] = dict(py=version('python3'), node=version('node'), go=version('go', ('version',)), rust=version('rustc'), docker=version('docker'))
+            e['tools'] = {t: bool(_which(t)) for t in ('btop', 'fastfetch', 'nmap', 'wireshark', 'tcpdump', 'docker', 'podman', 'dig', 'mtr', 'ncat', 'git', 'ranger', 'yazi')}
+            e['tc_t'] = ahora
+        tc = e['tc']
+        tools = e['tools']
+        repos_l = repos(e)
+        pac_h = edad_pacman()
+    else:
+        fallos, errores, tc, tools, repos_l, pac_h = 0, 0, {}, {}, [], None
+
+    if want_red:
+        pt = puertos()
+        est = len(sh(['ss', '-tnH', 'state', 'established']).splitlines())
+        vecinos = len([l for l in sh(['ip', 'neigh']).splitlines() if 'REACHABLE' in l or 'STALE' in l or 'DELAY' in l])
+        dns = re.search(r'nameserver (\S+)', leer('/etc/resolv.conf'))
+        dns_s = dns.group(1) if dns else None
+    else:
+        pt, est, vecinos, dns_s = [], 0, 0, None
+
+    d = dict(puertos=pt, est=est, vecinos=vecinos, dns=dns_s, repos=repos_l, fallos=fallos, errores=errores,
+             tc=tc, tools=tools, pacman_h=pac_h, kernel=os.uname().release.split('-')[0], host=os.uname().nodename)
+    if persist:
+        guarda_estado(e)
+    return d
 
 DEMO = os.path.exists(os.path.expanduser('~/.config/pixelzen/demo'))
 def anonimiza(d, modo):
@@ -239,7 +377,31 @@ def anonimiza(d, modo):
         d['repos'] = [dict(n='pixelzen', b='main', sucio=2, atras=0, adelante=1), dict(n='blog', b='dev', sucio=0, atras=0, adelante=0)]
     return d
 
+
+def _ejecuta_cmd(cmd_str, state):
+    parts = cmd_str.strip().split(':', 1)
+    modo = parts[0] or 'rapido'
+    secc = set(parts[1].split(',')) if len(parts) > 1 and parts[1] else None
+    r = lento(state, secc) if modo == 'lento' else rapido(state, secc)
+    return json.dumps(anonimiza(r, modo) if DEMO else r, ensure_ascii=False)
+
+
 if __name__ == '__main__':
     modo = sys.argv[1] if len(sys.argv) > 1 else 'rapido'
-    r = lento() if modo == 'lento' else rapido()
-    print(json.dumps(anonimiza(r, modo) if DEMO else r, ensure_ascii=False))
+    if modo == 'worker':
+        state = carga_estado()
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                sys.stdout.write(_ejecuta_cmd(line, state) + '\n')
+                sys.stdout.flush()
+            except Exception as exc:
+                sys.stdout.write(json.dumps({'error': str(exc)}) + '\n')
+                sys.stdout.flush()
+        guarda_estado(state)
+    else:
+        secc = set(sys.argv[3].split(',')) if len(sys.argv) > 3 and sys.argv[3] else None
+        r = lento(None, secc) if modo == 'lento' else rapido(None, secc)
+        print(json.dumps(anonimiza(r, modo) if DEMO else r, ensure_ascii=False))
