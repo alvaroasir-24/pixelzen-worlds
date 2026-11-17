@@ -261,9 +261,10 @@
         }
       }
 
+      const ti = t | 0;
       const tailDir = der ? -1 : 1;
       for (let k = 0; k < 3; k++) {
-        if ((t + k) % 3 !== 0) continue;
+        if ((ti + k) % 3 !== 0) continue;
         const sx = mx + tailDir * (10 + k * 4) + Math.round(Math.sin(t * 0.6 + k * 2) * 2);
         const sy = my + 2 + Math.round(Math.cos(t * 0.5 + k * 1.7) * 3);
         px(k === 1 ? '#ffd840' : '#00e5ff', 0.85, sx, sy, 1, 1);
@@ -306,7 +307,7 @@
         }
       }
 
-      const fIdx = (u >= 0.30 && u < 0.72 && (t % 64) < 5) ? 1 : 0;
+      const fIdx = (u >= 0.30 && u < 0.72 && ((t | 0) % 64) < 5) ? 1 : 0;
       const rows = MILES_HANG_ROWS[fIdx];
       for (let r = 0; r < rows.length; r++) {
         const ry = yTop + r;
@@ -347,7 +348,7 @@
       const pulse = 0.04 + 0.05 * osc(0.08, 0.5);
       px('#ff1e3c', pulse * (0.6 + 0.4 * nf), 0, 0, 640, 276);
       const slot = Math.floor(t / 44);
-      const age = t % 44;
+      const age = (t | 0) % 44;
       if (age >= 6) return;
       const alpha = (1 - age / 6) * (age % 2 === 0 ? 1 : 0.55);
       px('#ff2a48', alpha * 0.14, 0, 0, 640, 272);
@@ -469,8 +470,9 @@
     }
 
     function pintaDemonRengoku(t, nf) {
+      const ti = t | 0;
       const imp = Math.pow(Math.max(0, Math.sin(t * 0.28)), 4);
-      const clashTick = t % 24;
+      const clashTick = ti % 24;
       const clash = clashTick < 5 ? 1 - clashTick / 5 : 0;
       const env = 0.65 + 0.35 * nf;
 
@@ -558,9 +560,9 @@
         }
       }
       for (let b = 0; b < 6; b++) {
-        if ((t + b) % 3 === 0) continue;
+        if ((ti + b) % 3 === 0) continue;
         const ba = t * 0.37 + b * 1.05;
-        const bl = 7 + ((t * 3 + b * 5) % 10);
+        const bl = 7 + ((ti * 3 + b * 5) % 10);
         const colB = b % 2 === 0 ? '#ffe898' : '#78ecff';
         for (let s = 2; s <= bl; s += 2) {
           const jx = Math.round(Math.sin(s + t + b) * 1.4);
@@ -581,6 +583,7 @@
     }
 
     function pintaDemonTokito(t, nf) {
+      const ti = t | 0;
       const env = 0.65 + 0.35 * nf;
 
       // 1. Bancos de niebla turquesa de la Septima Postura deslizandose por el claro
@@ -615,7 +618,7 @@
       }
 
       // Destello relampago en X (Septima Postura: Neblina) sobre Gyokko
-      const flashTick = t % 28;
+      const flashTick = ti % 28;
       if (flashTick < 9) {
         const fAl = 1 - flashTick / 9;
         px('#54e8cc', 0.18 * fAl * env, 424, 260, 56, 42);
@@ -637,8 +640,8 @@
           px('#98fff0', 0.86, tx, ty, rt, rt);
         }
         // Salpicaduras en las puntas de los tentaculos
-        if ((t + (side > 0 ? 1 : 0)) % 2 === 0) {
-          const sxp = 468 + side * (36 + (t % 5));
+        if ((ti + (side > 0 ? 1 : 0)) % 2 === 0) {
+          const sxp = 468 + side * (36 + (ti % 5));
           const syp = 266 + Math.round(Math.cos(t * 0.5 + side) * 4);
           px('#d8fffc', 0.88, sxp, syp, 2, 2);
         }
@@ -655,9 +658,9 @@
         px('#54e4d4', 0.86, gx, gy, 5, 1);
         px('#ff5488', 0.80, gx + 4, gy, 2, 1);
       }
-      if (t % 3 !== 0) {
+      if (ti % 3 !== 0) {
         px('#ffffff', 0.90, 391, 279, 3, 3);
-        px('#ff6494', 0.80, 394 + (t % 4) - 2, 275 + ((t * 2) % 6), 2, 2);
+        px('#ff6494', 0.80, 394 + (ti % 4) - 2, 275 + ((ti * 2) % 6), 2, 2);
       }
     }
 
@@ -704,6 +707,7 @@
     }
 
     function pintaNarutoBaryon(t, nf) {
+      const ti = t | 0;
       const env = 0.68 + 0.32 * nf;
       const kPulse = 0.5 + 0.5 * Math.sin(t * 0.26);
 
@@ -714,7 +718,7 @@
         px('#fff0a8', 0.96, ex, 174, 2, 2);
       }
       for (let w = 0; w < 4; w++) {
-        const wy = 192 + w * 4 - ((t + w * 2) % 6);
+        const wy = 192 + w * 4 - ((ti + w * 2) % 6);
         px('#ff5a24', 0.36 * env, 130 + ((w * 7) % 16), wy, 2, 3);
       }
 
@@ -740,8 +744,8 @@
         const ay = 340 - Math.round(rise);
         px(rise > 18 ? '#ff2c1c' : '#ff9c38', Math.max(0.12, (1 - rise / 28) * 0.78), ax, ay, 2, 2);
       }
-      px('#ffe088', 0.85, 188, 300 + (t % 2), 1, 2);
-      px('#ffe088', 0.85, 204, 300 + ((t + 1) % 2), 1, 2);
+      px('#ffe088', 0.85, 188, 300 + (ti % 2), 1, 2);
+      px('#ffe088', 0.85, 204, 300 + ((ti + 1) % 2), 1, 2);
 
       // 4. Baryon Rasengan giratorio en la mano adelantada (220, 320)
       const rPulse = 0.65 + 0.35 * Math.sin(t * 0.65);
@@ -756,7 +760,7 @@
       }
 
       // 5. Chispas de choque entre Baryon Rasengan (220, 320) e Isshiki/cubos (322, 280)
-      if (t % 4 !== 0) {
+      if (ti % 4 !== 0) {
         const cxm = 258 + ((t * 7) % 48);
         const cym = 304 - Math.round((cxm - 258) * 0.4) + Math.round(Math.sin(t * 0.9) * 5);
         px('#ffd878', 0.90, cxm, cym, 3, 1);
@@ -770,7 +774,7 @@
         const cx = cubos[i][0];
         const cy = cubos[i][1] + bob;
         const sz = cubos[i][2];
-        const flash = ((t + i * 11) % 36) < 4;
+        const flash = ((ti + i * 11) % 36) < 4;
         px(flash ? '#ffb8ff' : '#c044ff', (flash ? 0.78 : 0.46) * env, cx - sz, cy - sz, sz * 2, 1);
         px('#8828c8', 0.36 * env, cx - sz, cy + sz - 1, sz * 2, 1);
       }
@@ -822,8 +826,9 @@
       }
 
       // 5. Destellos suaves sobre el Rio Naka (y >= 284, x <= 440)
+      const ti = t | 0;
       for (let r = 0; r < 10; r++) {
-        if ((t + r) % 3 === 0) continue;
+        if ((ti + r) % 3 === 0) continue;
         const rx = 44 + ((r * 39 + t * 2) % 390);
         const ry = 287 + (r % 5) * 9;
         px(nf > 0.55 ? '#98c8ff' : '#fff0b8', 0.42 * env, rx, ry, 4 + (r % 3) * 2, 1);
@@ -831,6 +836,7 @@
     }
 
     function pintaNarutoValle(t, nf) {
+      const ti = t | 0;
       const env = 0.65 + 0.35 * nf;
 
       // 1. Cascada viva del Valle del Fin (x=244..324, y=151..280)
@@ -844,7 +850,7 @@
       }
       for (let m = 0; m < 8; m++) {
         const mx = 242 + m * 11 + Math.round(Math.sin(t * 0.25 + m) * 2);
-        const my = 275 + ((t + m * 3) % 5);
+        const my = 275 + ((ti + m * 3) % 5);
         px('#e8fbff', 0.52 * env, mx, my, 5, 3);
       }
 
@@ -860,9 +866,9 @@
       // Rayos del Chidori alrededor de (291, 248)
       px('#a8d4ff', 0.32 * clash, 285, 241, 14, 14);
       for (let b = 0; b < 5; b++) {
-        if ((t + b) % 3 === 0) continue;
+        if ((ti + b) % 3 === 0) continue;
         const ba = t * 0.48 + b * 1.25;
-        const bl = 5 + ((t * 2 + b * 3) % 8);
+        const bl = 5 + ((ti * 2 + b * 3) % 8);
         for (let d = 2; d <= bl; d += 2) {
           const j = Math.round(Math.sin(d + t + b) * 1.4);
           px(b % 2 === 0 ? '#ffffff' : '#b8b0ff', 0.92, 291 + Math.round(Math.cos(ba) * d) + j, 248 + Math.round(Math.sin(ba) * d), 1, 1);
@@ -879,8 +885,8 @@
       }
 
       // Aura de Naruto (254, 268) y Sasuke (314, 268)
-      px('#ff9838', 0.65 * clash, 253, 255 - (t % 3), 2, 3);
-      px('#9880ff', 0.65 * clash, 314, 255 - ((t + 1) % 3), 2, 3);
+      px('#ff9838', 0.65 * clash, 253, 255 - (ti % 3), 2, 3);
+      px('#9880ff', 0.65 * clash, 314, 255 - ((ti + 1) % 3), 2, 3);
 
       // 3. Reflejo y ondas en la poza del Valle del Fin (284, 316)
       const poolW = 10 + ((t * 2) % 18);
@@ -889,6 +895,7 @@
     }
 
     function pintaJujutsu(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.55 + 0.45 * nf + aBoost);
       const pulse = 0.72 + 0.28 * Math.sin(t * 0.14);
@@ -906,7 +913,7 @@
       const eyeAl = Math.min(1, (0.55 + 0.45 * Math.sin(t * 0.16)) * al);
       px('#fb7185', 0.88 * eyeAl, 125, 189, 2, 2);
       px('#fb7185', 0.88 * eyeAl, 139, 189, 2, 2);
-      px('#ff2848', 0.55 * al, 120, 232 + (t % 3 === 0 ? -1 : 0), 24, 2);
+      px('#ff2848', 0.55 * al, 120, 232 + (ti % 3 === 0 ? -1 : 0), 24, 2);
       for (let s = 0; s < 5; s++) {
         const sy = 188 + ((s * 17 + t * 3) % 68);
         const sx = 98 + ((s * 29) % 68);
@@ -914,8 +921,8 @@
       }
 
       // 3. Cortes Desmantelar de Sukuna (214, 348) hacia Gojo (398, 348) y aura azul
-      px('#fb7185', 0.60 * al, 214, 314 - (t % 3), 2, 4);
-      px('#ef4444', 0.60 * al, 224, 318 - ((t + 1) % 3), 2, 4);
+      px('#fb7185', 0.60 * al, 214, 314 - (ti % 3), 2, 4);
+      px('#ef4444', 0.60 * al, 224, 318 - ((ti + 1) % 3), 2, 4);
       for (let k = 0; k < 4; k++) {
         const prog = ((t * 3 + k * 7) % 36);
         const sx0 = 242 + prog;
@@ -926,7 +933,7 @@
       }
 
       // 4. Rojo/Azul de Gojo y Choque Púrpura Vacío (306, 298)
-      px('#38bdf8', 0.68 * al, 396, 316 - ((t + 2) % 3), 2, 4);
+      px('#38bdf8', 0.68 * al, 396, 316 - ((ti + 2) % 3), 2, 4);
       const rOrb = 10 + Math.round(Math.sin(t * 0.2) * 2);
       const rAng = t * 0.22;
       px('#fb7185', 0.90 * al, 306 + Math.round(Math.cos(rAng) * rOrb), 298 + Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
@@ -949,13 +956,14 @@
     }
 
     function pintaJujutsuSec(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
       const bob = Math.round(Math.sin(t * 0.12) * 2);
 
       // 1. Prisión Confinadora (314, 282)
       px('#eab308', 0.45 * al, 306, 274 + bob, 16, 16);
-      if (t % 29 !== 0) {
+      if (ti % 29 !== 0) {
         px('#fff8e8', 0.92 * al, 312, 280 + bob, 4, 4);
         px('#e11d48', 0.95 * al, 313, 281 + bob, 2, 2);
       }
@@ -965,7 +973,7 @@
       }
 
       // 2. Destello Negro de Yuji Itadori (puño 187, 323)
-      const bfPulse = (t % 16) < 4;
+      const bfPulse = (ti % 16) < 4;
       px('#09090b', 0.90, 184, 320, 7, 7);
       px(bfPulse ? '#ffffff' : '#fb7185', 0.92 * al, 186, 322, 3, 3);
       for (let b = 0; b < 6; b++) {
@@ -981,12 +989,13 @@
         px(s % 2 === 0 ? '#38bdf8' : '#1e293b', 0.72 * al, sx, sy, 2, 2);
       }
       px('#38bdf8', 0.90 * al, 446, 314, 2, 1);
-      if ((t % 14) < 3) {
-        px('#bae6fd', 0.86 * al, 388 + (t % 5), 202, 2, 14);
+      if ((ti % 14) < 3) {
+        px('#bae6fd', 0.86 * al, 388 + (ti % 5), 202, 2, 14);
       }
     }
 
     function pintaJujutsuBloq(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
       const sway = Math.round(Math.sin(t * 0.09) * 1.5);
@@ -998,7 +1007,7 @@
 
       const pulse = 0.65 + 0.35 * Math.sin(t * 0.14);
       px('#e11d48', 0.38 * al * pulse, 313, 283, 14, 14);
-      px('#fb7185', 0.88 * al * pulse, 318, 287 + (t % 6 < 3 ? 0 : -1), 4, 7);
+      px('#fb7185', 0.88 * al * pulse, 318, 287 + (ti % 6 < 3 ? 0 : -1), 4, 7);
       px('#fef2f2', 0.88 * al, 319, 288, 2, 2);
 
       for (let w = 0; w < 6; w++) {
@@ -1013,6 +1022,7 @@
     }
 
     function pintaAotRumbling(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
       const pulse = 0.70 + 0.30 * Math.sin(t * 0.14);
@@ -1032,17 +1042,18 @@
         const ang = (a * Math.PI * 2) / 8 + t * 0.42;
         px(a % 2 === 0 ? '#f8fafc' : '#38bdf8', 0.85 * al, 392 + Math.round(Math.cos(ang) * 18), 322 + Math.round(Math.sin(ang) * 14), 3, 2);
       }
-      px('#ef4444', 0.85 * al, 206 + (t % 3) - 1, 315, 6, 2);
+      px('#ef4444', 0.85 * al, 206 + (ti % 3) - 1, 315, 6, 2);
     }
 
     function pintaAotShiganshina(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
       const pulse = 0.65 + 0.35 * Math.sin(t * 0.18);
 
       px('#fef08a', 0.92 * al * pulse, 190, 116, 3, 2);
       px('#fef08a', 0.92 * al * pulse, 212, 116, 3, 2);
-      if ((t % 18) < 5) {
+      if ((ti % 18) < 5) {
         for (let k = 0; k < 8; k++) {
           px(k % 2 === 0 ? '#fef08a' : '#f97316', 0.88 * al, 200 + Math.round(Math.sin(t + k) * 6), 24 + k * 9, 2, 7);
         }
@@ -1051,7 +1062,7 @@
         const sy = 194 - ((t + s * 9) % 34);
         px('#e2e8f0', 0.40 * al, 148 + s * 28 + Math.round(Math.sin(t * 0.06 + s) * 4), sy, 6, 3);
       }
-      px('#ef4444', 0.80 * al, 320 + Math.round(Math.sin(t * 0.2) * 3), 270 - (t % 8), 2, 4);
+      px('#ef4444', 0.80 * al, 320 + Math.round(Math.sin(t * 0.2) * 3), 270 - (ti % 8), 2, 4);
     }
 
     function pintaAotPaths(t, nf) {
@@ -1104,11 +1115,12 @@
     }
 
     function pintaOpPoneglyph(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
 
       for (let g = 0; g < 6; g++) {
-        const idx = (t + g * 5) % 24;
+        const idx = (ti + g * 5) % 24;
         const gx = 180 + (idx % 5) * 7;
         const gy = 248 + Math.floor(idx / 5) * 14;
         px('#fde047', 0.85 * al, gx, gy, 2, 2);
@@ -1166,15 +1178,16 @@
     }
 
     function pintaCyberSandevistan(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
       const cols = ['#4ade80', '#22d3ee', '#f43f5e'];
 
       for (let s = 0; s < 3; s++) {
-        const jitter = (t + s) % 3;
+        const jitter = (ti + s) % 3;
         px(cols[s], 0.52 * al, 178 + s * 16 - jitter, 314, 10, 14);
       }
-      px('#22d3ee', 0.90 * al, 227, 316 + (t % 4), 2, 6);
+      px('#22d3ee', 0.90 * al, 227, 316 + (ti % 4), 2, 6);
       // Monofilo pulsante de Lucy (328, 308) + faros Quadra + AV
       const mU = ((t * 3) % 40) / 40;
       px('#fde047', 0.92 * al, Math.round(370 - mU * 82), Math.round(328 - Math.sin(mU * Math.PI * 1.35) * 26), 3, 2);
@@ -1183,6 +1196,7 @@
     }
 
     function pintaCyberMoon(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.30 : 0;
       const al = Math.min(1, 0.58 + 0.42 * nf + aBoost);
 
@@ -1190,7 +1204,7 @@
       const tx = ((96 + t * 2) % 440);
       px('#38bdf8', 0.85 * al, tx, 221, 18, 3);
       for (const bx of [42, 148, 240, 396]) {
-        px((t + bx) % 16 < 8 ? '#38bdf8' : '#f472b6', 0.88 * al, bx, 259, 2, 2);
+        px((ti + bx) % 16 < 8 ? '#38bdf8' : '#f472b6', 0.88 * al, bx, 259, 2, 2);
       }
       for (let p = 0; p < 4; p++) {
         const gy = 290 - ((t + p * 8) % 30);
@@ -1199,6 +1213,7 @@
     }
 
     function pintaCyberBloq(t, nf) {
+      const ti = t | 0;
       const aBoost = state.audioReactivo ? (state.audioEnergy || 0) * 0.35 : 0;
       const al = Math.min(1, 0.60 + 0.40 * nf + aBoost);
 
@@ -1208,7 +1223,7 @@
         const vx = 286 + s * 11;
         px(s === activeSeg ? '#ffffff' : (s % 2 === 0 ? '#22d3ee' : '#4ade80'), (s === activeSeg ? 0.96 : 0.68) * al, vx - 1, 315, 3, 5);
       }
-      if ((t % 19) !== 0) {
+      if ((ti % 19) !== 0) {
         px('#f43f5e', 0.78 * al, 96, 166, 72, 1);
       }
       px('#4ade80', 0.60 * al * (0.6 + 0.4 * Math.sin(t * 0.15)), 316, 194, 8, 8);
@@ -1251,15 +1266,16 @@
             px(col, alphaBase * (1 - d * 0.08), gx + (wind < -1.5 ? -Math.floor(d * 0.4) : 0), gy + d, 1, 1);
           }
           if (gy > 282 && gy < 386 && i % 7 === 0) {
-            const rw = 2 + ((t + i) % 3);
+            const rw = 2 + (((t | 0) + i) % 3);
             px('#e0f2fe', 0.30 * alphaBase, gx - rw, gy + 1, rw * 2, 1);
           }
         }
         if (pesado) {
-          const flash = ((t * 17 + 13) % 131);
+          const ti = t | 0;
+          const flash = ((ti * 17 + 13) % 131);
           if (flash < 2) {
             px('#e0f2fe', flash === 0 ? 0.22 : 0.10, 0, 0, 640, 280);
-            const lx = 110 + ((t * 97) % 420);
+            const lx = 110 + ((ti * 97) % 420);
             for (let y = 8; y < 230; y += 4) {
               const jx = lx + Math.round(Math.sin(y * 0.18 + t) * 7);
               px('#f8fafc', 0.92, jx, y, 2, 4);
@@ -1678,39 +1694,39 @@
       });
 
       const esStranger = T.modo_heroe && T.modo_heroe.startsWith('stranger_');
-      if (esStranger) pintaTormentaStranger(t, nf, T.modo_heroe);
+      if (esStranger) pintaTormentaStranger(tf, nf, T.modo_heroe);
 
       ctx.globalAlpha = 1;
       ctx.drawImage(I['escena-noche'], 0, 0);
       if (wA > 0.01) { ctx.globalAlpha = wA; ctx.drawImage(I['escena-dorado'], 0, 0); }
       if (wB > 0.01) { ctx.globalAlpha = wB; ctx.drawImage(I['escena-dia'], 0, 0); }
 
-      if (T.modo_heroe === 'miles_morales') { pintaFerry(t, nf); pintaMiles(t, nf); }
-      else if (T.modo_heroe === 'miles_colgado') { pintaFerry(t, nf); pintaMilesColgado(t, nf); }
-      else if (T.modo_heroe === 'stranger_azotamentes') { pintaStrangerPrincipal(t, nf); }
-      else if (T.modo_heroe === 'stranger_demogorgon') { pintaStrangerDemogorgon(t, nf); }
-      else if (T.modo_heroe === 'stranger_reloj') { pintaStrangerReloj(t, nf); }
-      else if (T.modo_heroe === 'demon_rengoku') { pintaDemonRengoku(t, nf); }
-      else if (T.modo_heroe === 'demon_tokito') { pintaDemonTokito(t, nf); }
-      else if (T.modo_heroe === 'demon_glicinias') { pintaDemonGlicinias(t, nf); }
-      else if (T.modo_heroe === 'naruto_baryon') { pintaNarutoBaryon(t, nf); }
-      else if (T.modo_heroe === 'naruto_konoha') { pintaNarutoKonoha(t, nf); }
-      else if (T.modo_heroe === 'naruto_valle') { pintaNarutoValle(t, nf); }
-      else if (T.modo_heroe === 'jujutsu') { pintaJujutsu(t, nf); }
-      else if (T.modo_heroe === 'jujutsu_sec') { pintaJujutsuSec(t, nf); }
-      else if (T.modo_heroe === 'jujutsu_bloq') { pintaJujutsuBloq(t, nf); }
-      else if (T.modo_heroe === 'aot_rumbling') { pintaAotRumbling(t, nf); }
-      else if (T.modo_heroe === 'aot_shiganshina') { pintaAotShiganshina(t, nf); }
-      else if (T.modo_heroe === 'aot_paths') { pintaAotPaths(t, nf); }
-      else if (T.modo_heroe === 'op_gear5') { pintaOpGear5(t, nf); }
-      else if (T.modo_heroe === 'op_sunny') { pintaOpSunny(t, nf); }
-      else if (T.modo_heroe === 'op_poneglyph') { pintaOpPoneglyph(t, nf); }
-      else if (T.modo_heroe === 'dbz_ui') { pintaDbzUi(t, nf); }
-      else if (T.modo_heroe === 'dbz_namek') { pintaDbzNamek(t, nf); }
-      else if (T.modo_heroe === 'dbz_kame') { pintaDbzKame(t, nf); }
-      else if (T.modo_heroe === 'cyber_sandevistan') { pintaCyberSandevistan(t, nf); }
-      else if (T.modo_heroe === 'cyber_moon') { pintaCyberMoon(t, nf); }
-      else if (T.modo_heroe === 'cyber_bloq') { pintaCyberBloq(t, nf); }
+      if (T.modo_heroe === 'miles_morales') { pintaFerry(tf, nf); pintaMiles(tf, nf); }
+      else if (T.modo_heroe === 'miles_colgado') { pintaFerry(tf, nf); pintaMilesColgado(tf, nf); }
+      else if (T.modo_heroe === 'stranger_azotamentes') { pintaStrangerPrincipal(tf, nf); }
+      else if (T.modo_heroe === 'stranger_demogorgon') { pintaStrangerDemogorgon(tf, nf); }
+      else if (T.modo_heroe === 'stranger_reloj') { pintaStrangerReloj(tf, nf); }
+      else if (T.modo_heroe === 'demon_rengoku') { pintaDemonRengoku(tf, nf); }
+      else if (T.modo_heroe === 'demon_tokito') { pintaDemonTokito(tf, nf); }
+      else if (T.modo_heroe === 'demon_glicinias') { pintaDemonGlicinias(tf, nf); }
+      else if (T.modo_heroe === 'naruto_baryon') { pintaNarutoBaryon(tf, nf); }
+      else if (T.modo_heroe === 'naruto_konoha') { pintaNarutoKonoha(tf, nf); }
+      else if (T.modo_heroe === 'naruto_valle') { pintaNarutoValle(tf, nf); }
+      else if (T.modo_heroe === 'jujutsu') { pintaJujutsu(tf, nf); }
+      else if (T.modo_heroe === 'jujutsu_sec') { pintaJujutsuSec(tf, nf); }
+      else if (T.modo_heroe === 'jujutsu_bloq') { pintaJujutsuBloq(tf, nf); }
+      else if (T.modo_heroe === 'aot_rumbling') { pintaAotRumbling(tf, nf); }
+      else if (T.modo_heroe === 'aot_shiganshina') { pintaAotShiganshina(tf, nf); }
+      else if (T.modo_heroe === 'aot_paths') { pintaAotPaths(tf, nf); }
+      else if (T.modo_heroe === 'op_gear5') { pintaOpGear5(tf, nf); }
+      else if (T.modo_heroe === 'op_sunny') { pintaOpSunny(tf, nf); }
+      else if (T.modo_heroe === 'op_poneglyph') { pintaOpPoneglyph(tf, nf); }
+      else if (T.modo_heroe === 'dbz_ui') { pintaDbzUi(tf, nf); }
+      else if (T.modo_heroe === 'dbz_namek') { pintaDbzNamek(tf, nf); }
+      else if (T.modo_heroe === 'dbz_kame') { pintaDbzKame(tf, nf); }
+      else if (T.modo_heroe === 'cyber_sandevistan') { pintaCyberSandevistan(tf, nf); }
+      else if (T.modo_heroe === 'cyber_moon') { pintaCyberMoon(tf, nf); }
+      else if (T.modo_heroe === 'cyber_bloq') { pintaCyberBloq(tf, nf); }
       if (D.chimenea) {
         const [hx, hy] = D.chimenea;
         for (let i = 0; i < 9; i++) {
@@ -1800,8 +1816,8 @@
           px(zCol, zo, zx, zy, 2, 1);
         }
       }
-      pintaEventoEspecial(t);
-      pintaClima(t, wB, nf, fecha);
+      pintaEventoEspecial(tf);
+      pintaClima(tf, wB, nf, fecha);
       ctx.globalAlpha = 1;
 
       if (opts.onRender) opts.onRender(fecha, T);

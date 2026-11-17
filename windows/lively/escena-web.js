@@ -217,8 +217,8 @@
       renderer.render();
       reprogramar();
       refrescaStats();
-      setInterval(sincronizaEstado, 1800);
-      setInterval(refrescaStats, 2500);
+      setInterval(() => { if (!document.hidden) sincronizaEstado(); }, 1800);
+      setInterval(() => { if (!document.hidden) refrescaStats(); }, 2500);
     });
   });
 })();

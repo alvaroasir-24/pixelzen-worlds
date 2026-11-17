@@ -506,9 +506,10 @@ function pintaMiles(cr, t, nf) {
         }
     }
 
+    const ti = t | 0;
     const tailDir = der ? -1 : 1;
     for (let k = 0; k < 3; k++) {
-        if ((t + k) % 3 !== 0) continue;
+        if ((ti + k) % 3 !== 0) continue;
         const sx = mx + tailDir * (10 + k * 4) + Math.round(Math.sin(t * 0.6 + k * 2) * 2);
         const sy = my + 2 + Math.round(Math.cos(t * 0.5 + k * 1.7) * 3);
         px(cr, k === 1 ? '#ffd840' : '#00e5ff', 0.85, sx, sy, 1, 1);
@@ -540,8 +541,9 @@ function pintaFerry(cr, t, nf) {
 }
 
 function pintaDemonRengoku(cr, t, nf) {
+    const ti = t | 0;
     const imp = Math.pow(Math.max(0, Math.sin(t * 0.28)), 4);
-    const clashTick = t % 24;
+    const clashTick = ti % 24;
     const clash = clashTick < 5 ? 1 - clashTick / 5 : 0;
     const env = 0.65 + 0.35 * nf;
 
@@ -616,9 +618,9 @@ function pintaDemonRengoku(cr, t, nf) {
         }
     }
     for (let b = 0; b < 6; b++) {
-        if ((t + b) % 3 === 0) continue;
+        if ((ti + b) % 3 === 0) continue;
         const ba = t * 0.37 + b * 1.05;
-        const bl = 7 + ((t * 3 + b * 5) % 10);
+        const bl = 7 + ((ti * 3 + b * 5) % 10);
         const colB = b % 2 === 0 ? '#ffe898' : '#78ecff';
         for (let s = 2; s <= bl; s += 2) {
             px(cr, colB, 0.88, 418 + Math.round(Math.cos(ba) * s) + Math.round(Math.sin(s + t + b) * 1.4), 284 + Math.round(Math.sin(ba) * s * 0.8), 1, 1);
@@ -634,6 +636,7 @@ function pintaDemonRengoku(cr, t, nf) {
 }
 
 function pintaDemonTokito(cr, t, nf) {
+    const ti = t | 0;
     const env = 0.65 + 0.35 * nf;
     for (let i = 0; i < 6; i++) {
         const bx = 185 + ((Math.round(t * (1.2 + (i % 3) * 0.5)) + i * 64) % 350);
@@ -657,7 +660,7 @@ function pintaDemonTokito(cr, t, nf) {
             if (Math.abs(dy) <= 3) px(cr, '#e8fffc', 0.92, sx - arch + 1, sy + dy, 2, 1);
         }
     }
-    const flashTick = t % 28;
+    const flashTick = ti % 28;
     if (flashTick < 9) {
         const fAl = 1 - flashTick / 9;
         px(cr, '#54e8cc', 0.18 * fAl * env, 424, 260, 56, 42);
@@ -676,8 +679,8 @@ function pintaDemonTokito(cr, t, nf) {
             px(cr, '#2898a8', 0.75, tx - rt, ty - rt, rt * 2 + 1, rt * 2 + 1);
             px(cr, '#98fff0', 0.86, tx, ty, rt, rt);
         }
-        if ((t + (side > 0 ? 1 : 0)) % 2 === 0) {
-            px(cr, '#d8fffc', 0.88, 468 + side * (36 + (t % 5)), 266 + Math.round(Math.cos(t * 0.5 + side) * 4), 2, 2);
+        if ((ti + (side > 0 ? 1 : 0)) % 2 === 0) {
+            px(cr, '#d8fffc', 0.88, 468 + side * (36 + (ti % 5)), 266 + Math.round(Math.cos(t * 0.5 + side) * 4), 2, 2);
         }
     }
     px(cr, '#ff4878', 0.92, 467, 270, 2, 2);
@@ -689,9 +692,9 @@ function pintaDemonTokito(cr, t, nf) {
         px(cr, '#54e4d4', 0.86, gx, gy, 5, 1);
         px(cr, '#ff5488', 0.80, gx + 4, gy, 2, 1);
     }
-    if (t % 3 !== 0) {
+    if (ti % 3 !== 0) {
         px(cr, '#ffffff', 0.90, 391, 279, 3, 3);
-        px(cr, '#ff6494', 0.80, 394 + (t % 4) - 2, 275 + ((t * 2) % 6), 2, 2);
+        px(cr, '#ff6494', 0.80, 394 + (ti % 4) - 2, 275 + ((ti * 2) % 6), 2, 2);
     }
 }
 
@@ -728,6 +731,7 @@ function pintaDemonGlicinias(cr, t, nf) {
 }
 
 function pintaNarutoBaryon(cr, t, nf) {
+    const ti = t | 0;
     const env = 0.68 + 0.32 * nf;
     const kPulse = 0.5 + 0.5 * Math.sin(t * 0.26);
 
@@ -737,7 +741,7 @@ function pintaNarutoBaryon(cr, t, nf) {
         px(cr, '#fff0a8', 0.96, ex, 174, 2, 2);
     }
     for (let w = 0; w < 4; w++) {
-        const wy = 192 + w * 4 - ((t + w * 2) % 6);
+        const wy = 192 + w * 4 - ((ti + w * 2) % 6);
         px(cr, '#ff5a24', 0.36 * env, 130 + ((w * 7) % 16), wy, 2, 3);
     }
 
@@ -761,8 +765,8 @@ function pintaNarutoBaryon(cr, t, nf) {
         const ay = 340 - Math.round(rise);
         px(cr, rise > 18 ? '#ff2c1c' : '#ff9c38', Math.max(0.12, (1 - rise / 28) * 0.78), ax, ay, 2, 2);
     }
-    px(cr, '#ffe088', 0.85, 188, 300 + (t % 2), 1, 2);
-    px(cr, '#ffe088', 0.85, 204, 300 + ((t + 1) % 2), 1, 2);
+    px(cr, '#ffe088', 0.85, 188, 300 + (ti % 2), 1, 2);
+    px(cr, '#ffe088', 0.85, 204, 300 + ((ti + 1) % 2), 1, 2);
 
     const rPulse = 0.65 + 0.35 * Math.sin(t * 0.65);
     px(cr, '#ff4020', 0.35 * rPulse, 214, 314, 13, 13);
@@ -774,7 +778,7 @@ function pintaNarutoBaryon(cr, t, nf) {
             220 + Math.round(Math.cos(ra) * 5.2), 320 + Math.round(Math.sin(ra) * 5.2), 2, 2);
     }
 
-    if (t % 4 !== 0) {
+    if (ti % 4 !== 0) {
         const cxm = 258 + ((t * 7) % 48);
         const cym = 304 - Math.round((cxm - 258) * 0.4) + Math.round(Math.sin(t * 0.9) * 5);
         px(cr, '#ffd878', 0.90, cxm, cym, 3, 1);
@@ -787,7 +791,7 @@ function pintaNarutoBaryon(cr, t, nf) {
         const cx = cubos[i][0];
         const cy = cubos[i][1] + bob;
         const sz = cubos[i][2];
-        const flash = ((t + i * 11) % 36) < 4;
+        const flash = ((ti + i * 11) % 36) < 4;
         px(cr, flash ? '#ffb8ff' : '#c044ff', (flash ? 0.78 : 0.46) * env, cx - sz, cy - sz, sz * 2, 1);
         px(cr, '#8828c8', 0.36 * env, cx - sz, cy + sz - 1, sz * 2, 1);
     }
@@ -830,8 +834,9 @@ function pintaNarutoKonoha(cr, t, nf) {
         px(cr, lCol, 0.72, lx, ly, 2, 2);
     }
 
+    const ti = t | 0;
     for (let r = 0; r < 10; r++) {
-        if ((t + r) % 3 === 0) continue;
+        if ((ti + r) % 3 === 0) continue;
         const rx = 44 + ((r * 39 + t * 2) % 390);
         const ry = 287 + (r % 5) * 9;
         px(cr, nf > 0.55 ? '#98c8ff' : '#fff0b8', 0.42 * env, rx, ry, 4 + (r % 3) * 2, 1);
@@ -839,6 +844,7 @@ function pintaNarutoKonoha(cr, t, nf) {
 }
 
 function pintaNarutoValle(cr, t, nf) {
+    const ti = t | 0;
     const env = 0.65 + 0.35 * nf;
 
     for (let l = 0; l < 6; l++) {
@@ -851,7 +857,7 @@ function pintaNarutoValle(cr, t, nf) {
     }
     for (let m = 0; m < 8; m++) {
         const mx = 242 + m * 11 + Math.round(Math.sin(t * 0.25 + m) * 2);
-        const my = 275 + ((t + m * 3) % 5);
+        const my = 275 + ((ti + m * 3) % 5);
         px(cr, '#e8fbff', 0.52 * env, mx, my, 5, 3);
     }
 
@@ -865,9 +871,9 @@ function pintaNarutoValle(cr, t, nf) {
 
     px(cr, '#a8d4ff', 0.32 * clash, 285, 241, 14, 14);
     for (let b = 0; b < 5; b++) {
-        if ((t + b) % 3 === 0) continue;
+        if ((ti + b) % 3 === 0) continue;
         const ba = t * 0.48 + b * 1.25;
-        const bl = 5 + ((t * 2 + b * 3) % 8);
+        const bl = 5 + ((ti * 2 + b * 3) % 8);
         for (let d = 2; d <= bl; d += 2) {
             const j = Math.round(Math.sin(d + t + b) * 1.4);
             px(cr, b % 2 === 0 ? '#ffffff' : '#b8b0ff', 0.92,
@@ -884,8 +890,8 @@ function pintaNarutoValle(cr, t, nf) {
             284 + Math.round(Math.cos(ang) * ringR), 248 + Math.round(Math.sin(ang) * ringR * 0.8), 2, 2);
     }
 
-    px(cr, '#ff9838', 0.65 * clash, 253, 255 - (t % 3), 2, 3);
-    px(cr, '#9880ff', 0.65 * clash, 314, 255 - ((t + 1) % 3), 2, 3);
+    px(cr, '#ff9838', 0.65 * clash, 253, 255 - (ti % 3), 2, 3);
+    px(cr, '#9880ff', 0.65 * clash, 314, 255 - ((ti + 1) % 3), 2, 3);
 
     const poolW = 10 + ((t * 2) % 18);
     px(cr, '#90e8ff', 0.40 * clash, 284 - poolW, 315, poolW * 2, 2);
@@ -893,6 +899,7 @@ function pintaNarutoValle(cr, t, nf) {
 }
 
 function pintaJujutsu(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.55 + 0.45 * nf;
     const pulse = 0.72 + 0.28 * Math.sin(t * 0.14);
 
@@ -906,15 +913,15 @@ function pintaJujutsu(cr, t, nf) {
     const eyeAl = (0.55 + 0.45 * Math.sin(t * 0.16)) * al;
     px(cr, '#fb7185', 0.88 * eyeAl, 125, 189, 2, 2);
     px(cr, '#fb7185', 0.88 * eyeAl, 139, 189, 2, 2);
-    px(cr, '#ff2848', 0.55 * al, 120, 232 + (t % 3 === 0 ? -1 : 0), 24, 2);
+    px(cr, '#ff2848', 0.55 * al, 120, 232 + (ti % 3 === 0 ? -1 : 0), 24, 2);
     for (let s = 0; s < 5; s++) {
         const sy = 188 + ((s * 17 + t * 3) % 68);
         const sx = 98 + ((s * 29) % 68);
         px(cr, s % 2 === 0 ? '#ff4468' : '#fda4af', 0.72 * al, sx, sy, 5, 1);
     }
 
-    px(cr, '#fb7185', 0.60 * al, 214, 314 - (t % 3), 2, 4);
-    px(cr, '#ef4444', 0.60 * al, 224, 318 - ((t + 1) % 3), 2, 4);
+    px(cr, '#fb7185', 0.60 * al, 214, 314 - (ti % 3), 2, 4);
+    px(cr, '#ef4444', 0.60 * al, 224, 318 - ((ti + 1) % 3), 2, 4);
     for (let k = 0; k < 4; k++) {
         const prog = ((t * 3 + k * 7) % 36);
         const sx0 = 242 + prog;
@@ -924,7 +931,7 @@ function pintaJujutsu(cr, t, nf) {
         }
     }
 
-    px(cr, '#38bdf8', 0.68 * al, 396, 316 - ((t + 2) % 3), 2, 4);
+    px(cr, '#38bdf8', 0.68 * al, 396, 316 - ((ti + 2) % 3), 2, 4);
     const rOrb = 10 + Math.round(Math.sin(t * 0.2) * 2);
     const rAng = t * 0.22;
     px(cr, '#fb7185', 0.90 * al, 306 + Math.round(Math.cos(rAng) * rOrb), 298 + Math.round(Math.sin(rAng) * rOrb * 0.6), 3, 3);
@@ -947,11 +954,12 @@ function pintaJujutsu(cr, t, nf) {
 }
 
 function pintaJujutsuSec(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.58 + 0.42 * nf;
     const bob = Math.round(Math.sin(t * 0.12) * 2);
 
     px(cr, '#eab308', 0.45 * al, 306, 274 + bob, 16, 16);
-    if (t % 29 !== 0) {
+    if (ti % 29 !== 0) {
         px(cr, '#fff8e8', 0.92 * al, 312, 280 + bob, 4, 4);
         px(cr, '#e11d48', 0.95 * al, 313, 281 + bob, 2, 2);
     }
@@ -960,7 +968,7 @@ function pintaJujutsuSec(cr, t, nf) {
         px(cr, '#facc15', 0.78 * al, 314 + Math.round(Math.cos(ang) * 14), 282 + bob + Math.round(Math.sin(ang) * 11), 2, 2);
     }
 
-    const bfPulse = (t % 16) < 4;
+    const bfPulse = (ti % 16) < 4;
     px(cr, '#09090b', 0.90, 184, 320, 7, 7);
     px(cr, bfPulse ? '#ffffff' : '#fb7185', 0.92 * al, 186, 322, 3, 3);
     for (let b = 0; b < 6; b++) {
@@ -975,10 +983,11 @@ function pintaJujutsuSec(cr, t, nf) {
         px(cr, s % 2 === 0 ? '#38bdf8' : '#1e293b', 0.72 * al, sx, sy, 2, 2);
     }
     px(cr, '#38bdf8', 0.90 * al, 446, 314, 2, 1);
-    if ((t % 14) < 3) px(cr, '#bae6fd', 0.86 * al, 388 + (t % 5), 202, 2, 14);
+    if ((ti % 14) < 3) px(cr, '#bae6fd', 0.86 * al, 388 + (ti % 5), 202, 2, 14);
 }
 
 function pintaJujutsuBloq(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.58 + 0.42 * nf;
     const sway = Math.round(Math.sin(t * 0.09) * 1.5);
 
@@ -989,7 +998,7 @@ function pintaJujutsuBloq(cr, t, nf) {
 
     const pulse = 0.65 + 0.35 * Math.sin(t * 0.14);
     px(cr, '#e11d48', 0.38 * al * pulse, 313, 283, 14, 14);
-    px(cr, '#fb7185', 0.88 * al * pulse, 318, 287 + (t % 6 < 3 ? 0 : -1), 4, 7);
+    px(cr, '#fb7185', 0.88 * al * pulse, 318, 287 + (ti % 6 < 3 ? 0 : -1), 4, 7);
     px(cr, '#fef2f2', 0.88 * al, 319, 288, 2, 2);
 
     for (let w = 0; w < 6; w++) {
@@ -1004,6 +1013,7 @@ function pintaJujutsuBloq(cr, t, nf) {
 }
 
 function pintaAotRumbling(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.58 + 0.42 * nf;
     const pulse = 0.70 + 0.30 * Math.sin(t * 0.14);
     px(cr, '#4ade80', 0.92 * al * pulse, 289, 134, 2, 2);
@@ -1018,15 +1028,16 @@ function pintaAotRumbling(cr, t, nf) {
         const ang = (a * Math.PI * 2) / 8 + t * 0.42;
         px(cr, a % 2 === 0 ? '#f8fafc' : '#38bdf8', 0.85 * al, 392 + Math.round(Math.cos(ang) * 18), 322 + Math.round(Math.sin(ang) * 14), 3, 2);
     }
-    px(cr, '#ef4444', 0.85 * al, 206 + (t % 3) - 1, 315, 6, 2);
+    px(cr, '#ef4444', 0.85 * al, 206 + (ti % 3) - 1, 315, 6, 2);
 }
 
 function pintaAotShiganshina(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.60 + 0.40 * nf;
     const pulse = 0.65 + 0.35 * Math.sin(t * 0.18);
     px(cr, '#fef08a', 0.92 * al * pulse, 190, 116, 3, 2);
     px(cr, '#fef08a', 0.92 * al * pulse, 212, 116, 3, 2);
-    if ((t % 18) < 5) {
+    if ((ti % 18) < 5) {
         for (let k = 0; k < 8; k++) {
             px(cr, k % 2 === 0 ? '#fef08a' : '#f97316', 0.88 * al, 200 + Math.round(Math.sin(t + k) * 6), 24 + k * 9, 2, 7);
         }
@@ -1035,7 +1046,7 @@ function pintaAotShiganshina(cr, t, nf) {
         const sy = 194 - ((t + s * 9) % 34);
         px(cr, '#e2e8f0', 0.40 * al, 148 + s * 28 + Math.round(Math.sin(t * 0.06 + s) * 4), sy, 6, 3);
     }
-    px(cr, '#ef4444', 0.80 * al, 320 + Math.round(Math.sin(t * 0.2) * 3), 270 - (t % 8), 2, 4);
+    px(cr, '#ef4444', 0.80 * al, 320 + Math.round(Math.sin(t * 0.2) * 3), 270 - (ti % 8), 2, 4);
 }
 
 function pintaAotPaths(cr, t, nf) {
@@ -1078,9 +1089,10 @@ function pintaOpSunny(cr, t, nf) {
 }
 
 function pintaOpPoneglyph(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.58 + 0.42 * nf;
     for (let g = 0; g < 6; g++) {
-        const idx = (t + g * 5) % 24;
+        const idx = (ti + g * 5) % 24;
         px(cr, '#fde047', 0.85 * al, 180 + (idx % 5) * 7, 248 + Math.floor(idx / 5) * 14, 2, 2);
     }
     for (let m = 0; m < 4; m++) {
@@ -1124,10 +1136,11 @@ function pintaDbzKame(cr, t, nf) {
 }
 
 function pintaCyberSandevistan(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.60 + 0.40 * nf;
     const cols = ['#4ade80', '#22d3ee', '#f43f5e'];
-    for (let s = 0; s < 3; s++) px(cr, cols[s], 0.52 * al, 178 + s * 16 - ((t + s) % 3), 314, 10, 14);
-    px(cr, '#22d3ee', 0.90 * al, 227, 316 + (t % 4), 2, 6);
+    for (let s = 0; s < 3; s++) px(cr, cols[s], 0.52 * al, 178 + s * 16 - ((ti + s) % 3), 314, 10, 14);
+    px(cr, '#22d3ee', 0.90 * al, 227, 316 + (ti % 4), 2, 6);
     const mU = ((t * 3) % 40) / 40;
     px(cr, '#fde047', 0.92 * al, Math.round(370 - mU * 82), Math.round(328 - Math.sin(mU * Math.PI * 1.35) * 26), 3, 2);
     px(cr, '#ef4444', 0.80 * al * (0.7 + 0.3 * Math.sin(t * 0.25)), 40, 319, 6, 2);
@@ -1135,19 +1148,21 @@ function pintaCyberSandevistan(cr, t, nf) {
 }
 
 function pintaCyberMoon(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.58 + 0.42 * nf;
     px(cr, '#38bdf8', 0.85 * al, ((96 + t * 2) % 440), 221, 18, 3);
-    for (const bx of [42, 148, 240, 396]) px(cr, (t + bx) % 16 < 8 ? '#38bdf8' : '#f472b6', 0.88 * al, bx, 259, 2, 2);
+    for (const bx of [42, 148, 240, 396]) px(cr, (ti + bx) % 16 < 8 ? '#38bdf8' : '#f472b6', 0.88 * al, bx, 259, 2, 2);
     for (let p = 0; p < 4; p++) px(cr, '#bae6fd', 0.72 * al, 300 + p * 10 + Math.round(Math.sin(t * 0.1 + p) * 4), 290 - ((t + p * 8) % 30), 2, 2);
 }
 
 function pintaCyberBloq(cr, t, nf) {
+    const ti = t | 0;
     const al = 0.60 + 0.40 * nf;
     const activeSeg = Math.floor(t / 2) % 7;
     for (let s = 0; s < 7; s++) {
         px(cr, s === activeSeg ? '#ffffff' : (s % 2 === 0 ? '#22d3ee' : '#4ade80'), (s === activeSeg ? 0.96 : 0.68) * al, 285 + s * 11, 315, 3, 5);
     }
-    if ((t % 19) !== 0) px(cr, '#f43f5e', 0.78 * al, 96, 166, 72, 1);
+    if ((ti % 19) !== 0) px(cr, '#f43f5e', 0.78 * al, 96, 166, 72, 1);
     px(cr, '#4ade80', 0.60 * al * (0.6 + 0.4 * Math.sin(t * 0.15)), 316, 194, 8, 8);
 }
 
@@ -1758,50 +1773,50 @@ export class Escena {
         const t = this.tick, tf = this.tickFloat ?? t, D = pack.D, T = pack.T, nf = this.nocheF;
 
         if (T.modo_heroe === 'miles_morales') {
-            pintaFerry(cr, t, nf);
-            pintaMiles(cr, t, nf);
+            pintaFerry(cr, tf, nf);
+            pintaMiles(cr, tf, nf);
         } else if (T.modo_heroe === 'demon_rengoku') {
-            pintaDemonRengoku(cr, t, nf);
+            pintaDemonRengoku(cr, tf, nf);
         } else if (T.modo_heroe === 'demon_tokito') {
-            pintaDemonTokito(cr, t, nf);
+            pintaDemonTokito(cr, tf, nf);
         } else if (T.modo_heroe === 'demon_glicinias') {
-            pintaDemonGlicinias(cr, t, nf);
+            pintaDemonGlicinias(cr, tf, nf);
         } else if (T.modo_heroe === 'naruto_baryon') {
-            pintaNarutoBaryon(cr, t, nf);
+            pintaNarutoBaryon(cr, tf, nf);
         } else if (T.modo_heroe === 'naruto_konoha') {
-            pintaNarutoKonoha(cr, t, nf);
+            pintaNarutoKonoha(cr, tf, nf);
         } else if (T.modo_heroe === 'naruto_valle') {
-            pintaNarutoValle(cr, t, nf);
+            pintaNarutoValle(cr, tf, nf);
         } else if (T.modo_heroe === 'jujutsu') {
-            pintaJujutsu(cr, t, nf);
+            pintaJujutsu(cr, tf, nf);
         } else if (T.modo_heroe === 'jujutsu_sec') {
-            pintaJujutsuSec(cr, t, nf);
+            pintaJujutsuSec(cr, tf, nf);
         } else if (T.modo_heroe === 'jujutsu_bloq') {
-            pintaJujutsuBloq(cr, t, nf);
+            pintaJujutsuBloq(cr, tf, nf);
         } else if (T.modo_heroe === 'aot_rumbling') {
-            pintaAotRumbling(cr, t, nf);
+            pintaAotRumbling(cr, tf, nf);
         } else if (T.modo_heroe === 'aot_shiganshina') {
-            pintaAotShiganshina(cr, t, nf);
+            pintaAotShiganshina(cr, tf, nf);
         } else if (T.modo_heroe === 'aot_paths') {
-            pintaAotPaths(cr, t, nf);
+            pintaAotPaths(cr, tf, nf);
         } else if (T.modo_heroe === 'op_gear5') {
-            pintaOpGear5(cr, t, nf);
+            pintaOpGear5(cr, tf, nf);
         } else if (T.modo_heroe === 'op_sunny') {
-            pintaOpSunny(cr, t, nf);
+            pintaOpSunny(cr, tf, nf);
         } else if (T.modo_heroe === 'op_poneglyph') {
-            pintaOpPoneglyph(cr, t, nf);
+            pintaOpPoneglyph(cr, tf, nf);
         } else if (T.modo_heroe === 'dbz_ui') {
-            pintaDbzUi(cr, t, nf);
+            pintaDbzUi(cr, tf, nf);
         } else if (T.modo_heroe === 'dbz_namek') {
-            pintaDbzNamek(cr, t, nf);
+            pintaDbzNamek(cr, tf, nf);
         } else if (T.modo_heroe === 'dbz_kame') {
-            pintaDbzKame(cr, t, nf);
+            pintaDbzKame(cr, tf, nf);
         } else if (T.modo_heroe === 'cyber_sandevistan') {
-            pintaCyberSandevistan(cr, t, nf);
+            pintaCyberSandevistan(cr, tf, nf);
         } else if (T.modo_heroe === 'cyber_moon') {
-            pintaCyberMoon(cr, t, nf);
+            pintaCyberMoon(cr, tf, nf);
         } else if (T.modo_heroe === 'cyber_bloq') {
-            pintaCyberBloq(cr, t, nf);
+            pintaCyberBloq(cr, tf, nf);
         }
 
         if (D.chimenea) {
@@ -1902,7 +1917,7 @@ export class Escena {
                 px(cr, core, 0.2 + 0.8 * b, fx, fy, 1, 1);
             }
         }
-        this._pintaEventoEspecial(cr, t);
+        this._pintaEventoEspecial(cr, tf);
         this._pintaClima(cr, tf, this.wB, nf, this.fechaEfectiva());
     }
 

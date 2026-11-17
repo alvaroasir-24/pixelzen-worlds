@@ -112,7 +112,7 @@ def _leer_version():
                     return txt
             except Exception:
                 pass
-    return '1.2.31'
+    return '1.2.32'
 
 
 def _cortar_serie_prefijo(txt):
@@ -1059,6 +1059,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self._switches_hud = {}
         self._mock_cards = {}
         self._fase_btns = {}
+        self._pending_update = None
 
         self._build_ui()
         self._cargar_estado_inicial()
@@ -1067,6 +1068,7 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self._cargar_clima_async()
 
         GLib.timeout_add_seconds(20, self._tick_reloj)
+        GLib.timeout_add(1200, self._inicia_check_update_silenciosa)
 
     def _img_sprite(self, name, w, h):
         pic = Gtk.Picture.new_for_paintable(self.sprites[name])
@@ -1100,8 +1102,9 @@ class PixelZenWindow(Adw.ApplicationWindow):
         left_hdr.append(self.lbl_mon_info)
         header.pack_start(left_hdr)
 
-        self.btn_update = Gtk.Button(label='🔄 Actualizar')
+        self.btn_update = Gtk.Button(label='⬆️ Actualizar')
         self.btn_update.add_css_class('pz-pill-btn')
+        self.btn_update.set_visible(False)
         self.btn_update.connect('clicked', self._on_buscar_actualizacion)
         header.pack_end(self.btn_update)
         root.append(header)
@@ -1938,10 +1941,11 @@ class PixelZenWindow(Adw.ApplicationWindow):
         self.lbl_diag.set_halign(Gtk.Align.START)
         diag_box.append(self.lbl_diag)
         act_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        btn_upd = Gtk.Button(label='🔄 Buscar actualización')
-        btn_upd.add_css_class('pz-pill-cyan')
-        btn_upd.connect('clicked', self._on_buscar_actualizacion)
-        act_row.append(btn_upd)
+        self.btn_upd = Gtk.Button(label='⬆️ Actualizar')
+        self.btn_upd.add_css_class('pz-pill-cyan')
+        self.btn_upd.set_visible(False)
+        self.btn_upd.connect('clicked', self._on_buscar_actualizacion)
+        act_row.append(self.btn_upd)
         btn_rst = Gtk.Button(label='Restablecer recomendados')
         btn_rst.add_css_class('pz-pill-btn')
         btn_rst.connect('clicked', self._on_restaurar)
@@ -2808,8 +2812,39 @@ class PixelZenWindow(Adw.ApplicationWindow):
                 nums.append(0)
         return tuple(nums)
 
+    def _inicia_check_update_silenciosa(self):
+        def _bg():
+            try:
+                req = urllib.request.Request(RELEASES_API, headers={'User-Agent': 'PixelZenWorlds'})
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    rel = json.loads(resp.read().decode('utf-8'))
+                tag = str(rel.get('tag_name', '')).lstrip('vV')
+                if tag and self._parse_ver(tag) > self._parse_ver(VERSION_ACTUAL):
+                    asset_url = next(
+                        (a['browser_download_url'] for a in rel.get('assets', []) if a.get('name') == 'PixelZenWorlds-Linux-Setup.run'),
+                        None,
+                    )
+                    GLib.idle_add(self._mostrar_actualizacion_disponible, tag, asset_url or rel.get('html_url', RELEASES_URL))
+            except Exception:
+                pass
+        threading.Thread(target=_bg, daemon=True).start()
+        return False
+
+    def _mostrar_actualizacion_disponible(self, tag, url):
+        self._pending_update = (tag, url)
+        self.btn_update.set_label(f'⬆️ Actualizar v{tag}')
+        self.btn_update.set_visible(True)
+        self.btn_upd.set_label(f'⬆️ Actualizar a v{tag}')
+        self.btn_upd.set_visible(True)
+        return False
+
     def _on_buscar_actualizacion(self, *_args):
+        if self._pending_update:
+            tag, url = self._pending_update
+            self._fin_check_update(f'✨ Nueva versión v{tag} disponible.', tag, url)
+            return
         self.btn_update.set_sensitive(False)
+        self.btn_upd.set_sensitive(False)
         self.lbl_status.set_text('🔄 Buscando actualizaciones en GitHub Releases...')
 
         def _worker():
@@ -2833,6 +2868,13 @@ class PixelZenWindow(Adw.ApplicationWindow):
 
     def _fin_check_update(self, msg, tag, url):
         self.btn_update.set_sensitive(True)
+        self.btn_upd.set_sensitive(True)
+        if tag and tag != 'web' and url:
+            self._mostrar_actualizacion_disponible(tag, url)
+        elif not tag:
+            self._pending_update = None
+            self.btn_update.set_visible(False)
+            self.btn_upd.set_visible(False)
         self.lbl_status.set_text(msg)
         if not tag or not url:
             return

@@ -4,6 +4,7 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter';
+import Meta from 'gi://Meta';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
@@ -22,6 +23,9 @@ export default class PixelZenExtension extends Extension {
         this._settings = this.getSettings();
         this._ids = [];
         this._timerRot = 0;
+        this._timerPausa = 0;
+        this._focusWin = null;
+        this._focusSizeId = 0;
         this._activo = true;
         const token = (this._enableToken = (this._enableToken || 0) + 1);
         this._grupo = Main.layoutManager._backgroundGroup;
@@ -43,7 +47,28 @@ export default class PixelZenExtension extends Extension {
         con(this._grupo, 'child-added', (_g, hijo) => {
             if (hijo !== this._raiz) this._grupo.set_child_above_sibling(this._raiz, null);
         });
-        con(global.display, 'in-fullscreen-changed', () => this._actualizaPausa());
+        con(global.display, 'in-fullscreen-changed', () => this._programaPausa());
+        con(global.display, 'restacked', () => this._programaPausa());
+        con(global.display, 'window-entered-monitor', () => this._programaPausa());
+        con(global.display, 'window-left-monitor', () => this._programaPausa());
+        con(global.workspace_manager, 'active-workspace-changed', () => this._programaPausa());
+        con(Main.overview, 'showing', () => this._actualizaPausa());
+        con(Main.overview, 'hidden', () => this._programaPausa());
+        const onFocusChanged = () => {
+            if (this._focusWin && this._focusSizeId) {
+                try { this._focusWin.disconnect(this._focusSizeId); } catch (_e) {}
+            }
+            this._focusWin = global.display.focus_window;
+            this._focusSizeId = 0;
+            if (this._focusWin) {
+                try {
+                    this._focusSizeId = this._focusWin.connect('size-changed', () => this._programaPausa());
+                } catch (_e) {}
+            }
+            this._programaPausa();
+        };
+        con(global.display, 'notify::focus-window', onFocusChanged);
+        onFocusChanged();
         con(Main.sessionMode, 'updated', () => this._actualizaPausa());
         con(this._settings, 'changed', (_s, clave) => {
             if (clave === 'tema' || clave === 'tema-revision' || clave === 'fondo-principal' || clave === 'fondo-secundario' || clave === 'tema-secundario') {
@@ -141,6 +166,15 @@ export default class PixelZenExtension extends Extension {
         this._hud.coloca(lm.getWorkAreaForMonitor(i), mon);
     }
 
+    _programaPausa() {
+        if (this._timerPausa) return;
+        this._timerPausa = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 120, () => {
+            this._timerPausa = 0;
+            if (this._activo) this._actualizaPausa();
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
     _actualizaPausa() {
         const bloqueada = Main.sessionMode.isLocked || Main.sessionMode.isGreeter;
         const lm = Main.layoutManager;
@@ -151,7 +185,30 @@ export default class PixelZenExtension extends Extension {
                 break;
             }
         }
-        const pausado = bloqueada || completa;
+        let tapadoMax = false;
+        if (!bloqueada && !completa && !Main.overview.visible) {
+            const ws = global.workspace_manager.get_active_workspace();
+            const wins = ws ? ws.list_windows() : [];
+            const mons = this._monitores().filter(Boolean);
+            if (mons.length > 0 && wins.length > 0) {
+                tapadoMax = mons.every(m => {
+                    const mIdx = lm.monitors.indexOf(m);
+                    if (mIdx < 0) return false;
+                    if (global.display.get_monitor_in_fullscreen(mIdx)) return true;
+                    const work = lm.getWorkAreaForMonitor(mIdx);
+                    return wins.some(w => {
+                        if (!w || w.minimized || w.skip_taskbar) return false;
+                        if (w.window_type !== Meta.WindowType.NORMAL) return false;
+                        if (w.get_monitor() !== mIdx) return false;
+                        if (!w.showing_on_its_workspace?.()) return false;
+                        if (w.maximized_horizontally && w.maximized_vertically) return true;
+                        const r = w.get_frame_rect();
+                        return r.width >= work.width - 4 && r.height >= work.height - 4;
+                    });
+                });
+            }
+        }
+        const pausado = bloqueada || completa || tapadoMax;
         this._escena?.pausa(pausado);
         this._hud?.pausa?.(pausado);
     }
@@ -215,6 +272,13 @@ export default class PixelZenExtension extends Extension {
         this._timerUbi = 0;
         if (this._timerRot) GLib.source_remove(this._timerRot);
         this._timerRot = 0;
+        if (this._timerPausa) GLib.source_remove(this._timerPausa);
+        this._timerPausa = 0;
+        if (this._focusWin && this._focusSizeId) {
+            try { this._focusWin.disconnect(this._focusSizeId); } catch (_e) {}
+        }
+        this._focusWin = null;
+        this._focusSizeId = 0;
         this._hud?.destroy();
         this._hud = null;
         this._escena?.destroy();

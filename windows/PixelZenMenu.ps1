@@ -1977,7 +1977,7 @@ $xaml = @"
                           <TextBlock Text="Estado del sistema y actualizaciones" Foreground="#F6C84C" FontSize="13.5" FontWeight="Bold" Margin="0,0,0,8"/>
                           <TextBlock x:Name="TxtDiag" Text="" Foreground="#C4D2E6" FontSize="12" TextWrapping="Wrap" LineHeight="20" Margin="0,0,0,12"/>
                           <StackPanel Orientation="Horizontal">
-                            <Button x:Name="BtnBuscarUpdate" Content="🔄 Buscar actualización" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#3C8D96" Margin="0,0,8,0"/>
+                            <Button x:Name="BtnBuscarUpdate" Content="⬆️ Actualizar" Visibility="Collapsed" Style="{StaticResource PillBtn}" Foreground="#54DED4" BorderBrush="#3C8D96" Margin="0,0,8,0"/>
                             <Button x:Name="BtnRestaurar" Content="Restablecer recomendados" Style="{StaticResource PillBtn}"/>
                           </StackPanel>
                         </StackPanel>
@@ -3493,6 +3493,42 @@ $win.Add_Closing({
 Cambia-Pestana 'hub'
 Cambia-VistaMundo 'series'
 Actualiza-Vista
+
+$script:updCheckTimer = New-Object System.Windows.Threading.DispatcherTimer
+$script:updCheckTimer.Interval = [TimeSpan]::FromMilliseconds(1400)
+$script:updCheckTimer.Add_Tick({
+    $script:updCheckTimer.Stop()
+    try {
+        $script:updPs = [powershell]::Create().AddScript({
+            param($verLocal)
+            try {
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/davidlpizano/pixelzen-worlds/releases/latest' -Headers @{ 'User-Agent' = 'PixelZenWorlds' } -TimeoutSec 8
+                $remTag = ([string]$rel.tag_name).TrimStart('v', 'V')
+                if ($remTag -and ([version]$remTag -gt [version]$verLocal)) { return $remTag }
+            } catch {}
+            return ''
+        }).AddArgument($VersionActual)
+        $script:updIar = $script:updPs.BeginInvoke()
+        $script:updPoll = New-Object System.Windows.Threading.DispatcherTimer
+        $script:updPoll.Interval = [TimeSpan]::FromMilliseconds(350)
+        $script:updPoll.Add_Tick({
+            if (-not $script:updIar.IsCompleted) { return }
+            $script:updPoll.Stop()
+            try {
+                $resTag = ($script:updPs.EndInvoke($script:updIar) | Select-Object -First 1)
+                if ($resTag) {
+                    $el.BtnBuscarUpdate.Content = "⬆️ Actualizar a v$resTag"
+                    $el.BtnBuscarUpdate.Visibility = 'Visible'
+                }
+            } catch {} finally {
+                try { $script:updPs.Dispose() } catch {}
+            }
+        })
+        $script:updPoll.Start()
+    } catch {}
+})
+$script:updCheckTimer.Start()
 
 if ($Tray) {
     $c = Cargar-Config
