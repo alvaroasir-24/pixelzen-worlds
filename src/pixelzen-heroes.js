@@ -991,19 +991,17 @@ function createPixelZenHeroes(px) {
   function pintaMichiTerraza(cr, t, nf, aE) {
     const ti = t | 0;
     const al = Math.min(1, 0.62 + 0.38 * nf + aE * 0.30);
-    // Parpadeo periodico del Michi Gris (ojos en 334,290 y 348,290)
+    // Parpadeo periodico del Michi Gris (ojos en 344,261 y 352,265)
     if ((ti % 38) >= 35) {
-      px(cr, '#4d5563', 0.96, 334, 290, 8, 4);
-      px(cr, '#4d5563', 0.96, 348, 290, 8, 4);
-      px(cr, '#14171d', 0.95, 334, 292, 8, 2);
-      px(cr, '#14171d', 0.95, 348, 292, 8, 2);
-    } else {
-      px(cr, '#fef08a', 0.72 * al, 338, 290, 2, 2);
-      px(cr, '#fef08a', 0.72 * al, 350, 290, 2, 2);
+      px(cr, '#525864', 0.96, 344, 261, 4, 4);
+      px(cr, '#525864', 0.96, 352, 265, 4, 3);
+      px(cr, '#14171d', 0.95, 344, 263, 4, 1);
+      px(cr, '#14171d', 0.95, 352, 266, 4, 1);
+    } else if (nf > 0.35) {
+      px(cr, '#fef08a', 0.55 * al, 345, 262, 1, 1);
+      px(cr, '#fef08a', 0.55 * al, 353, 265, 1, 1);
     }
-    // Respiracion zen de la panza del Michi Crema y destello en la pelotita multicolor
-    const breath = Math.round(Math.sin(t * 0.14));
-    px(cr, '#eee6dc', 0.45, 178, 342 + breath, 12, 4);
+    // Destello en la pelotita multicolor y motitas de luz
     if ((ti % 16) < 4) px(cr, '#ffffff', 0.85, 122, 296, 2, 2);
     for (let i = 0; i < 6; i++) {
       const fx = (110 + i * 62 + Math.round(Math.sin(t * 0.08 + i * 1.4) * 14));
@@ -1018,10 +1016,12 @@ function createPixelZenHeroes(px) {
     // Pompon colgando balanceandose
     const sw = Math.round(Math.sin(t * 0.16) * 3);
     px(cr, '#fef08a', 0.90, 259 + sw, 232, 6, 6);
-    // Parpadeo del Michi Gris arriba en el rascador (174,136 y 190,136)
+    // Parpadeo del Michi Gris arriba en el rascador (169,112 y 180,112)
     if ((ti % 42) >= 39) {
-      px(cr, '#4d5563', 0.95, 174, 136, 6, 2);
-      px(cr, '#4d5563', 0.95, 190, 136, 6, 2);
+      px(cr, '#525864', 0.96, 169, 112, 4, 4);
+      px(cr, '#525864', 0.96, 180, 112, 5, 4);
+      px(cr, '#14171d', 0.95, 169, 114, 4, 1);
+      px(cr, '#14171d', 0.95, 180, 114, 5, 1);
     }
     for (let i = 0; i < 6; i++) {
       const fx = 90 + i * 64 + Math.round(Math.sin(t * 0.09 + i) * 12);
