@@ -991,15 +991,15 @@ function createPixelZenHeroes(px) {
   function pintaMichiTerraza(cr, t, nf, aE) {
     const ti = t | 0;
     const al = Math.min(1, 0.62 + 0.38 * nf + aE * 0.30);
-    // Parpadeo periodico del Michi Gris (ojos en 344,261 y 352,265)
+    // Parpadeo periodico del Michi Gris (ojos en 344,260 y 352,264)
     if ((ti % 38) >= 35) {
-      px(cr, '#525864', 0.96, 344, 261, 4, 4);
-      px(cr, '#525864', 0.96, 352, 265, 4, 3);
-      px(cr, '#14171d', 0.95, 344, 263, 4, 1);
-      px(cr, '#14171d', 0.95, 352, 266, 4, 1);
+      px(cr, '#6e7181', 0.96, 344, 260, 5, 5);
+      px(cr, '#6e7181', 0.96, 352, 264, 5, 5);
+      px(cr, '#14171d', 0.95, 344, 262, 5, 1);
+      px(cr, '#14171d', 0.95, 352, 266, 5, 1);
     } else if (nf > 0.35) {
       px(cr, '#fef08a', 0.55 * al, 345, 262, 1, 1);
-      px(cr, '#fef08a', 0.55 * al, 353, 265, 1, 1);
+      px(cr, '#fef08a', 0.55 * al, 353, 266, 1, 1);
     }
     // Destello en la pelotita multicolor y motitas de luz
     if ((ti % 16) < 4) px(cr, '#ffffff', 0.85, 122, 296, 2, 2);
@@ -1016,12 +1016,12 @@ function createPixelZenHeroes(px) {
     // Pompon colgando balanceandose
     const sw = Math.round(Math.sin(t * 0.16) * 3);
     px(cr, '#fef08a', 0.90, 259 + sw, 232, 6, 6);
-    // Parpadeo del Michi Gris arriba en el rascador (169,112 y 180,112)
+    // Parpadeo del Michi Gris arriba en el rascador (168,111 y 180,111)
     if ((ti % 42) >= 39) {
-      px(cr, '#525864', 0.96, 169, 112, 4, 4);
-      px(cr, '#525864', 0.96, 180, 112, 5, 4);
-      px(cr, '#14171d', 0.95, 169, 114, 4, 1);
-      px(cr, '#14171d', 0.95, 180, 114, 5, 1);
+      px(cr, '#6e7181', 0.96, 168, 111, 7, 5);
+      px(cr, '#6e7181', 0.96, 180, 111, 7, 5);
+      px(cr, '#14171d', 0.95, 168, 113, 7, 1);
+      px(cr, '#14171d', 0.95, 180, 113, 7, 1);
     }
     for (let i = 0; i < 6; i++) {
       const fx = 90 + i * 64 + Math.round(Math.sin(t * 0.09 + i) * 12);
