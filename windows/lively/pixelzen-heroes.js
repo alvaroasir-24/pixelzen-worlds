@@ -991,22 +991,20 @@ function createPixelZenHeroes(px) {
   function pintaMichiTerraza(cr, t, nf, aE) {
     const ti = t | 0;
     const al = Math.min(1, 0.62 + 0.38 * nf + aE * 0.30);
-    // Parpadeo periodico del Michi Gris
+    // Parpadeo periodico del Michi Gris (ojos en 334,290 y 348,290)
     if ((ti % 38) >= 35) {
-      px(cr, '#4d5563', 0.96, 344, 270, 6, 6);
-      px(cr, '#4d5563', 0.96, 358, 270, 6, 6);
-      px(cr, '#23272e', 0.95, 345, 273, 4, 1);
-      px(cr, '#23272e', 0.95, 359, 273, 4, 1);
+      px(cr, '#4d5563', 0.96, 334, 290, 8, 4);
+      px(cr, '#4d5563', 0.96, 348, 290, 8, 4);
+      px(cr, '#14171d', 0.95, 334, 292, 8, 2);
+      px(cr, '#14171d', 0.95, 348, 292, 8, 2);
     } else {
-      px(cr, '#fef08a', 0.72 * al, 345, 272, 2, 2);
-      px(cr, '#fef08a', 0.72 * al, 359, 272, 2, 2);
+      px(cr, '#fef08a', 0.72 * al, 338, 290, 2, 2);
+      px(cr, '#fef08a', 0.72 * al, 350, 290, 2, 2);
     }
-    // Respiracion zen de la panza del Michi Crema y movimiento sutil de cola del Gris
+    // Respiracion zen de la panza del Michi Crema y destello en la pelotita multicolor
     const breath = Math.round(Math.sin(t * 0.14));
-    px(cr, '#eee6dc', 0.55, 192, 326 + breath, 12, 4);
-    px(cr, '#363c46', 0.85, 438 + Math.round(Math.sin(t * 0.18) * 3), 350, 5, 4);
-    // Destello en la pelotita multicolor y luciernagas/mariposas sobre el cesped
-    if ((ti % 16) < 4) px(cr, '#ffffff', 0.85, 134, 294, 2, 2);
+    px(cr, '#eee6dc', 0.45, 178, 342 + breath, 12, 4);
+    if ((ti % 16) < 4) px(cr, '#ffffff', 0.85, 122, 296, 2, 2);
     for (let i = 0; i < 6; i++) {
       const fx = (110 + i * 62 + Math.round(Math.sin(t * 0.08 + i * 1.4) * 14));
       const fy = 248 + ((i * 11) % 34) + Math.round(Math.cos(t * 0.11 + i) * 7);
@@ -1020,12 +1018,11 @@ function createPixelZenHeroes(px) {
     // Pompon colgando balanceandose
     const sw = Math.round(Math.sin(t * 0.16) * 3);
     px(cr, '#fef08a', 0.90, 259 + sw, 232, 6, 6);
-    // Parpadeo del Michi Gris arriba en el rascador
+    // Parpadeo del Michi Gris arriba en el rascador (174,136 y 190,136)
     if ((ti % 42) >= 39) {
-      px(cr, '#4d5563', 0.95, 179, 130, 5, 4);
-      px(cr, '#4d5563', 0.95, 188, 130, 5, 4);
+      px(cr, '#4d5563', 0.95, 174, 136, 6, 2);
+      px(cr, '#4d5563', 0.95, 190, 136, 6, 2);
     }
-    // Luciernagas en el jardin
     for (let i = 0; i < 6; i++) {
       const fx = 90 + i * 64 + Math.round(Math.sin(t * 0.09 + i) * 12);
       const fy = 244 + ((i * 13) % 36) + Math.round(Math.cos(t * 0.1 + i) * 6);

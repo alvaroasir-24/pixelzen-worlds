@@ -245,8 +245,8 @@ for y in range(382, H):
 if FASE != 'dia':
     glow(550, 392, 65, '#fbbf24', 0.18 if FASE == 'noche' else 0.12)
 
-# 7. Pelotita multicolor de fieltro (centro en x=112, y=296, radio 9, bien separada de la cabeza)
-ellipse(113, 303, 10, 4, '#091208', 0.42)  # sombra
+# 7. Pelotita multicolor de fieltro (centro en x=126, y=300, radio 9)
+ellipse(127, 307, 10, 4, '#091208', 0.42)  # sombra
 ball_cols = ['#ef4444', '#facc15', '#22c55e', '#ec4899', '#3b82f6', '#fb923c']
 for dy in range(-9, 10):
     for dx in range(-9, 10):
@@ -258,136 +258,41 @@ for dy in range(-9, 10):
                 col = mix(col, '#111827', 0.35)
             elif dx < -2 and dy < -2:
                 col = mix(col, '#ffffff', 0.25)
-            put(112 + dx, 296 + dy, col)
+            put(126 + dx, 300 + dy, col)
 
-# 8. MICHI CREMA Y BLANCO (panza arriba, estirado diagonalmente en x=136..278, y=295..382)
+# 8 y 9. Sprites pixel-art artesanales de ambos michis (escala 2x2 nitida)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from michis_sprites import SPR_CREAM_BELLYUP, SPR_GRAY_LOUNGE, draw_sprite_2x  # noqa: E402
+
 c_dk, c_md, c_sh, c_hi, c_wh, c_whs, c_pink, c_eye = PAL['cream_cat']
-# Sombra suave semitransparente bajo el gato crema
-for dy in range(-28, 30):
-    for dx in range(-66, 66):
-        rad = math.radians(22)
-        u = dx * math.cos(rad) + dy * math.sin(rad)
-        v = -dx * math.sin(rad) + dy * math.cos(rad)
-        if (u * u) / (64.0 * 64.0) + (v * v) / (24.0 * 24.0) <= 1.0:
-            over(202 + dx, 344 + dy, '#081407', 0.42)
+CMAP_CREAM = {
+    'k': mix(c_sh, '#1a120e', 0.45),
+    'd': c_dk,
+    'm': c_md,
+    'h': c_hi,
+    'W': c_wh,
+    'w': c_whs,
+    'p': c_pink,
+    'e': c_eye,
+}
+draw_sprite_2x(lz, 198, 372, SPR_CREAM_BELLYUP, CMAP_CREAM)
 
-# Cola esponjosa crema curvada suavemente tras la cadera
-for i in range(16):
-    u = i / 15.0
-    tx = int(238 + u * 24)
-    ty = int(336 - math.sin(u * 1.8) * 10)
-    ellipse(tx, ty, 6, 5, c_dk if i % 2 == 0 else c_md)
-
-# Patitas traseras estiradas hacia la derecha-abajo (pose comoda en V)
-rot_ellipse(250, 344, 18, 8, 12, c_md, c_sh)
-rot_ellipse(266, 347, 8, 6, 12, c_wh, c_whs)     # calcetin blanco pata sup
-rot_ellipse(228, 366, 18, 8, 56, c_md, c_sh)
-rot_ellipse(238, 378, 8, 6, 56, c_wh, c_whs)     # calcetin blanco pata inf
-
-# Torso mullido panza arriba
-rot_ellipse(196, 336, 42, 23, 24, c_md, c_sh)
-rot_ellipse(188, 343, 33, 15, 24, c_dk)
-# Gran panza blanca esponjosa
-rot_ellipse(196, 332, 31, 15, 24, c_wh, c_whs)
-rot_ellipse(174, 322, 17, 12, 24, c_wh)
-rot_ellipse(216, 343, 15, 10, 20, c_wh, c_whs)
-
-# Patitas delanteras recogidas sobre el pecho (pose zen!)
-rot_ellipse(160, 328, 10, 7, -25, c_hi, c_md)
-rot_ellipse(155, 332, 6, 5, -20, c_wh, c_whs)
-rot_ellipse(173, 314, 10, 7, 15, c_hi, c_md)
-rot_ellipse(177, 317, 6, 5, 15, c_wh, c_whs)
-
-# Cabeza redonda British Shorthair crema (x=146, y=312)
-for ex, ey in ((133, 300), (149, 294)):
-    for oy in range(10):
-        we = max(1, (oy + 1) // 2)
-        for dx in range(-we, we + 1):
-            put(ex + dx, ey - 5 + oy, c_sh if abs(dx) == we else c_md)
-        if oy > 3:
-            for dx in range(-max(0, we - 2), max(1, we - 1)):
-                put(ex + dx, ey - 5 + oy, c_pink)
-ellipse(146, 312, 16, 14, c_md)
-ellipse(146, 310, 14, 11, c_hi)
-ellipse(148, 316, 8, 5, c_wh)
-put(147, 314, c_pink)
-put(148, 314, c_pink)
-# Ojitos cerrados felices (^ ^)
-for ox in (140, 152):
-    put(ox - 1, 309, c_eye)
-    put(ox, 308, c_eye)
-    put(ox + 1, 308, c_eye)
-    put(ox + 2, 309, c_eye)
-# Bigotitos blancos
-for bx, by in ((138, 315), (137, 317), (156, 314), (157, 316)):
-    put(bx, by, '#f8fafc')
-
-# 9. MICHI GRIS Y BLANCO (tumbado de lado mirando arriba, x=300..445, y=256..360)
 g1, g2, g0, g3, gw, gws, ge1, ge2, gpk = PAL['gray_cat']
-ellipse(368, 336, 54, 18, '#081407', 0.42)
-
-# Cola larga gris esponjosa curvada abajo a la derecha
-for i in range(34):
-    u = i / 33.0
-    tx = int(414 + u * 28 - math.sin(u * math.pi) * 5)
-    ty = int(316 + u * 34)
-    ellipse(tx, ty, 6 if u < 0.7 else 5, 5, g1 if u < 0.5 else g0)
-    if i % 3 == 0:
-        put(tx - 1, ty - 1, g2)
-
-# Pata trasera blanca estirada (como en la foto!)
-rot_ellipse(344, 331, 22, 9, -8, gw, gws)
-ellipse(324, 334, 7, 5, gw)
-put(321, 334, gpk)
-
-# Cuerpo grueso y atigrado sutil British Shorthair gris
-rot_ellipse(382, 310, 42, 25, -10, g1, g0)
-rot_ellipse(378, 304, 34, 18, -10, g2)
-for s in range(5):
-    sx = 360 + s * 11
-    for dy in range(-11, 7):
-        if (sx + dy) % 2 == 0:
-            put(sx + (dy // 4), 302 + dy, g0)
-# Pecho / babero blanco integrado al cuerpo
-ellipse(350, 300, 15, 14, gw)
-ellipse(352, 304, 11, 9, gws)
-
-# Patas delanteras descansando suavemente sobre el cesped
-rot_ellipse(332, 300, 15, 6, 12, g1, g0)
-ellipse(318, 297, 7, 5, gw)
-put(316, 296, gpk)
-put(317, 298, '#1e1b18')
-
-rot_ellipse(326, 314, 17, 6, 4, g2, g0)
-ellipse(310, 314, 8, 5, gw)
-
-# Cabeza redonda gris con orejas puntiagudas British Shorthair (x=354, y=276)
-for ox_off in (-10, 10):
-    for oy in range(11):
-        w_e = max(1, (oy + 1) // 2)
-        for dx in range(-w_e, w_e + 1):
-            put(354 + ox_off + dx, 254 + oy, g0 if abs(dx) == w_e else g1)
-        if oy > 3:
-            for dx in range(-max(0, w_e - 2), max(1, w_e - 1)):
-                put(354 + ox_off + dx, 254 + oy, '#fca5a5' if FASE != 'noche' else '#9d6b76')
-
-ellipse(354, 276, 17, 15, g1)
-ellipse(354, 274, 15, 12, g2)
-ellipse(354, 268, 11, 6, g3)
-ellipse(353, 282, 9, 6, gw)
-ellipse(353, 279, 4, 3, gw)
-put(353, 279, gpk)
-put(352, 279, gpk)
-for ex in (346, 360):
-    ellipse(ex, 273, 3, 3, ge1)
-    put(ex, 273, '#111827')
-    put(ex - 1, 272, ge2)
-    put(ex + 1, 272, '#ffffff')
-for wy in (280, 282):
-    for wx in range(334, 344, 2):
-        put(wx, wy, '#f8fafc')
-    for wx in range(363, 373, 2):
-        put(wx, wy, '#f8fafc')
+CMAP_GRAY = {
+    'K': '#14171d',
+    'G': g0,
+    'g': g1,
+    'l': g2,
+    'L': g3,
+    'W': gw,
+    'w': gws,
+    'A': ge1,
+    'a': ge2,
+    'P': '#0f172a',
+    'p': gpk,
+    'b': '#1e1b18',
+}
+draw_sprite_2x(lz, 360, 344, SPR_GRAY_LOUNGE, CMAP_GRAY)
 
 # Detalles adicionales y registro de luces
 try:

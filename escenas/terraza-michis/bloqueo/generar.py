@@ -189,35 +189,34 @@ for dy in range(-12, 13):
             put(320 + dx, 312 + dy, col)
 glow(320, 312, 18, '#fde047', 0.22 if FASE != 'dia' else 0.08)
 
-# Ambos michis acurrucados durmiendo juntos a ambos lados del cojín
-# Izquierda (x=236, y=306): Michi Crema acurrucado
-cm0, cm1, cm2, cm3, cmw, cmws, cmpk, cmeye = PAL['cream_cat']
-ellipse(236, 314, 28, 15, cm0)
-ellipse(236, 311, 24, 12, cm1)
-ellipse(244, 316, 14, 7, cmw)  # patita/panza blanca
-ellipse(222, 304, 12, 10, cm1)
-ellipse(222, 302, 10, 8, cm3)
-ellipse(216, 293, 3, 4, cm1)
-ellipse(228, 293, 3, 4, cm1)
-put(222, 306, cmpk)
-for ex in (218, 225):
-    put(ex, 302, cmeye)
-    put(ex + 1, 302, cmeye)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from michis_sprites import SPR_CREAM_SLEEP, SPR_GRAY_SLEEP, draw_sprite_2x  # noqa: E402
 
-# Derecha (x=404, y=304): Michi Gris acurrucado mirando sereno
+# Ambos michis acurrucados durmiendo juntos a ambos lados del cojín
+cm0, cm1, cm2, cm3, cmw, cmws, cmpk, cmeye = PAL['cream_cat']
+CMAP_CREAM = {
+    'k': mix(cm2, '#1a120e', 0.45),
+    'd': cm0,
+    'm': cm1,
+    'h': cm3,
+    'W': cmw,
+    'w': cmws,
+    'p': cmpk,
+}
+draw_sprite_2x(lz, 240, 326, SPR_CREAM_SLEEP, CMAP_CREAM)
+
 g1, g2, g0, g3, gw, gws, ge1, gpk = PAL['gray_cat']
-ellipse(404, 313, 30, 16, g1)
-ellipse(404, 310, 26, 13, g2)
-ellipse(390, 315, 13, 8, gw)
-ellipse(418, 301, 13, 11, g1)
-ellipse(418, 299, 11, 9, g2)
-ellipse(418, 304, 7, 4, gw)
-ellipse(412, 289, 3, 5, g1)
-ellipse(424, 289, 3, 5, g1)
-put(418, 302, gpk)
-for ex in (413, 422):
-    ellipse(ex, 298, 2, 2, ge1)
-    put(ex, 298, '#111827')
+CMAP_GRAY = {
+    'K': '#14171d',
+    'G': g0,
+    'g': g1,
+    'l': g2,
+    'L': g3,
+    'W': gw,
+    'w': gws,
+    'p': gpk,
+}
+draw_sprite_2x(lz, 404, 326, SPR_GRAY_SLEEP, CMAP_GRAY)
 
 # Poste rascador detras a la derecha (x=462, y=236..308)
 s0, s1, s2, s3 = PAL['sisal']

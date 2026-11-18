@@ -202,62 +202,43 @@ for y in range(212, 232):
     put(262, y, s3)
 ellipse(262, 235, 5, 5, '#fef08a')
 
-# MICHI GRIS sentado majestuoso en la plataforma superior mirando la terraza (x=188, y=144)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from michis_sprites import SPR_CREAM_PLAY, SPR_GRAY_SIT, draw_sprite_2x  # noqa: E402
+
+# MICHI GRIS sentado majestuoso en la plataforma superior mirando la terraza (x=188, y=164)
 g1, g2, g0, g3, gw, gws, ge1, ge2, gpk = PAL['gray_cat']
-# Cola colgando naturalmente desde la cadera derecha
-for i in range(18):
-    u = i / 17.0
-    ellipse(202 + int(math.sin(u * 2.2) * 5), 160 + int(u * 22), 4, 4, g1 if i % 2 == 0 else g0)
-# Cuerpo sentado
-ellipse(190, 152, 14, 14, g1)
-ellipse(190, 150, 11, 11, g2)
-ellipse(185, 154, 7, 10, gw)  # pecho blanco
-ellipse(184, 163, 5, 3, gw)   # patitas blancas
-ellipse(194, 163, 5, 3, gw)
-# Cabeza con orejas puntiagudas
-for ox_off in (-7, 7):
-    for oy in range(8):
-        we = max(1, (oy + 1) // 2)
-        for dx in range(-we, we + 1):
-            put(186 + ox_off + dx, 120 + oy, g0 if abs(dx) == we else g1)
-ellipse(186, 134, 12, 10, g1)
-ellipse(186, 132, 10, 8, g2)
-ellipse(185, 138, 6, 4, gw)
-put(185, 136, gpk)
-for ex in (181, 190):
-    ellipse(ex, 132, 2, 2, ge1)
-    put(ex, 132, '#111827')
-    put(ex - 1, 131, ge2)
+CMAP_GRAY = {
+    'K': '#14171d',
+    'G': g0,
+    'g': g1,
+    'l': g2,
+    'L': g3,
+    'W': gw,
+    'w': gws,
+    'A': ge1,
+    'a': ge2,
+    'P': '#0f172a',
+    'p': gpk,
+}
+draw_sprite_2x(lz, 188, 178, SPR_GRAY_SIT, CMAP_GRAY, shadow_col=None)
 
-# MICHI CREMA jugando sobre el cesped con la pelotita multicolor (x=340, y=318)
+# MICHI CREMA jugando sobre el cesped con la pelotita multicolor (x=338, y=338)
 c_dk, c_md, c_sh, c_hi, c_wh, c_whs, c_pink, c_eye = PAL['cream_cat']
-ellipse(342, 336, 36, 12, '#081407', 0.45)
-# Cola esponjosa levantada alegre
-for i in range(20):
-    u = i / 19.0
-    ellipse(368 + int(u * 14), 318 - int(math.sin(u * 2.2) * 20), 5, 5, c_md if u < 0.6 else c_dk)
-# Cuerpo agazapado en postura de juego
-ellipse(346, 322, 26, 16, c_md)
-ellipse(346, 318, 22, 11, c_hi)
-ellipse(336, 328, 14, 8, c_wh)
-# Pata delantera estirada hacia la pelotita
-ellipse(314, 330, 12, 5, c_hi)
-ellipse(304, 331, 6, 4, c_wh)
-# Cabeza crema mirando hacia la pelotita
-for ex, ey in ((318, 294), (332, 292)):
-    ellipse(ex, ey, 4, 5, c_md)
-    ellipse(ex, ey + 1, 2, 3, c_pink)
-ellipse(324, 306, 14, 12, c_md)
-ellipse(324, 304, 12, 9, c_hi)
-ellipse(320, 310, 7, 4, c_wh)
-put(319, 308, c_pink)
-for ex in (318, 327):
-    ellipse(ex, 304, 2, 2, '#f59e0b')
-    put(ex, 304, '#111827')
-    put(ex - 1, 303, '#ffffff')
+CMAP_CREAM = {
+    'k': mix(c_sh, '#1a120e', 0.45),
+    'd': c_dk,
+    'm': c_md,
+    'h': c_hi,
+    'W': c_wh,
+    'w': c_whs,
+    'p': c_pink,
+    'A': '#f59e0b',
+    'e': '#0f172a',
+}
+draw_sprite_2x(lz, 338, 338, SPR_CREAM_PLAY, CMAP_CREAM)
 
-# Pelotita multicolor delante de la patita del michi crema (x=284, y=330)
-ellipse(285, 336, 9, 4, '#081407', 0.45)
+# Pelotita multicolor delante de la patita del michi crema (x=292, y=328)
+ellipse(293, 335, 9, 4, '#081407', 0.45)
 ball_cols = ['#ef4444', '#facc15', '#22c55e', '#ec4899', '#3b82f6', '#fb923c']
 for dy in range(-8, 9):
     for dx in range(-8, 9):
@@ -265,7 +246,7 @@ for dy in range(-8, 9):
             col = ball_cols[((dx + 8) // 5 + ((dy + 8) // 5) * 2) % len(ball_cols)]
             if dy > 4:
                 col = mix(col, '#111827', 0.35)
-            put(284 + dx, 330 + dy, col)
+            put(292 + dx, 328 + dy, col)
 
 # Guirnalda en valla
 for bx in range(34, 444, 44):
