@@ -1,7 +1,7 @@
 # PixelZen Worlds
 
 [![Release](https://img.shields.io/github/v/release/davidlpizano/pixelzen-worlds?label=Versi%C3%B3n&color=54ded4)](https://github.com/davidlpizano/pixelzen-worlds/releases/latest)
-[![Mundos](https://img.shields.io/badge/Mundos-15%20%C3%97%203%20pantallas%20(45%20escenas)-e6b45a)](#mundos-incluidos-monitor-1--monitor-2--bloqueo)
+[![Mundos](https://img.shields.io/badge/Mundos-16%20%C3%97%203%20pantallas%20(48%20escenas)-e6b45a)](#mundos-incluidos-monitor-1--monitor-2--bloqueo)
 [![Tarjetas HUD](https://img.shields.io/badge/HUD%20Flotante-9%20tarjetas%20click--through-72c48c)](#panel-hud-flotante-9-tarjetas)
 [![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-1e2b4a)](LICENSE)
 
@@ -92,6 +92,7 @@ En Windows ([`windows/PixelZenHud.ps1`](windows/PixelZenHud.ps1)) las tarjetas f
 | **Gear 5 & Onigashima** (`one-piece`) · *One Piece* | ![OP M1](docs/previews/one-piece/dorado.png)<br/>**Onigashima**: Calavera gigante, Luffy Gear 5 desatando el Bajrang Gun frente a Kaido Dragón Azul. | ![OP M2](docs/previews/one-piece/m2-dorado.png)<br/>**Thousand Sunny**: el barco de los Mugiwara bajo la luna con Zoro y Sanji sobre la cubierta. | ![OP M3](docs/previews/one-piece/m3-dorado.png)<br/>**Road Poneglyph**: monolito carmesí con glifos antiguos, Sombrero de Paja y Fruta Nika. |
 | **Ultra Instinto en Namek** (`dragon-ball-z`) · *Dragon Ball Z* | ![DBZ M1](docs/previews/dragon-ball-z/dorado.png)<br/>**Namek en Colapso**: Goku Ultra Instinto Dominado chocando su Kamehameha Divino vs Freezer Dorado. | ![DBZ M2](docs/previews/dragon-ball-z/m2-dorado.png)<br/>**Dragón Shenron**: el dragón sagrado ascendiendo entre relámpagos sobre las 7 Bolas de Dragón. | ![DBZ M3](docs/previews/dragon-ball-z/m3-dorado.png)<br/>**Kame House**: isla del Maestro Roshi, Nube Kinton con el Bastón Mágico y la Bola de 4 Estrellas. |
 | **Night City & Sandevistan** (`cyberpunk-edgerunners`) · *Cyberpunk: Edgerunners* | ![Cyber M1](docs/previews/cyberpunk-edgerunners/dorado.png)<br/>**Corpo Plaza**: Arasaka, Quadra Turbo-R, David con estela cromática del Sandevistan y Lucy con su monofilo. | ![Cyber M2](docs/previews/cyberpunk-edgerunners/m2-dorado.png)<br/>**La Luna**: David y Lucy sentados en la azotea frente a la Luna plateada y el monorraíl NCART. | ![Cyber M3](docs/previews/cyberpunk-edgerunners/m3-dorado.png)<br/>**Callejón Afterlife**: mural grafiteado ER en verde ácido e implante espinal Apogee Sandevistan. |
+| **Terraza de los Michis** (`terraza-michis`) · *Vida Zen · Mascotas* | ![Michis M1](docs/previews/terraza-michis/dorado.png)<br/>**Siesta en el Césped**: Michi Crema panza arriba, Michi Gris de ojos ámbar, pelotita multicolor y tarima de madera. | ![Michis M2](docs/previews/terraza-michis/m2-dorado.png)<br/>**Torre Rascador y Pelotita**: rascador de dos niveles con pompón, macetas y ambos michis jugando en la terraza. | ![Michis M3](docs/previews/terraza-michis/m3-dorado.png)<br/>**Santuario de la Pelotita**: cojín ceremonial con huellas luminosas, farol cálido y ambos michis durmiendo bajo las estrellas. |
 
 ---
 

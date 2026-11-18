@@ -988,6 +988,66 @@ function createPixelZenHeroes(px) {
     px(cr, '#4ade80', 0.60 * al * (0.6 + 0.4 * Math.sin(t * 0.15)), 316, 194, 8, 8);
   }
 
+  function pintaMichiTerraza(cr, t, nf, aE) {
+    const ti = t | 0;
+    const al = Math.min(1, 0.62 + 0.38 * nf + aE * 0.30);
+    // Parpadeo periodico del Michi Gris
+    if ((ti % 38) >= 35) {
+      px(cr, '#4d5563', 0.96, 344, 270, 6, 6);
+      px(cr, '#4d5563', 0.96, 358, 270, 6, 6);
+      px(cr, '#23272e', 0.95, 345, 273, 4, 1);
+      px(cr, '#23272e', 0.95, 359, 273, 4, 1);
+    } else {
+      px(cr, '#fef08a', 0.72 * al, 345, 272, 2, 2);
+      px(cr, '#fef08a', 0.72 * al, 359, 272, 2, 2);
+    }
+    // Respiracion zen de la panza del Michi Crema y movimiento sutil de cola del Gris
+    const breath = Math.round(Math.sin(t * 0.14));
+    px(cr, '#eee6dc', 0.55, 192, 326 + breath, 12, 4);
+    px(cr, '#363c46', 0.85, 438 + Math.round(Math.sin(t * 0.18) * 3), 350, 5, 4);
+    // Destello en la pelotita multicolor y luciernagas/mariposas sobre el cesped
+    if ((ti % 16) < 4) px(cr, '#ffffff', 0.85, 134, 294, 2, 2);
+    for (let i = 0; i < 6; i++) {
+      const fx = (110 + i * 62 + Math.round(Math.sin(t * 0.08 + i * 1.4) * 14));
+      const fy = 248 + ((i * 11) % 34) + Math.round(Math.cos(t * 0.11 + i) * 7);
+      px(cr, nf > 0.35 ? '#fde047' : (i % 2 === 0 ? '#fef08a' : '#a3e635'), (0.45 + 0.45 * Math.abs(Math.sin(t * 0.2 + i))) * al, fx, fy, 2, 2);
+    }
+  }
+
+  function pintaMichiRascador(cr, t, nf, aE) {
+    const ti = t | 0;
+    const al = Math.min(1, 0.62 + 0.38 * nf + aE * 0.30);
+    // Pompon colgando balanceandose
+    const sw = Math.round(Math.sin(t * 0.16) * 3);
+    px(cr, '#fef08a', 0.90, 259 + sw, 232, 6, 6);
+    // Parpadeo del Michi Gris arriba en el rascador
+    if ((ti % 42) >= 39) {
+      px(cr, '#4d5563', 0.95, 179, 130, 5, 4);
+      px(cr, '#4d5563', 0.95, 188, 130, 5, 4);
+    }
+    // Luciernagas en el jardin
+    for (let i = 0; i < 6; i++) {
+      const fx = 90 + i * 64 + Math.round(Math.sin(t * 0.09 + i) * 12);
+      const fy = 244 + ((i * 13) % 36) + Math.round(Math.cos(t * 0.1 + i) * 6);
+      px(cr, nf > 0.35 ? '#fef08a' : '#86efac', (0.5 + 0.45 * Math.sin(t * 0.2 + i)) * al, fx, fy, 2, 2);
+    }
+  }
+
+  function pintaMichiBloqueo(cr, t, nf, aE) {
+    const al = Math.min(1, 0.60 + 0.40 * nf + aE * 0.30);
+    const pulse = 0.65 + 0.35 * Math.sin(t * 0.16);
+    // Brillo del farol calido y de las huellitas runicas alrededor del cojin
+    px(cr, '#fef08a', 0.85 * al * pulse, 172, 320, 9, 12);
+    for (const [hx, hy] of [[280, 328], [360, 328], [320, 344]]) {
+      px(cr, '#fef9c3', 0.82 * al * pulse, hx - 1, hy - 1, 3, 3);
+    }
+    for (let i = 0; i < 5; i++) {
+      const fx = 210 + i * 54 + Math.round(Math.sin(t * 0.08 + i) * 10);
+      const fy = 264 + ((i * 9) % 24) + Math.round(Math.cos(t * 0.12 + i) * 5);
+      px(cr, '#fde047', 0.72 * al, fx, fy, 2, 2);
+    }
+  }
+
   const HEROES = {
     miles_morales: (cr, t, nf) => { pintaFerry(cr, t, nf); pintaMiles(cr, t, nf); },
     miles_colgado: (cr, t, nf) => { pintaFerry(cr, t, nf); pintaMilesColgado(cr, t, nf); },
@@ -1015,6 +1075,9 @@ function createPixelZenHeroes(px) {
     cyber_sandevistan: pintaCyberSandevistan,
     cyber_moon: pintaCyberMoon,
     cyber_bloq: pintaCyberBloq,
+    michi_terraza: pintaMichiTerraza,
+    michi_rascador: pintaMichiRascador,
+    michi_bloqueo: pintaMichiBloqueo,
   };
 
   function pintaHeroeAtras(cr, modo, t, nf) {

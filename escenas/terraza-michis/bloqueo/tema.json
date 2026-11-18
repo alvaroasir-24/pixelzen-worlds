@@ -1,0 +1,56 @@
+{
+  "id": "terraza-michis",
+  "serie": "Vida Zen · Mascotas",
+  "nombre": "Santuario de la Pelotita",
+  "subtitulo": "Altar del Cojín · Siesta Nocturna Juntos",
+  "descripcion": "Escena ceremonial de bloqueo junto a la tarima de madera y el farol cálido: la pelotita multicolor reposa sobre el cojín oscuro rodeada de huellas luminosas mientras ambos michis duermen acurrucados bajo las estrellas.",
+  "sin_lago": true,
+  "cielo_fondo": "#070f18",
+  "modo_heroe": "michi_bloqueo",
+  "modo_pajaros": "ninguno",
+  "color_pajaros": "#1c2838",
+  "modo_particulas": "hojas_mana",
+  "colores_hojas": [
+    "#fde047",
+    "#4ade80",
+    "#fb7185",
+    "#38bdf8"
+  ],
+  "color_mana_halo": "#fbbf24",
+  "color_mana_centro": "#fef9c3",
+  "color_fuegos_halo": [
+    "#fbbf24",
+    "#4ade80"
+  ],
+  "color_fuegos_centro": [
+    "#fffbeb",
+    "#dcfce7"
+  ],
+  "color_ventanas": "#fde68a",
+  "color_faroles_halo": "#f59e0b",
+  "color_faroles_centro": "#fffbeb",
+  "color_runas_halo": "#fde047",
+  "color_runas_centro": "#fef9c3",
+  "color_humo_dia": "#f1f5f9",
+  "color_humo_noche": "#94a3b8",
+  "color_olas": [
+    "#86efac",
+    "#22c55e"
+  ],
+  "color_reflejo_sol": "#fef08a",
+  "color_reflejo_luna": "#e2e8f0",
+  "color_destello": "#fef9c3",
+  "citas": [
+    {
+      "sub": "Cojín y Huellas",
+      "es": "«Cuando cae la noche en la terraza, hasta la pelotita más inquieta descansa.»",
+      "au": "Terraza de los Michis"
+    },
+    {
+      "sub": "Guardia Nocturna",
+      "es": "«Dos ronroneos bajo la misma luna mantienen a raya cualquier lunes.»",
+      "au": "Michi Gris & Michi Crema"
+    }
+  ],
+  "titulo": "Santuario de la Pelotita"
+}

@@ -155,6 +155,16 @@
       m3: { name: 'Callejón Afterlife & Sandevistan', sub: 'Mural ER e Implante Apogee', desc: 'Callejón húmedo tras el Afterlife con el emblema grafiteado ER iluminado en verde ácido y el implante espinal Apogee Sandevistan latiendo en el banco.' },
       cita: '«No hace falta que salves el mundo entero… basta con llevarte hasta la luna.» — David Martinez',
     },
+    {
+      id: 'terraza-michis',
+      serie: 'Vida Zen · Mascotas',
+      cat: 'zen',
+      titulo: 'Terraza de los Michis',
+      m1: { name: 'Siesta en el Césped', sub: 'Michi Gris & Michi Crema · Pelotita Multicolor', desc: 'Tarde tranquila en el césped verde: el michi crema estirado panza arriba junto a su pelotita multicolor y la tarima de madera, mientras el michi gris de ojos ámbar descansa junto al rascador de sisal.' },
+      m2: { name: 'Torre Rascador y Pelotita', sub: 'Mirador de Sisal · Juego en la Terraza', desc: 'Continuación del balcón con la torre rascador de dos niveles y plantas en maceta: el michi gris vigila desde lo alto y el michi crema persigue su pelotita arcoíris.' },
+      m3: { name: 'Santuario de la Pelotita', sub: 'Altar del Cojín · Siesta Nocturna Juntos', desc: 'La pelotita multicolor reposando sobre el cojín oscuro rodeada de huellitas luminosas junto al farol cálido, con ambos michis descansando acurrucados bajo las estrellas.' },
+      cita: '«La felicidad es un rayo de sol sobre el césped verde y un buen ronroneo sin prisas.» — Terraza de los Michis',
+    },
   ];
 
   const STAT_KEYS = ['tiempo', 'clima', 'sistema', 'gpu', 'red', 'audio', 'dev', 'foco', 'grimorio'];

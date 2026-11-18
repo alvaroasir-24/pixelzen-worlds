@@ -68,7 +68,7 @@ def leer_version():
                     return txt
             except Exception:
                 pass
-    return '1.2.33'
+    return '1.2.34'
 
 
 VERSION_ACTUAL = leer_version()

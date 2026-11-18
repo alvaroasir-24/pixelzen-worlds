@@ -1531,6 +1531,30 @@ def _cyber_bloqueo_post(ctx):
 
 
 # =====================================================================
+# 16. TERRAZA DE LOS MICHIS (principal, secundario, bloqueo)
+# =====================================================================
+
+def _michis_principal_post(ctx):
+    # Luciérnagas sobre el cesped, brillos en la pelotita multicolor y matitas de hierba
+    _sparks(ctx, 138, 294, 20, 14, 8, '#fde047', '#fb7185', seed=1611, runa_stride=3)
+    _sparks(ctx, 310, 276, 48, 18, 10, '#fef08a', '#4ade80', seed=1612, runa_stride=3)
+    _tuft_band(ctx, 120, 440, 266, 20, 6, 10, ['#4ade80', '#22c55e', '#86efac'], seed=1613)
+
+
+def _michis_secundario_post(ctx):
+    # Brillos sobre el rascador y la pelotita multicolor en el cesped
+    _sparks(ctx, 262, 236, 18, 14, 8, '#fef08a', '#a3e635', seed=1621, runa_stride=3)
+    _sparks(ctx, 290, 324, 26, 16, 10, '#fde047', '#4ade80', seed=1622, runa_stride=3)
+    _tuft_band(ctx, 26, 450, 272, 22, 6, 10, ['#4ade80', '#22c55e', '#a3e635'], seed=1623)
+
+
+def _michis_bloqueo_post(ctx):
+    # Aureola calida del farol y destellos zen alrededor del cojin y los michis
+    _sparks(ctx, 320, 312, 34, 18, 14, '#fef08a', '#4ade80', seed=1631, runa_stride=2)
+    _sparks(ctx, 176, 322, 18, 14, 8, '#fbbf24', '#fef3c7', seed=1632, runa_stride=3)
+
+
+# =====================================================================
 # TABLA DE DESPACHO PARA LAS ESCENAS
 # =====================================================================
 
@@ -1597,6 +1621,9 @@ _POST_ESCENA = {
     ('spiderman-miles-morales', 'principal'): _sm_principal_post,
     ('spiderman-miles-morales', 'secundario'): _sm_secundario_post,
     ('spiderman-miles-morales', 'bloqueo'): _sm_bloqueo_post,
+    ('terraza-michis', 'principal'): _michis_principal_post,
+    ('terraza-michis', 'secundario'): _michis_secundario_post,
+    ('terraza-michis', 'bloqueo'): _michis_bloqueo_post,
 }
 
 

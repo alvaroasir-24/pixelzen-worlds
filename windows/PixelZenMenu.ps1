@@ -534,6 +534,7 @@ function Cargar-Temas {
         'one-piece'               = @{ serie = 'One Piece'; titulo = 'Gear 5 & Onigashima' }
         'dragon-ball-z'           = @{ serie = 'Dragon Ball Z'; titulo = 'Ultra Instinto en Namek' }
         'cyberpunk-edgerunners'   = @{ serie = 'Cyberpunk: Edgerunners'; titulo = 'Night City & Sandevistan' }
+        'terraza-michis'          = @{ serie = 'Vida Zen · Mascotas'; titulo = 'Terraza de los Michis' }
     }
     $lista = @()
     if (Test-Path $TemasDir) {

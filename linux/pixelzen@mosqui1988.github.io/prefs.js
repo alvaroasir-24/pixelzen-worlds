@@ -21,6 +21,7 @@ const TEMAS_BASE = [
     {id: 'one-piece', nombre: 'One Piece · Gear 5 & Onigashima'},
     {id: 'dragon-ball-z', nombre: 'Dragon Ball Z · Ultra Instinto'},
     {id: 'cyberpunk-edgerunners', nombre: 'Cyberpunk: Edgerunners · Night City'},
+    {id: 'terraza-michis', nombre: 'Terraza de los Michis · Siesta Zen'},
 ];
 
 export default class PixelZenPreferences extends ExtensionPreferences {

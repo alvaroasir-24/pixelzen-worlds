@@ -1,0 +1,66 @@
+{
+  "id": "terraza-michis",
+  "serie": "Vida Zen · Mascotas",
+  "nombre": "Terraza Zen · Siesta en el Césped",
+  "subtitulo": "Michi Gris & Michi Crema · Pelotita Multicolor y Tarima",
+  "descripcion": "Tarde tranquila en la terraza de césped verde: el michi crema descansa estirado panza arriba junto a su pelotita multicolor, mientras el michi gris de ojos ámbar vigila junto a la tarima de madera, el rascador de sisal y la valla iluminada.",
+  "sin_lago": true,
+  "cielo_fondo": "#09121c",
+  "modo_heroe": "michi_terraza",
+  "modo_pajaros": "grullas",
+  "color_pajaros": "#1c2838",
+  "modo_particulas": "hojas_mana",
+  "colores_hojas": [
+    "#a3e635",
+    "#4ade80",
+    "#fde047",
+    "#fb7185"
+  ],
+  "color_mana_halo": "#fde047",
+  "color_mana_centro": "#fef9c3",
+  "color_fuegos_halo": [
+    "#f59e0b",
+    "#4ade80"
+  ],
+  "color_fuegos_centro": [
+    "#fef3c7",
+    "#dcfce7"
+  ],
+  "color_ventanas": "#fde68a",
+  "color_faroles_halo": "#fbbf24",
+  "color_faroles_centro": "#fffbeb",
+  "color_runas_halo": "#4ade80",
+  "color_runas_centro": "#fef08a",
+  "color_humo_dia": "#f1f5f9",
+  "color_humo_noche": "#94a3b8",
+  "color_olas": [
+    "#86efac",
+    "#22c55e"
+  ],
+  "color_reflejo_sol": "#fef08a",
+  "color_reflejo_luna": "#e2e8f0",
+  "color_destello": "#fef9c3",
+  "citas": [
+    {
+      "sub": "Michi Crema · Panza Arriba",
+      "es": "«La felicidad es un rayo de sol sobre el césped verde y cero prisas en la agenda.»",
+      "au": "Michi Crema"
+    },
+    {
+      "sub": "Michi Gris · Ojos Ámbar",
+      "es": "«Vigilo la terraza con dignidad británica… al menos hasta que ruede la pelotita.»",
+      "au": "Michi Gris"
+    },
+    {
+      "sub": "Terraza de los Michis · Hora Zen",
+      "es": "«Un buen ronroneo sincroniza el reloj del hogar mejor que cualquier algoritmo.»",
+      "au": "Terraza Zen"
+    },
+    {
+      "sub": "Rincón del Rascador",
+      "es": "«Afilar las garras en el sisal, perseguir colores y dormir bajo las estrellas.»",
+      "au": "Crónica Felina"
+    }
+  ],
+  "titulo": "Terraza de los Michis"
+}
